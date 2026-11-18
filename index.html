@@ -2886,7 +2886,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261118181630',newer=false,want='',last=Date.now();
+  var MINE='20261118185416',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6267,12 +6267,15 @@ function homeDial(){const n=new Date(),nowM=n.getHours()*60+n.getMinutes();if(RG
   return h('div',{class:'hmwrap'},h('div',{class:'hmclip',style:RGSZ.home?`height:${RGSZ.home[1]}px`:null},svg),
     RGH.follow?null:h('button',{class:'tlink hmnow',onclick:()=>{RGH.follow=true;render();}},'↺ Back to now'));}
 /* one date header for every page that shows a date: the big name and the clock, with the date underneath */
-function pageHead(title,short,dateTxt,wx,noShrink){return h('div',{class:'dayhead homehead pagehead'},
+/* upright phones: short day and month names (WED, Nov 18, 2026) */
+const phoneUp=()=>portrait()&&innerWidth<700;
+const shortMonths=t=>String(t).replace(new RegExp('\\b('+MONTHS.join('|')+')\\b','g'),m=>m.slice(0,3));
+function pageHead(title,short,dateTxt,wx,noShrink){if(phoneUp()){title=short||title;dateTxt=shortMonths(dateTxt);}return h('div',{class:'dayhead homehead pagehead'},
   h('div',{class:'bigrow'},h('div',{class:'hdl'},h('h1',{'aria-label':title,class:'dayfit','data-full':String(title).toUpperCase(),'data-short':String(short).toUpperCase(),'data-noshrink':noShrink?'1':null},String(title).toUpperCase()),
     h('div',{class:'date'},dateTxt)),bigClock()),
   wx?wxLine():null);}
 const portrait=()=>{try{return matchMedia('(orientation:portrait)').matches;}catch(e){return false;}};
-try{matchMedia('(orientation:portrait)').addEventListener('change',()=>{if(S.tab==='home')render();});}catch(e){}
+try{matchMedia('(orientation:portrait)').addEventListener('change',()=>render());}catch(e){}
 function homeView(){
   if(S.rv)return reviewView();
   const k=S.today,d=parseKey(k),n=new Date(),hm=pad(n.getHours())+':'+pad(n.getMinutes());
@@ -9462,9 +9465,9 @@ function fitClocks(){document.querySelectorAll('#app .pagehead .bigrow').forEach
   ck.style.removeProperty('font-size');ck.style.marginTop='';dt.style.removeProperty('font-size');
   const b1=parseFloat(getComputedStyle(h1).fontSize),b2=parseFloat(getComputedStyle(dt).fontSize);
   const app=document.getElementById('app'),acs=getComputedStyle(app),ar=app.getBoundingClientRect(),lim=Math.min(row.clientWidth,ar.width-parseFloat(acs.paddingLeft)-parseFloat(acs.paddingRight)),gap=parseFloat(getComputedStyle(row).columnGap)||0;
-  /* scale the day name and the date together, size the time to match, and keep the largest scale that fits the row */
+  /* scale the day name and the date together, size the time to the day name's height, and keep the largest scale that fits the row */
   const apply=k=>{h1.style.setProperty('font-size',(b1*k).toFixed(2)+'px','important');dt.style.setProperty('font-size',(b2*k).toFixed(2)+'px','important');ck.style.marginTop='0px';
-    const a=glyBox(h1),b=glyBox(dt),want=b.base-a.top,c=glyBox(ct);if(!c.a||want<=0)return false;ck.style.setProperty('font-size',(c.fs*want/c.a).toFixed(1)+'px','important');
+    const a=glyBox(h1),want=a.base-a.top,c=glyBox(ct);if(!c.a||want<=0)return false;ck.style.setProperty('font-size',(c.fs*want/c.a).toFixed(1)+'px','important');
     const c2=glyBox(ct);ck.style.marginTop=(a.top-c2.top).toFixed(1)+'px';return col.getBoundingClientRect().width+ck.getBoundingClientRect().width+gap<=lim+1;};
   const best=()=>{if(apply(1))return 1;let lo=.2,hi=1;for(let n=0;n<14;n++){const m=(lo+hi)/2;if(apply(m))lo=m;else hi=m;}apply(lo);return lo;};
   const k=best();if(k<.42&&h1.dataset.short&&h1.dataset.short!==h1.textContent){h1.textContent=h1.dataset.short;best();}});}
