@@ -8031,7 +8031,21 @@ function skBoardNewForm(){const nm=h('input',{class:'skszin skbdname',placeholde
 function skBoardCard(B){skBoardNorm(B);const ps=skBoardPanels(B).slice(0,4);
   return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,style:`aspect-ratio:${B.pw*2+8}/${B.ph*2+8}`,onclick:()=>{S.skBoardOpen=B.id;S.skBook=null;SKBV=null;saveUI();render();window.scrollTo(0,0);}},
       [0,1,2,3].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk);return h('span',{class:'skbdcell',style:`aspect-ratio:${B.pw}/${B.ph}`},d&&!d._partial?skPanelCv(d,B,140):null);})),
-    h('div',{class:'skn'},B.name),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')));}
+    h('div',{class:'skn'},B.name),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
+    h('div',{class:'skcardb'},h('button',{class:'tlink',title:'Make a copy of this storyboard with its own copies of every drawing',disabled:!!S.skBoardDup,onclick:()=>skBoardDup(B)},S.skBoardDup===B.id?'Duplicating…':'Duplicate')));}
+/* duplicate a storyboard: new copies of every panel drawing (and their guide images), so the copy can change without touching the original */
+async function skBoardDup(B){if(S.skBoardDup)return;S.skBoardDup=B.id;render();
+  try{const map=new Map(),stamp=new Date().toISOString();
+    for(const p of skBoardPanels(B)){if(map.has(p.sk))continue;const d=S.sketches.get(p.sk);if(!d||d._partial)continue;
+      const nid='sk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),doc=Object.assign(skClone(d),{strokes:skDeep(d.strokes||[])});delete doc.del;delete doc.ldel;delete doc.gdel;doc.created=stamp;doc.updated=stamp;
+      if(skGuides(d).length){doc.guides=[];for(const g of skGuides(d)){const ng=Object.assign({},g,{id:'gd'+skNewId()});
+          try{const s0=await col('skguides').doc(g.id).get();if(s0.exists){const gd=Object.assign({},s0.data());if(gd.sk)gd.sk=nid;await write(()=>col('skguides').doc(ng.id).set(gd));}}catch(e){}doc.guides.push(ng);}}
+      map.set(p.sk,nid);S.sketches.set(nid,Object.assign(skClone(doc),{strokes:skDeep(doc.strokes)}));skStore(nid,doc);}
+    const nb=skClone(B);nb.id='bd'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);nb.name=(B.name||'Storyboard')+' copy';
+    nb.panels=(B.panels||[]).map(p=>p&&p.sk&&map.has(p.sk)?Object.assign({},p,{sk:map.get(p.sk)}):p&&p.sk?Object.assign({},p,{sk:null}):p);
+    const L=skBoards().slice(),i=L.indexOf(B);L.splice(i<0?L.length:i+1,0,nb);S.skBoards=L;skBoardsSave();flash('Made “'+nb.name+'”.');}
+  catch(e){flash('That didn’t duplicate. Try again.');}
+  finally{S.skBoardDup=null;render();}}
 function skBoardView(){const B=skBoardGet(S.skBoardOpen);if(!B){S.skBoardOpen=null;return null;}clearInterval(SKBP);SKBP=0;
   const P=skBoardPanels(B),all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
   const move=(i,k)=>{const L=B.panels,a=L.indexOf(P[i]),b=L.indexOf(P[i+k]);if(a<0||b<0)return;[L[a],L[b]]=[L[b],L[a]];skBoardsSave();render();};
@@ -8889,7 +8903,9 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
         h('button',{class:'tlink',title:'The drawings in it go back to loose drawings',onclick:()=>{if(S.confirm!=='skbdel')return armConfirm('skbdel');S.confirm=null;S.skBooks=books.filter(b=>b.id!==ob.id);S.skBook=null;skBooksSave();render();flash('Sketchbook deleted. Its drawings are loose now.');}},S.confirm==='skbdel'?'Tap again to delete the sketchbook':'Delete sketchbook')),
       newRow,custom,
       list.length?h('div',{class:'skgal'},list.map(card)):h('p',{class:'calnote'},'This sketchbook is empty. Start a sketch above, or use Move on a drawing to put it here.')];}
-  const loose=all.filter(([,d])=>!inBook(d));
+  /* drawings that sit in a storyboard live there, not in Loose drawings (they come back here if taken out of every storyboard) */
+  const inBoard=new Set();for(const b of skBoards())for(const p of (b.panels||[]))if(p&&p.sk)inBoard.add(p.sk);
+  const loose=all.filter(([id,d])=>!inBook(d)&&!inBoard.has(id));
   /* a sketchbook looks like a black hardcover: the latest drawing in a window, the name on a label, the pages and strap showing at the bottom */
   const bookCard=b=>{const its=all.filter(([,d])=>inBook(d)===b.id),top=its.find(([id])=>id===b.cover)||its[0];
     return h('div',{class:'skcard skbook'},h('button',{class:'skbk','aria-label':'Open sketchbook '+b.name,onclick:()=>{S.skBook=b.id;S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},
@@ -8903,7 +8919,7 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
       h('h2',{class:'sksec'},'Loose drawings')]
       :h('div',{class:'sksech'},addBook()),
     loose.length?h('div',{class:'skgal'},loose.map(card)):
-      h('p',{class:'calnote'},all.length?'Every drawing is in a sketchbook.':'No sketches yet. Pick a page shape above to start drawing with a pen, your finger or the mouse.')];}
+      h('p',{class:'calnote'},all.length?'Every drawing is in a sketchbook or a storyboard.':'No sketches yet. Pick a page shape above to start drawing with a pen, your finger or the mouse.')];}
 function skBook3D(front,W,H,T,view){W=W||200;H=H||244;T=T||12;const k=W/200,rc=5*k,b=2.5*k,o=3*k,x0=-W/2,f=[];
   const face=(w,hh,tr,cls,kids,st)=>f.push(h('span',{class:'b3f '+cls,style:`width:${w}px;height:${hh}px;left:${(W-w)/2}px;top:${(H-hh)/2}px;transform:${tr};${st||''}`},kids||null));
   const bw=W-rc+1.2,bx=rc/2-.6;/* a hair wider so the cover tucks into the spine with no seam */
