@@ -2751,7 +2751,9 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
     firebase.initializeApp(window.FB_CONFIG);const auth=firebase.auth(),fs=firebase.firestore();
     try{await fs.enablePersistence({synchronizeTabs:true});}catch(e){}
     /* coming back from the emailed link */
-    if(auth.isSignInWithEmailLink(location.href)){let em=localStorage.getItem('fbEmail')||prompt('Confirm your email to finish signing in');
+    /* a sign-in link meant for the After Effects panel: don't use it here, show it to copy into the panel */
+    if(auth.isSignInWithEmailLink(location.href)&&/[?&]panel=1/.test(location.search)){const link=location.href;history.replaceState(null,'',location.pathname);panelCard(link);}
+    else if(auth.isSignInWithEmailLink(location.href)){let em=localStorage.getItem('fbEmail')||prompt('Confirm your email to finish signing in');
       try{await auth.signInWithEmailLink(em,location.href);localStorage.removeItem('fbEmail');}catch(e){alert('That sign-in link didn’t work: '+e.message);}
       history.replaceState(null,'',location.pathname);}
     const user=await new Promise(res=>{const off=auth.onAuthStateChanged(u=>{if(u){off();res(u);}else gate(auth);});});
@@ -2765,6 +2767,11 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
     document.body.appendChild(G);const f=G.querySelector('form'),inp=f.querySelector('input'),msg=f.querySelector('.msg');inp.value=localStorage.getItem('fbEmail')||'';
     f.onsubmit=async e=>{e.preventDefault();msg.textContent='Sending…';try{await auth.sendSignInLinkToEmail(inp.value.trim(),{url:location.origin+location.pathname,handleCodeInApp:true});
       localStorage.setItem('fbEmail',inp.value.trim());msg.textContent='Check your email and open the link on this device.';}catch(err){msg.textContent='Couldn’t send it: '+err.message;}};}
+  function panelCard(link){const d=document.createElement('div');d.id='fbpanel';d.innerHTML=`<style>#fbpanel{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:rgba(240,240,240,.96);font:16px system-ui,sans-serif;color:#111}
+    #fbpanel div{background:#fff;border:2px solid #111;border-radius:16px;padding:28px;width:min(380px,calc(100vw - 32px));display:grid;gap:12px}#fbpanel h2{margin:0;font-size:1.3rem}#fbpanel p{margin:0;color:#555;font-size:.95rem}
+    #fbpanel button{font:inherit;font-weight:700;padding:10px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}#fbpanel .q{background:#eee;color:#111}</style>
+    <div><h2>Sign in the After Effects panel</h2><p>Copy this link, then paste it into the panel’s sign-in box.</p><button class="c">Copy sign-in link</button><button class="q">Close</button></div>`;
+    document.body.appendChild(d);const c=d.querySelector('.c');c.onclick=async()=>{try{await navigator.clipboard.writeText(link);c.textContent='Copied. Paste it in the panel.';}catch(e){prompt('Copy this link:',link);}};d.querySelector('.q').onclick=()=>d.remove();}
   function hideGate(){if(G){G.remove();G=null;}}
   /* the planner's database calls, on Firestore */
   /* photos uploaded on claude.ai were copied into this site's _blob folder; their saved addresses point there */
