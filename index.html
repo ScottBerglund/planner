@@ -2767,7 +2767,9 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
       localStorage.setItem('fbEmail',inp.value.trim());msg.textContent='Check your email and open the link on this device.';}catch(err){msg.textContent='Couldn’t send it: '+err.message;}};}
   function hideGate(){if(G){G.remove();G=null;}}
   /* the planner's database calls, on Firestore */
-  const enc=d=>({j:JSON.stringify(d===undefined?null:d),u:Date.now()}),dec=s=>{const v=s.data();if(!v)return undefined;try{return JSON.parse(v.j);}catch(e){return undefined;}};
+  /* photos uploaded on claude.ai were copied into this site's _blob folder; their saved addresses point there */
+  const BLOB=/\/_blob\/([0-9a-f]{32})(?![0-9a-f.])/g;
+  const enc=d=>({j:JSON.stringify(d===undefined?null:d),u:Date.now()}),dec=s=>{const v=s.data();if(!v)return undefined;try{return JSON.parse(String(v.j).replace(BLOB,'_blob/$1.jpg'));}catch(e){return undefined;}};
   const dsnap=s=>({id:s.id,exists:s.exists,data:()=>s.exists?dec(s):undefined});
   const csnap=q=>({docs:q.docs.map(dsnap),size:q.size,empty:q.empty});
   function adapter(fs,uid){const base=fs.collection('users').doc(uid);
@@ -2782,9 +2784,14 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
       _base:base,_fs:fs};}
   /* downloads: a normal browser download */
   const downloads={save:({filename,data})=>new Promise(res=>{const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename||'download';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);res({status:'saved'});})};
+  /* new photos: shrunk to 900px JPEG and kept inside the record itself (no separate file storage needed) */
+  const assets={upload:blob=>new Promise((res,rej)=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');
+      c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);
+      const url=c.toDataURL('image/jpeg',.8);res({id:'inline',url,sizeBytes:url.length,contentType:'image/jpeg'});};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Not an image'));};im.src=u;}),
+    list:async()=>({assets:[],usage:{}}),delete:async()=>{}};
   window.STANDALONE=true;
   window.claude={use:async name=>{if(name==='db'){try{const {fs,user}=await boot();const db=adapter(fs,user.uid);window.FBDB=db;window.FBUSER=user;return db;}catch(e){console.error(e);return null;}}
-    if(name==='downloads')return downloads;return null;}};
+    if(name==='downloads')return downloads;if(name==='assets')return assets;return null;}};
 })();
 </script><script>/* Standalone planner: Google Calendar without claude.ai.
    window.claude.use('mcp') hands the planner the same watchTool/callTool/invalidate calls it uses on claude.ai, but only for
