@@ -2882,6 +2882,26 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
   const prev=window.claude&&window.claude.use;
   window.claude=Object.assign({},window.claude,{use:async name=>name==='mcp'?(window.GC_CLIENT_ID?mcp:null):prev?prev(name):null});
 })();
+</script><script>/* Standalone planner: pick up new versions on its own (claude.ai used to reload the page for us).
+   Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
+   but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
+(function(){
+  var MINE='20261118181630',newer=false,want='',last=Date.now();
+  /* tidy the address after an update reload */
+  if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
+  ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
+  function busy(){var a=document.activeElement;if(a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||a.isContentEditable))return true;
+    try{if(typeof SKW!=='undefined'&&SKW)return true;}catch(e){}return false;}
+  function tryReload(force){if(!newer)return;if(busy())return;if(!force&&Date.now()-last<30000)return;
+    /* once per version, with a fresh address so a cached copy of the old page isn't served again */
+    try{if(sessionStorage.getItem('upd')===want)return;sessionStorage.setItem('upd',want);}catch(e){}
+    location.replace(location.pathname+'?v='+want);}
+  function check(force){fetch('version.txt?'+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
+      v=v&&v.trim();if(v&&v!==MINE){newer=true;want=v;}tryReload(force);}).catch(function(){});}
+  setInterval(function(){if(newer)tryReload(false);else if(document.visibilityState==='visible')check(false);},180000);
+  setInterval(function(){tryReload(false);},15000);
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')check(true);});
+})();
 </script><script>
 (function(){
 const pad=n=>String(n).padStart(2,'0');
