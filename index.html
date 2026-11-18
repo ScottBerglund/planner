@@ -2737,6 +2737,8 @@ window.FB_CONFIG = {
   messagingSenderId: "864362034167",
   appId: "1:864362034167:web:4a25a62c2b23517fd634f2"
 };
+/* Google sign-in for Calendar (OAuth web client, allowed only from https://scottberglund.github.io) */
+window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.googleusercontent.com";
 </script><script>/* Standalone planner: the same page as in claude.ai, with claude.ai's storage swapped for Firebase.
    window.claude.use('db') hands the planner an object with the same calls it already uses (collection/doc, set/update/delete/get/onSnapshot),
    kept under users/<your sign-in>/… so each login only ever sees its own data. Each record is stored as one JSON string, because Firestore
@@ -2783,6 +2785,85 @@ window.FB_CONFIG = {
   window.STANDALONE=true;
   window.claude={use:async name=>{if(name==='db'){try{const {fs,user}=await boot();const db=adapter(fs,user.uid);window.FBDB=db;window.FBUSER=user;return db;}catch(e){console.error(e);return null;}}
     if(name==='downloads')return downloads;return null;}};
+})();
+</script><script>/* Standalone planner: Google Calendar without claude.ai.
+   window.claude.use('mcp') hands the planner the same watchTool/callTool/invalidate calls it uses on claude.ai, but only for
+   'Google Calendar', answered straight from Google's Calendar API in the browser. Sign-in is Google's own popup (GIS token model);
+   the access token lasts about an hour, then the next click on the page quietly renews it. */
+(function(){
+  const GC='Google Calendar',API='https://www.googleapis.com/calendar/v3',SCOPE='https://www.googleapis.com/auth/calendar';
+  const TZ=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const err=(code,message)=>Object.assign(new Error(message||code),{code});
+  let tok=null,tc=null,gisP=null;
+  try{const t=JSON.parse(localStorage.getItem('gcTok')||'null');if(t&&t.exp>Date.now()+60000)tok=t;}catch(e){}
+  const live=()=>tok&&tok.exp>Date.now()+60000;
+  const had=()=>{try{return localStorage.getItem('gcOK')==='1';}catch(e){return false;}};
+  function gis(){if(gisP)return gisP;gisP=new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
+    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>{gisP=null;rej(err('server_not_connected','Could not load Google sign-in'));};document.head.appendChild(s);});return gisP;}
+  gis().catch(()=>{});
+  let busy=null;
+  /* must run from a click (it opens Google's popup) */
+  function connect(prompt){if(busy)return busy;
+    busy=new Promise((res,rej)=>{
+      if(!(window.google&&google.accounts&&google.accounts.oauth2)){busy=null;gis().catch(()=>{});return rej(err('server_not_connected','Google sign-in is still loading. Try again.'));}
+      let hint='';try{hint=localStorage.getItem('gcHint')||'';}catch(e){}
+      tc=google.accounts.oauth2.initTokenClient({client_id:window.GC_CLIENT_ID,scope:SCOPE,hint,
+        callback:r=>{busy=null;if(r.error)return rej(err('needs_reauth',r.error));
+          tok={t:r.access_token,exp:Date.now()+(+r.expires_in||3600)*1000};
+          try{localStorage.setItem('gcTok',JSON.stringify(tok));localStorage.setItem('gcOK','1');}catch(e){}
+          res();refreshAll();},
+        error_callback:e=>{busy=null;rej(err('needs_reauth',(e&&e.type)||'popup closed'));}});
+      tc.requestAccessToken({prompt:prompt==null?(had()?'':'consent'):prompt});});
+    return busy;}
+  /* after the hour runs out, the next click anywhere renews it (Google only lets the popup open from a click) */
+  addEventListener('pointerdown',()=>{if(!live()&&had()&&!busy&&W.size)connect('').catch(()=>{});},true);
+  async function api(path,{method='GET',q,body}={}){
+    if(!live())throw err('needs_reauth','Google Calendar needs connecting');
+    const u=new URL(API+path);if(q)for(const k in q)if(q[k]!=null&&q[k]!=='')u.searchParams.set(k,q[k]);
+    const r=await fetch(u,{method,headers:Object.assign({Authorization:'Bearer '+tok.t},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
+    if(r.status===401){tok=null;try{localStorage.removeItem('gcTok');}catch(e){}throw err('needs_reauth','Google Calendar sign-in expired');}
+    if(r.status===204)return {};
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw Object.assign(err('tool_error',(j.error&&j.error.message)||('HTTP '+r.status)),{retryable:r.status>=500||r.status===429});
+    return j;}
+  const iso=s=>s&&!/[zZ]|[+-]\d\d:\d\d$/.test(s)?new Date(s).toISOString():s;
+  const cid=id=>encodeURIComponent(id||'primary');
+  function times(a,b){if(a.startTime==null)return;
+    if(a.allDay)Object.assign(b,{start:{date:a.startTime.slice(0,10)},end:{date:(a.endTime||a.startTime).slice(0,10)}});
+    else Object.assign(b,{start:{dateTime:a.startTime,timeZone:TZ},end:{dateTime:a.endTime||a.startTime,timeZone:TZ}});}
+  function fields(a,b){for(const k of ['summary','description','location','colorId','visibility'])if(a[k]!=null)b[k]=a[k];
+    if(a.attendees)b.attendees=a.attendees.map(x=>({email:x.email,optional:!!x.optionalAttendee}));
+    if(a.recurrenceData)b.recurrence=a.recurrenceData;
+    if(a.useDefaultReminders===false)b.reminders={useDefault:false,overrides:a.overrideReminders||[]};
+    if(a.availability)b.transparency=a.availability==='AVAILABILITY_FREE'?'transparent':'opaque';
+    times(a,b);return b;}
+  const TOOLS={
+    list_calendars:async()=>{const j=await api('/users/me/calendarList',{q:{maxResults:250}});const cals=j.items||[];
+      const p=cals.find(c=>c.primary);if(p)try{localStorage.setItem('gcHint',p.id);}catch(e){}
+      return {payload:{calendars:cals}};},
+    list_events:async a=>{let ev=[],page=null,n=0;
+      do{const j=await api('/calendars/'+cid(a.calendarId)+'/events',{q:{timeMin:iso(a.startTime),timeMax:iso(a.endTime),singleEvents:true,orderBy:'startTime',maxResults:250,timeZone:TZ,pageToken:page}});
+        ev=ev.concat(j.items||[]);page=j.nextPageToken;}while(page&&++n<8);
+      return {payload:{events:ev}};},
+    create_event:async a=>{const e=await api('/calendars/'+cid(a.calendarId)+'/events',{method:'POST',body:fields(a,{})});return {payload:e};},
+    update_event:async a=>{const e=await api('/calendars/'+cid(a.calendarId)+'/events/'+encodeURIComponent(a.eventId),{method:'PATCH',body:fields(a,{})});return {payload:e};},
+    delete_event:async a=>{await api('/calendars/'+cid(a.calendarId)+'/events/'+encodeURIComponent(a.eventId),{method:'DELETE',q:{sendUpdates:a.notificationLevel==='ALL'?'all':'none'}});return {payload:{}};},
+    get_event:async a=>({payload:await api('/calendars/'+cid(a.calendarId)+'/events/'+encodeURIComponent(a.eventId))})};
+  async function run(server,tool,input){if(server!==GC||!TOOLS[tool])throw err('server_not_connected',server+' isn’t available on this page');return TOOLS[tool](input||{});}
+  /* watches: fetch now, then every refetchInterval; invalidate() fetches again */
+  const W=new Set();
+  function fire(w){if(w.off)return;run(w.server,w.tool,w.input).then(result=>{if(!w.off)w.cb({type:'data',result,cache:{storedAt:Date.now()}});},e=>{if(!w.off)w.cb({type:'error',error:e});});}
+  function refreshAll(){for(const w of W)if(w.tool==='list_calendars')fire(w);setTimeout(()=>{for(const w of W)if(w.tool!=='list_calendars')fire(w);},50);}
+  const mcp={
+    watchTool(server,tool,input,cb,opts){const w={server,tool,input,cb};W.add(w);setTimeout(()=>fire(w),0);
+      const ms=opts&&opts.refetchInterval;if(ms)w.iv=setInterval(()=>{if(document.visibilityState!=='hidden')fire(w);},ms);
+      return ()=>{w.off=true;clearInterval(w.iv);W.delete(w);};},
+    callTool:(server,tool,input)=>run(server,tool,input),
+    invalidate:async(server,tool)=>{for(const w of W)if(w.server===server&&(!tool||w.tool===tool))fire(w);},
+    listTools:async()=>Object.keys(TOOLS).map(name=>({server:GC,name}))};
+  window.GCAL={connect:()=>connect(),connected:live};
+  const prev=window.claude&&window.claude.use;
+  window.claude=Object.assign({},window.claude,{use:async name=>name==='mcp'?(window.GC_CLIENT_ID?mcp:null):prev?prev(name):null});
 })();
 </script><script>
 (function(){
@@ -3013,6 +3094,7 @@ function calNote(){const m={loading:'Loading your Google Calendar…',
     notconnected:'Google Calendar isn’t connected to this account. Add it in claude.ai Settings → Connectors, then reload this page.',
     notallowed:'Google Calendar isn’t allowed on this page yet. Allow it from the page’s Permissions menu, then reload.',
     off:'Calendar events show when this page is opened while signed in to claude.ai.'}[C.status];
+  if(window.STANDALONE&&window.GCAL&&['reauth','notconnected','notallowed'].includes(C.status))return h('div',{class:'calnote'},h('button',{class:'btn sm',onclick:async()=>{try{await GCAL.connect();}catch(e){flash('Google didn’t connect. Try again.');}}},C.status==='reauth'&&localStorage.getItem('gcOK')?'Reconnect Google Calendar':'Connect Google Calendar'));
   return m?h('div',{class:'calnote'},m):C.warn?h('div',{class:'calnote'},'Calendar is having trouble refreshing. Showing the last events loaded.'):null;}
 function evRow(e,k){const key='e:'+e.id,on=isChk(k,key);return h('div',{class:'evrow'+ctOf(e.cal)+(on?' done':'')},smallChk(on,e.title,()=>toggleChk(k,key)),h('div',{class:'tm'},e.all?'All day':fmtT(e.start)+(e.end?'–'+fmtT(e.end):'')),
   h('div',{style:'min-width:0'},h('div',{class:'ti'},e.title),h('div',{class:'mt'},[calName(e.cal),e.loc].filter(Boolean).join(' · '))));}
@@ -5211,7 +5293,7 @@ function header(){
       h('button',{class:'wake','aria-pressed':String(!!S.chimes),onclick:toggleChimes},S.chimes?'Chimes on':'Chimes'),
       S.chimes?h('button',{class:'wake',title:'Tap to hear the next sound',onclick:()=>{const ks=Object.keys(CHIMES);S.chimeSound=ks[(ks.indexOf(S.chimeSound)+1)%ks.length];saveUI();chime('switch');render();}},'Sound: '+(CHIMES[S.chimeSound]||CHIMES.bowl).label):null,
       h('button',{class:'wake',disabled:!!S.exporting,onclick:exportAll,title:'Save all your planner data as a file'},S.exporting?'Saving…':'Back up data'),
-      C.mcp?h('button',{class:'wake',disabled:!!C.syncing,onclick:syncCals},C.syncing?'Syncing…':'Sync calendars'):null):null);
+      C.mcp?(window.STANDALONE&&window.GCAL&&['reauth','notconnected','notallowed'].includes(C.status)?h('button',{class:'wake',onclick:async()=>{try{await GCAL.connect();}catch(e){flash('Google didn’t connect. Try again.');}}},'Connect Google Calendar'):h('button',{class:'wake',disabled:!!C.syncing,onclick:syncCals},C.syncing?'Syncing…':'Sync calendars')):null):null);
 }
 
 function pnav(prev,today,next,isCur,labels){return h('div',{class:'pnav'},
