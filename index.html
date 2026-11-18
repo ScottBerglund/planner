@@ -2770,7 +2770,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
   function panelCard(link){const d=document.createElement('div');d.id='fbpanel';d.innerHTML=`<style>#fbpanel{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:rgba(240,240,240,.96);font:16px system-ui,sans-serif;color:#111}
     #fbpanel div{background:#fff;border:2px solid #111;border-radius:16px;padding:28px;width:min(380px,calc(100vw - 32px));display:grid;gap:12px}#fbpanel h2{margin:0;font-size:1.3rem}#fbpanel p{margin:0;color:#555;font-size:.95rem}
     #fbpanel button{font:inherit;font-weight:700;padding:10px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}#fbpanel .q{background:#eee;color:#111}</style>
-    <div><h2>Sign in the After Effects panel</h2><p>Copy this link, then paste it into the panel’s sign-in box.</p><button class="c">Copy sign-in link</button><button class="q">Close</button></div>`;
+    <div><h2>Vector Sketch Cloud</h2><p>Copy this link, then paste it into the sign-in box in After Effects.</p><button class="c">Copy sign-in link</button><button class="q">Close</button></div>`;
     document.body.appendChild(d);const c=d.querySelector('.c');c.onclick=async()=>{try{await navigator.clipboard.writeText(link);c.textContent='Copied. Paste it in the panel.';}catch(e){prompt('Copy this link:',link);}};d.querySelector('.q').onclick=()=>d.remove();}
   function hideGate(){if(G){G.remove();G=null;}}
   /* the planner's database calls, on Firestore */
@@ -8201,7 +8201,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
   const bar=h('div',{class:'skbar sbbar'},h('div',{class:'skgrp'},h('button',{class:'tlink skback',title:'Back to all sketches',onclick:()=>{S.skBoardOpen=null;S.skFromBoard=null;S.skPop=null;SKBV=null;saveUI();render();}},tri('l')),
       h('input',{class:'skname sbname',value:B.name,maxlength:'40','aria-label':'Storyboard name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();},onchange:e=>{B.name=e.target.value.trim()||B.name;skBoardsSave();render();}})),
     h('div',{class:'skgrp'},ib('zoomout','Zoom out (Ctrl+−)',()=>skBoardZoom(1/1.25)),h('button',{class:'tlink sbzl',title:'Fit (Ctrl+0)',onclick:skBoardFit},'100%'),ib('zoomin','Zoom in (Ctrl+=)',()=>skBoardZoom(1.25))),
-    h('div',{class:'skgrp skacts'},set,h('span',{class:'skexpk'},exp)));
+    h('div',{class:'skgrp skacts'},set,h('span',{class:'skexpk'},exp),window.AEPCLOUDUI?AEPCLOUDUI({kind:'board',B}):null));
   const menu=S.skBoardMenu?skBoardMenuView(B):null,pick=S.skBoardPick!=null?skBoardPickView(B):null,note=S.skBoardNote!=null?skBoardNoteView(B):null;
   requestAnimationFrame(()=>{if(!SKBV||SKBV.id!==B.id){SKBV={id:B.id,x:0,y:0,z:1};skBoardFit();}else skBoardApply();});
   return h('div',{class:'skeditor skfs sbed'},bar,stage,menu,pick,note);}
@@ -8771,6 +8771,7 @@ function skToolbar(){try{skSelColorSync();}catch(e){}const fl=!!S.skFloat,t=skTo
     skPopBtn('zoom','Zoom',h('span',{class:'skzl'},Math.round(((SKW.view&&SKW.view.z)||1)*100)+'%'),{popCls:'row',items:()=>[
       ib('zoomout','Zoom out',()=>SKW.zoomBy&&SKW.zoomBy(1/1.25)),ib('zoomin','Zoom in',()=>SKW.zoomBy&&SKW.zoomBy(1.25)),ib('fit',doc.inf?'Fit: show everything':'Fit the page',()=>{SKW.fit&&SKW.fit();S.skPop=null;render();})]}),
     h('div',{class:'skgrp skacts'},
+      window.AEPCLOUDUI?AEPCLOUDUI({kind:'sketch',id:SKW.id}):null,
       skPopBtn('more','More settings',skIcoL('more'),{popCls:'list',items:()=>[
         h('button',{class:'skrow',onclick:skPick(()=>{S.skKeys=true;})},skIcoL('keys'),'Keyboard shortcuts'),
         h('div',{class:'skuisz'},h('span',null,'Interface size'),h('div',{class:'skuiszb'},SK_UI.map(([v,l])=>h('button',{class:'skpb'+(skUI()===v?' on':''),'aria-pressed':String(skUI()===v),title:l,onclick:()=>skUISet(v)},l[0]==='E'?'XL':l[0])))),
@@ -8876,7 +8877,8 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
       mi('▭  Landscape',()=>skNew('land')),mi('▯  Portrait',()=>skNew('port')),mi('□  Square',()=>skNew('square')),mi('⬚  Custom size…',()=>{S.skNewCustom=true;}),mi('∞  Infinite canvas',()=>skNew('inf')),
       ob?null:h('div',{class:'skgh'},'Collections'),ob?null:mi('Storyboard…',()=>{S.skBoardNew=true;}),ob?null:mi('Sketchbook…',()=>{S.skBookNew=true;S.skMoveFor=null;}),
       h('div',{class:'skgh'},'Import'),mi('Drawing or storyboard file…',skImportPick)]}),
-    S.skNewCustom?h('button',{class:'tlink',onclick:()=>{S.skNewCustom=false;render();}},'Cancel custom size'):null);
+    S.skNewCustom?h('button',{class:'tlink',onclick:()=>{S.skNewCustom=false;render();}},'Cancel custom size'):null,
+    window.AEPCLOUDUI?h('span',{class:'skcloudg'},AEPCLOUDUI({kind:'gallery'})):null);
   const custom=S.skNewCustom?h('div',{class:'sknewcustom'},skSizeForm((w,hh)=>{S.skNewCustom=false;const o=S.skSBNew;if(o&&o.on){const L=skSBLayout(w,hh,o.n,o.cols);if(L.w>16000||L.h>16000){flash('That storyboard is too big. Use fewer or smaller panels.');S.skNewCustom=true;return;}skNew('custom',L.w,L.h,{pw:w,ph:hh,n:L.n,cols:L.cols,texts:[],dur:2});}else skNew('custom',w,hh);},1920,1080,'Create')):null;
   if(ob){const list=all.filter(([,d])=>inBook(d)===ob.id);
     return [head,h('div',{class:'skbookbar'},h('button',{class:'tlink',onclick:()=>{S.skBook=null;S.skMoveFor=null;saveUI();render();}},triT('l'),'All sketches'),
