@@ -2940,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119131147',newer=false,want='',last=Date.now();
+  var MINE='20261119131725',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7137,7 +7137,7 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
   const stage=h('div',{class:'skstage'+(inf?' inf':' pg'+(S.skTint===false?' notint':'')+(S.skBox===false?' nobox':''))+(skTool()==='hand'?' handtool':'')+(skTool()==='rotv'?' rotvtool':'')+(skTool()==='ptr'?' ptrtool':'')+(skTool()==='pt'?' pttool':'')+(skTool()==='vpen'?' vpentool':'')+(skTool()==='board'?' boardtool':'')});
   const bgd=inf&&bgc?h('div',{class:'skbgd'+bgc}):null;
   /* a fixed page is a sheet on the desk you can zoom and move around, like the infinite canvas */
-  const paper=inf?null:h('div',{class:'skpaper'+bgc,style:doc.bgc?`background-color:${doc.bgc}`:null});if(inf&&doc.bgc)stage.style.background=doc.bgc;
+  const paper=inf?null:h('div',{class:'skpaper'+bgc,style:doc.bgc?`background-color:${doc.bgc}`:null});/* a background colour fills the whole canvas area, not just the page; the page's border still shows */if(doc.bgc)stage.style.setProperty('background',doc.bgc,'important');
   const base=h('canvas',{class:'skcv'}),live=h('canvas',{class:'skcv sklive','aria-label':'Drawing area'});if(paper)stage.append(paper);if(bgd)stage.append(bgd);stage.append(base,live);
   if(!SKW.view)SKW.view=Object.assign({x:0,y:0,z:1},inf&&doc.view||{});
   const V=SKW.view,clip=ctx=>{const c=SKW.playing&&skPlayRect(doc);if(c){ctx.beginPath();ctx.rect(c.x,c.y,c.w,c.h);ctx.clip();}};/* a sized canvas is an artboard: you can draw past its edges */
