@@ -1414,6 +1414,8 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .skrz-ne,.skrz-nw,.skrz-se,.skrz-sw{width:14px;height:14px}.skrz-ne{top:-4px;right:-4px;cursor:nesw-resize}.skrz-sw{bottom:-4px;left:-4px;cursor:nesw-resize}.skrz-nw{top:-4px;left:-4px;cursor:nwse-resize}.skrz-se{bottom:-4px;right:-4px;cursor:nwse-resize}
 /* current layer: a dark bar on its left edge (the gray box marks layers holding the selection) */
 .sklay.skcur{box-shadow:inset 3px 0 0 var(--ink)}
+.skeldrop{position:fixed;height:2px;background:#1E88E5;border-radius:2px;display:none;pointer-events:none;z-index:100002}
+.sklay.skel .skgrip{width:12px}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2938,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119121840',newer=false,want='',last=Date.now();
+  var MINE='20261119122428',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8735,7 +8737,8 @@ function skElRows(l){const d=SKW.doc,list=skOrder(d.strokes.filter(st=>skLid(d,s
   const pick=(items,e)=>skPickItems(items,e,l);
   const sw=items=>skElThumb(items);
   const row=(items,name,cls,extra)=>{const hid=all(items,'hid'),lk=all(items,'lk'),on=items.every(x=>sel.has(x));
-    return h('div',{class:'sklay skel'+(cls?' '+cls:'')+(on?' on':'')+(hid?' hid':''),title:'Click to select · Shift or Ctrl+click to add or remove',onclick:e=>{if(e.target.closest('.sklb'))return;pick(items,e);}},extra||h('span',{class:'sktwsp'}),
+    return h('div',{class:'sklay skel'+(cls?' '+cls:'')+(on?' on':'')+(hid?' hid':''),'data-el':items.map(x=>x.id).join(','),'data-ell':l.id,title:'Click to select · Shift or Ctrl+click to add or remove · drag ⋮⋮ to restack',onclick:e=>{if(e.target.closest('.sklb,.skgrip'))return;pick(items,e);}},
+      h('span',{class:'skgrip',title:'Drag to change the stacking order (or onto another layer)','aria-hidden':'true',onpointerdown:e=>skElDrag(e,items)},'⋮⋮'),extra||h('span',{class:'sktwsp'}),
       h('button',{class:'sklb'+(hid?' off':''),title:hid?'Show':'Hide','aria-label':(hid?'Show ':'Hide ')+name,'aria-pressed':String(!hid),onclick:()=>skElSet(items,'hid',!hid)},skIcoL(hid?'eyeoff':'eye')),
       sw(items),h('button',{class:'sklname skeln',title:'Select '+name+' (Shift or Ctrl+click to add)'},name),
       h('button',{class:'sklb'+(lk?'':' off'),title:lk?'Unlock':'Lock','aria-label':(lk?'Unlock ':'Lock ')+name,'aria-pressed':String(lk),onclick:()=>skElSet(items,'lk',!lk)},skIcoL(lk?'lock':'unlock')),
@@ -8764,6 +8767,24 @@ function skLayersMerge(ids){const d0=SKW.doc;if(ids.length<2)return;const order=
     mine.sort((a,b)=>rank.get(skLid(d,a))-rank.get(skLid(d,b)));for(const st of mine)st.l=top;d.strokes=rest.concat(mine);d.layers=d.layers.filter(l=>l.id===top||!rank.has(l.id));d.cur=top;});
   SKW.lsel=null;S.skLPick=false;flash('Merged '+ids.length+' layers into “'+T.name+'”'+(diff?' (it keeps its own opacity and blending)':''));}
 /* drag the grip: the layer (or all selected layers) moves to where you drop it */
+/* drag items (or groups) in the Layers list to restack them, or drop them into another layer; several selected items move together; one undo */
+function skElDrag(e,items){if(e.button>0)return;e.preventDefault();e.stopPropagation();const g=e.currentTarget,panel=g.closest('.skpop,.sklfloat,.skpanel')||document.body;try{g.setPointerCapture(e.pointerId);}catch(x){}
+  const d=SKW.doc,cs=skSel(),moving0=items.every(x=>cs.includes(x))&&cs.length>items.length?cs:items;
+  const rows=[...panel.querySelectorAll('.sklay[data-lid],.sklay[data-el]')].filter(r=>!r.closest('.skel.sub')||true),line=h('div',{class:'skeldrop'});document.body.appendChild(line);let at=null;
+  const mine=new Set(moving0.map(x=>x.id));rows.forEach(r=>{if(r.dataset.el&&r.dataset.el.split(',').every(id=>mine.has(id)))r.classList.add('lifting');});
+  const mv=ev=>{const y=ev.clientY;let k=rows.length;for(let i=0;i<rows.length;i++){const b=rows[i].getBoundingClientRect();if(y<b.top+b.height/2){k=i;break;}}at=k;
+    const ref=k<rows.length?rows[k].getBoundingClientRect():rows[rows.length-1].getBoundingClientRect(),pr=panel.getBoundingClientRect();line.style.top=((k<rows.length?ref.top:ref.bottom)-1)+'px';line.style.left=(pr.left+10)+'px';line.style.width=(pr.width-20)+'px';line.style.display='block';};
+  const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);line.remove();rows.forEach(r=>r.classList.remove('lifting'));if(at==null){render();return;}
+    /* where it lands: just above the item row it was dropped on; at the bottom of a layer when dropped after its last item; on top of a layer dropped right under its (collapsed) name */
+    const ent=rows.map(r=>r.dataset.el?{lid:r.dataset.ell,ids:r.dataset.el.split(',')}:{lid:r.dataset.lid,layer:true});const nx=ent[at],pv=ent[at-1];let lid,anchor=null,mode;
+    if(nx&&!nx.layer){lid=nx.lid;anchor=nx.ids;mode='above';}else if(pv&&!pv.layer){lid=pv.lid;anchor=pv.ids;mode='below';}else if(pv&&pv.layer){lid=pv.lid;mode='top';}else if(nx&&nx.layer){lid=nx.lid;mode='top';}else{render();return;}
+    if(anchor&&anchor.every(id=>mine.has(id))){render();return;}
+    const tl=(d.layers||[]).find(x=>x.id===lid);if(tl&&tl.locked){flash('“'+tl.name+'” is locked. Unlock it to move things into it.');render();return;}
+    const newSel=[];skLayerAct(dd=>{const keep=dd.strokes.filter(st=>!mine.has(st.id)),mov=dd.strokes.filter(st=>mine.has(st.id)).map(st=>{const c=Object.assign({},st,{l:lid});newSel.push(c);return c;});
+      let idx=keep.length;if(anchor){const A=new Set(anchor),pos=keep.map((st,i)=>A.has(st.id)?i:-1).filter(i=>i>=0);if(pos.length)idx=mode==='above'?Math.max(...pos)+1:Math.min(...pos);}
+      dd.strokes=keep.slice(0,idx).concat(mov,keep.slice(idx));dd.cur=lid;});
+    SKW.sel=newSel;SKW.selIn=newSel.slice();render();};
+  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);}
 function skLDrag(e,ids){if(e.button>0)return;e.preventDefault();e.stopPropagation();const g=e.currentTarget,panel=g.closest('.skpop,.sklfloat,.skpanel')||document.body;try{g.setPointerCapture(e.pointerId);}catch(x){}
   const rows=[...panel.querySelectorAll('.sklay[data-lid]')],line=h('div',{class:'skldrop'});panel.appendChild(line);let at=null;rows.forEach(r=>{if(ids.includes(r.dataset.lid))r.classList.add('lifting');});
   const mv=ev=>{const y=ev.clientY;let k=rows.length;for(let i=0;i<rows.length;i++){const b=rows[i].getBoundingClientRect();if(y<b.top+b.height/2){k=i;break;}}at=k;
