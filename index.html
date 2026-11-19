@@ -1404,6 +1404,14 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .sktarget .sktgt{display:block;width:12px;height:12px;border-radius:50%;border:1.6px solid currentColor;box-sizing:border-box}
 .sktarget.on .sktgt{background:#1E88E5;border-color:#1E88E5;box-shadow:0 0 0 2px color-mix(in srgb,#1E88E5 30%,transparent)}
 .sklay.skel{cursor:pointer}
+/* resizable floating panels: edges and corners drag; contents scroll inside */
+.skszbl{display:flex!important;flex-direction:column;overflow:visible!important}
+.skszbl>.skscr{flex:1;min-height:0;overflow:auto}
+.skszbl.sksized{max-height:none!important}
+.skrz{position:absolute;z-index:3;touch-action:none}
+.skrz-n,.skrz-s{left:10px;right:10px;height:8px}.skrz-n{top:-4px;cursor:ns-resize}.skrz-s{bottom:-4px;cursor:ns-resize}
+.skrz-e,.skrz-w{top:10px;bottom:10px;width:8px}.skrz-e{right:-4px;cursor:ew-resize}.skrz-w{left:-4px;cursor:ew-resize}
+.skrz-ne,.skrz-nw,.skrz-se,.skrz-sw{width:14px;height:14px}.skrz-ne{top:-4px;right:-4px;cursor:nesw-resize}.skrz-sw{bottom:-4px;left:-4px;cursor:nesw-resize}.skrz-nw{top:-4px;left:-4px;cursor:nwse-resize}.skrz-se{bottom:-4px;right:-4px;cursor:nwse-resize}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2928,7 +2936,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119120634',newer=false,want='',last=Date.now();
+  var MINE='20261119121202',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7869,7 +7877,7 @@ function skPFFloatView(){const o=S.skPFFloat;if(!SKW||!o)return null;
         const mv=ev=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,ev.clientX-ox)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,ev.clientY-oy));el.style.left=x+'px';el.style.top=y+'px';o.x=Math.round(x);o.y=Math.round(y);};
         const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);saveUI();};g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);}},
       h('span',null,'Pathfinder'),h('button',{class:'sklb',title:'Close (still in the toolbar)','aria-label':'Close the Pathfinder panel',onclick:()=>{S.skPFFloat=null;saveUI();render();}},skIcoL('x'))),
-    skPFRow(true));return el;}
+    skPFRow(true));return skSizer(el,'pf',(x,y)=>{o.x=x;o.y=y;});}
 /* ---------- keyboard shortcuts: editable ----------
    Each action has a default key (matched to Photoshop / Illustrator). Changed keys live in S.skKeymap {action: key} and are saved with the planner.
    A changed key is translated to the action's default key before the shortcut handlers see it, so the handlers never change. */
@@ -8614,6 +8622,23 @@ function skFlattenLayer(id){const d=SKW.doc,lib=skPolyLib(),L=d.layers.find(l=>l
     SKW.sel=[];flash('Flattened “'+L.name+'” into '+flat.length+(flat.length===1?' shape':' shapes')+' · Ctrl+Z to undo');}
   catch(e){flash('Flatten didn’t work on this layer.');}finally{S.skBusy=false;render();}},30);}
 /* the Layers panel can float on its own: drag it by its top bar, dock it back with the button */
+/* floating panels: drag any edge or corner to resize (left/top edges move that side); each panel keeps its size and place.
+   The panel's contents scroll inside it, so the edges stay put. */
+function skSizer(el,key,pos){const sz=(S.skPanelSz||{})[key];const hd=el.firstChild,scr=h('div',{class:'skscr'});while(hd&&hd.nextSibling)scr.appendChild(hd.nextSibling);el.appendChild(scr);el.classList.add('skszbl');
+  if(sz){el.style.width=sz.w+'px';el.style.height=sz.h+'px';el.style.maxHeight='none';el.classList.add('sksized');}
+  for(const d of ['n','s','e','w','ne','nw','se','sw']){const g=h('div',{class:'skrz skrz-'+d,'aria-hidden':'true'});
+    g.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();g.setPointerCapture(e.pointerId);const r=el.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,k=parseFloat(getComputedStyle(el).getPropertyValue('--skui'))||1;
+      const mv=ev=>{let dx=ev.clientX-sx,dy=ev.clientY-sy,x=r.left,y=r.top,w=r.width,hh=r.height;
+        if(d.includes('e'))w=Math.min(innerWidth-r.left-4,r.width+dx);if(d.includes('s'))hh=Math.min(innerHeight-r.top-4,r.height+dy);
+        if(d.includes('w')){dx=Math.max(4-r.left,Math.min(dx,r.width-150));x=r.left+dx;w=r.width-dx;}if(d.includes('n')){dy=Math.max(4-r.top,Math.min(dy,r.height-80));y=r.top+dy;hh=r.height-dy;}
+        w=Math.max(150,w);hh=Math.max(80,hh);el.style.left=x+'px';el.style.top=y+'px';el.style.width=w/k+'px';el.style.height=hh/k+'px';el.style.maxHeight='none';el.classList.add('sksized');
+        S.skPanelSz=Object.assign({},S.skPanelSz||{},{[key]:{w:Math.round(w/k),h:Math.round(hh/k)}});if(pos)pos(Math.round(x),Math.round(y));};
+      const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);saveUI();};
+      g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);});
+    /* double-click an edge: back to the panel's natural size */
+    g.addEventListener('dblclick',()=>{const o=Object.assign({},S.skPanelSz||{});delete o[key];S.skPanelSz=o;saveUI();render();});
+    el.appendChild(g);}
+  return el;}
 function skLayersFloatView(){if(!SKW||!S.skLFloat||S.skLHide)return null;const pos=S.skLPos||{x:Math.max(8,innerWidth-300),y:80};
   const el=h('div',{class:'skpop list layers sklfloat',style:`left:${pos.x}px;top:${pos.y}px`},
     h('div',{class:'sklfh',title:'Drag to move',onpointerdown:skLFDrag},h('span',null,'Layers'),
@@ -8621,7 +8646,7 @@ function skLayersFloatView(){if(!SKW||!S.skLFloat||S.skLHide)return null;const p
       h('button',{class:'sklb',title:'Hide (the Layers button brings it back)','aria-label':'Hide the Layers panel',onclick:()=>{S.skLHide=true;saveUI();render();}},skIcoL('x'))),
     skLayersPanel(true));
   requestAnimationFrame(()=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,pos.x)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,pos.y));el.style.left=x+'px';el.style.top=y+'px';});
-  return el;}
+  return skSizer(el,'layers',(x,y)=>{S.skLPos={x,y};});}
 function skLFDrag(e){if(e.button>0||(e.target.closest&&e.target.closest('button')))return;e.preventDefault();const g=e.currentTarget,el=g.parentElement,r=el.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;g.setPointerCapture(e.pointerId);
   const mv=ev=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,ev.clientX-ox)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,ev.clientY-oy));el.style.left=x+'px';el.style.top=y+'px';S.skLPos={x:Math.round(x),y:Math.round(y)};};
   const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);saveUI();};
@@ -8949,7 +8974,7 @@ function skPalSoloViews(){if(!SKW)return null;const P=skPals(),cur=skColor().toU
       h('div',{class:'skpalc'},pl.colors.length?pl.colors.map(c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(cur===c),title:c+' · Alt+click (or right-click) to remove',style:`--c:${c}`,
         onclick:e=>{if(e.altKey){pl.colors=pl.colors.filter(x=>x!==c);skPalsSave();render();return;}skUseColor(c);},oncontextmenu:e=>{e.preventDefault();pl.colors=pl.colors.filter(x=>x!==c);skPalsSave();render();}})):h('span',{class:'skpale'},'Empty. + adds the current colour.')));
     requestAnimationFrame(()=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,o.x)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,o.y));el.style.left=x+'px';el.style.top=y+'px';});
-    return el;});}
+    return skSizer(el,'pal:'+o.id,(x,y)=>{o.x=x;o.y=y;});});}
 function skPalFloatView(){if(!SKW||!S.skPalFloat||!S.skPalShow)return null;const pos=S.skPPos||{x:Math.max(8,innerWidth-620),y:80};
   const el=h('div',{class:'skpop list sklfloat skpalfloat',style:`left:${pos.x}px;top:${pos.y}px`},
     h('div',{class:'sklfh',title:'Drag to move',onpointerdown:e=>{if(e.button>0||(e.target.closest&&e.target.closest('button')))return;e.preventDefault();const g=e.currentTarget,r=el.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;g.setPointerCapture(e.pointerId);
@@ -8958,7 +8983,7 @@ function skPalFloatView(){if(!SKW||!S.skPalFloat||!S.skPalShow)return null;const
       h('span',null,'Palettes'),h('button',{class:'sklb',title:'Hide (Shift+P brings it back)','aria-label':'Hide the Palettes panel',onclick:()=>{S.skPalShow=false;saveUI();render();}},skIcoL('x'))),
     skPalettesView(true));
   requestAnimationFrame(()=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,pos.x)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,pos.y));el.style.left=x+'px';el.style.top=y+'px';});
-  return el;}
+  return skSizer(el,'pals',(x,y)=>{S.skPPos={x,y};});}
 function skPick(fn){return ()=>{fn();S.skPop=null;saveUI();render();};}
 function skSelColorSync(){if(!SKW)return;const sel=skSel(),sig=sel.map(st=>st.id||'').join(',');if(sig===SKW._selSig)return;SKW._selSig=sig;if(!sel.length||(skPenCtx&&skPenCtx()))return;
   const top=sel[sel.length-1];let c=null;if(S.skColTarget==='fill'){const f=sel.slice().reverse().find(st=>st.pf);c=f?f.pf:null;}if(!c)c=top.c;if(c&&/^#/.test(c))S.skColor=String(c).toUpperCase();}
@@ -9642,10 +9667,10 @@ async function skImportText(txt){let o;try{o=JSON.parse(txt);}catch(e){o=null;}
   flash(bmsg+(parts.length?'Drawings: '+parts.join(', ')+'.':'No drawings in that file.'));render();}
 
 /* ---------- the host page (the planner, or the After Effects panel) calls these to load and save the drawing settings and to follow the database ---------- */
-function skPrefsLoad(store){S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
+function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
 /* remember the colour you had before the last change, for X */
 function skPrefsTrack(){if(S.skColor!==S._skColCur){if(S._skColCur!==undefined&&S._skColCur)S.skColorPrev=S._skColCur;S._skColCur=S.skColor;const c=String(S.skColor||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))S.skRecent=[c].concat((S.skRecent||[]).filter(x=>x!==c)).slice(0,8);}}
-function skPrefsOut(){const pc=skPenCols();return {skPFFloat:S.skPFFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
+function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skPFFloat:S.skPFFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
 function skListen(db){
   db.collection('sketches').onSnapshot(s=>{S.skMain=new Map(s.docs.map(d=>[d.id,d.data()]));skSyncFromDb();},()=>{});
   db.collection('skparts').onSnapshot(s=>{S.skParts=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.skMain)skSyncFromDb();},()=>{});
