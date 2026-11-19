@@ -2922,7 +2922,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119110144',newer=false,want='',last=Date.now();
+  var MINE='20261119111745',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8190,8 +8190,13 @@ const skFrameIds=d=>skHasFrames(d)&&d.frames.length>1?d.frames:null;
 const skPoster=d=>skHasFrames(d)?(d.frames.includes(d.poster)?d.poster:d.frames.includes(d.fcur)?d.fcur:d.frames[0]):null;
 function skFrameDoc(d,fid){if(!skHasFrames(d))return d;const f0=d.frames[0];fid=fid||skPoster(d);return Object.assign({},d,{strokes:(d.strokes||[]).filter(st=>(d.frames.includes(st.f)?st.f:f0)===fid)});}
 function skPanelPaint(ctx,d,c,s){ctx.save();ctx.setTransform(s,0,0,s,-c.x*s,-c.y*s);ctx.beginPath();ctx.rect(c.x,c.y,c.w,c.h);ctx.clip();skPaintDoc(ctx,skVisDoc(d),1);ctx.restore();}
+/* storyboard panel pictures are drawn once per version of the drawing and reused on every re-render (drawing them is slow for big sketches) */
+const SKPCV=new Map();
 function skPanelCv(d,B,W,fid){const dpr=Math.min(2,devicePixelRatio||1),H=W*B.ph/B.pw,cv=document.createElement('canvas');cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.className='skpcv';
-  const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);const c=skBoardCrop(d,B.pw,B.ph);skPanelPaint(ctx,skFrameDoc(d,fid),c,cv.width/c.w);return cv;}
+  const ctx=cv.getContext('2d'),key=[d.created||d.name||'',d.updated||'',(d.strokes||[]).length,d.bgc||'',B.pw,B.ph,cv.width,cv.height,fid||''].join('|'),hit=SKPCV.get(key);
+  if(hit){ctx.drawImage(hit,0,0);SKPCV.delete(key);SKPCV.set(key,hit);return cv;}
+  ctx.fillStyle=d.bgc||'#fff';ctx.fillRect(0,0,cv.width,cv.height);const c=skBoardCrop(d,B.pw,B.ph);skPanelPaint(ctx,skFrameDoc(d,fid),c,cv.width/c.w);
+  try{const keep=document.createElement('canvas');keep.width=cv.width;keep.height=cv.height;keep.getContext('2d').drawImage(cv,0,0);SKPCV.set(key,keep);while(SKPCV.size>120)SKPCV.delete(SKPCV.keys().next().value);}catch(e){}return cv;}
 let SKBP=0;
 function skBoardNew(name,pw,ph){const B=skBoardNorm({id:'sb'+skNewId(),name:name||'Storyboard '+(skBoards().length+1),pw,ph,dur:2,fps:S.skBoardNewFps||12,rows:S.skBoardNewRC?S.skBoardNewRC[0]:2,cols:S.skBoardNewRC?S.skBoardNewRC[1]:3,pages:1,header:false,panels:[]});S.skBoards=skBoards().concat([B]);skBoardsSave();S.skBoardNew=false;S.skBoardOpen=B.id;SKBV=null;render();}
 function skBoardNewForm(){const nm=h('input',{class:'skszin skbdname',placeholder:'Storyboard name',maxlength:'40','aria-label':'Storyboard name',onkeydown:e=>e.stopPropagation()});const rc=S.skBoardNewRC||(S.skBoardNewRC=[2,3]);
