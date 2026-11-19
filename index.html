@@ -2940,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119124550',newer=false,want='',last=Date.now();
+  var MINE='20261119130546',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7804,7 +7804,7 @@ function skAddCopies(list,M){if(!skSelOk())return;const d=SKW.doc,cs=skRegroup(l
 function skPaste(inPlace){if(!SKCLIP||!SKCLIP.length)return;let M=null;
   if(!inPlace&&SKW.vw){const b=skBoxOf(SKCLIP),V=SKW.view,cx=V.x+SKW.vw/2/V.z,cy=V.y+SKW.vh/2/V.z;M=[1,0,0,1,Math.round(cx-(b.x+b.w/2)),Math.round(cy-(b.y+b.h/2))];}skAddCopies(SKCLIP,M);}
 function skDupSel(){const sel=skSel();if(!sel.length)return;const o=Math.round(16/((SKW.view&&SKW.view.z)||1));skAddCopies(sel,[1,0,0,1,o,o]);}
-function skRecolor(c){const G=skGSel();if(G&&S.skGStop!=null){skGEdit(g=>{if(g.s[S.skGStop])g.s[S.skGStop][1]=c;});return;}
+function skRecolor(c){const G=skGSel();if(!G)S.skGStop=null;if(G&&S.skGStop!=null){skGEdit(g=>{if(g.s[S.skGStop])g.s[S.skGStop][1]=c;});return;}
   if(S.skColTarget==='fill'){const L=[...new Set(skSel().concat(skPenSel()))];if(L.length)skEditSel(L,st=>st.vp?(skPClosed(st)?{pf:c,pg:null}:{}):(st.cg?{c,cg:null}:{c}));return;}const sel=skTool()==='pt'&&skPed()?[skPed().st]:skSel();if(sel.length)skEditSel(sel,st=>st.cg?{c,cg:null}:{c});}
 /* the selected items a gradient edit applies to, and the first one's gradient (null when none has one) */
 function skGItems(){const L=S.skColTarget==='fill'?skPenSel().filter(st=>skPClosed(st)):(skTool()==='pt'&&skPed()?[skPed().st]:skSel());return L;}
@@ -8936,10 +8936,12 @@ function skWheelPanel(){const R=130,dpr=Math.min(3,devicePixelRatio||1);let [hh,
     const [r8,g8,b8]=rgbOf(c),set=(el,v)=>{if(document.activeElement!==el)el.value=String(v);};set(F.r,r8);set(F.g,g8);set(F.b,b8);set(F.h,Math.round(hh)%360);set(F.s,Math.round(ss*100));set(F.v,Math.round(vv*100));
     S.skColor=c;S.skWheelHS=[hh,ss];liveApply(c);document.querySelectorAll('#app .skcol.cur').forEach(el=>{el.style.setProperty('--c',c);el.classList.toggle('white',c==='#FFFFFF');});};
   let ready=false;const LIVE=new Map();
-  const liveApply=c=>{if(!ready||!SKW)return;const fillT=S.skColTarget==='fill',list=fillT?skPenSel().filter(skPClosed):skSel();if(!list.length)return;
-    for(const st of list){if(!LIVE.has(st))LIVE.set(st,fillT?{pf:st.pf}:{c:st.c});if(fillT)st.pf=c;else st.c=c;}SKW.repaint&&SKW.repaint();};
+  /* live preview while dragging: the same rule as applying a colour (closed pen shapes take it as fill when Fill is picked; everything else as its colour; a gradient gives way to the flat colour) */
+  const liveApply=c=>{if(!ready||!SKW)return;const fillT=S.skColTarget==='fill',list=fillT?[...new Set(skSel().concat(skPenSel()))]:(skTool()==='pt'&&skPed()?[skPed().st]:skSel());if(!list.length)return;
+    if(skGSel()&&S.skGStop!=null)return;
+    for(const st of list){const asFill=fillT&&st.vp&&skPClosed(st);if(fillT&&st.vp&&!asFill)continue;if(!LIVE.has(st))LIVE.set(st,asFill?{pf:st.pf,pg:st.pg}:{c:st.c,cg:st.cg});if(asFill){st.pf=c;st.pg=null;}else{st.c=c;st.cg=null;}}SKW.repaint&&SKW.repaint();};
   const commit=()=>{const c=skColor().toUpperCase();if(!SK_COLORS.includes(c))S.skCustom=[c].concat((S.skCustom||[]).filter(x=>x!==c)).slice(0,4);
-    for(const [st,o] of LIVE)Object.assign(st,o);LIVE.clear();if(skSel().length||(S.skColTarget==='fill'&&skPenSel().length))skRecolor(c);saveUI();};
+    for(const [st,o] of LIVE)Object.assign(st,o);LIVE.clear();if(skSel().length||(S.skColTarget==='fill'&&skPenSel().length)||(skTool()==='pt'&&skPed()))skRecolor(c);saveUI();};
   const at=e=>{const r=cv.getBoundingClientRect(),q=(r.width/(2*R))||1,dx=(e.clientX-r.left)/q-R,dy=(e.clientY-r.top)/q-R;hh=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;ss=Math.min(1,Math.hypot(dx,dy)/R);if(vv<.05){vv=1;val.value='100';}show();};
   wrap.addEventListener('pointerdown',e=>{e.preventDefault();wrap.setPointerCapture(e.pointerId);at(e);});
   wrap.addEventListener('pointermove',e=>{if(wrap.hasPointerCapture(e.pointerId))at(e);});
