@@ -2940,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119123255',newer=false,want='',last=Date.now();
+  var MINE='20261119124550',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7055,7 +7055,7 @@ function skOnionPaint(ctx){const n=S.skOnionOn?(S.skOnion||1):0;if(!n||!SKW||SKW
     skPaintDoc(c2,Object.assign({},d,{strokes:arr.map(st=>ghost(st,col))}),1);
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=.42/k;ctx.drawImage(o,0,0);ctx.restore();}}
 let SKISOPAINT=false;
-function skPaintDoc(ctx,d,s){const iso=SKISOPAINT&&SKW&&SKW.iso&&d===SKW.doc;for(const g of skByLayer(d)){const op=g.l.op==null?1:g.l.op,bm=g.l.bm&&g.l.bm!=='normal'?g.l.bm:null;if(op<=0)continue;
+function skPaintDoc(ctx,d,s){SKMCTX=skMaskMap(d.strokes);const iso=SKISOPAINT&&SKW&&SKW.iso&&d===SKW.doc;for(const g of skByLayer(d)){const op=g.l.op==null?1:g.l.op,bm=g.l.bm&&g.l.bm!=='normal'?g.l.bm:null;if(op<=0)continue;
   if(op>=.999&&!bm){for(const st of g.strokes){if(iso&&!skInIso(st)){ctx.save();ctx.globalAlpha*=.28;skPaint(ctx,st,s);ctx.restore();}else skPaint(ctx,st,s);}continue;}
   const cv=ctx.canvas;if(!SKOFF)SKOFF=document.createElement('canvas');const o=SKOFF;if(o.width!==cv.width||o.height!==cv.height){o.width=cv.width;o.height=cv.height;}
   const c2=o.getContext('2d');c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,o.width,o.height);c2.setTransform(ctx.getTransform());for(const st of g.strokes){if(iso&&!skInIso(st)){c2.save();c2.globalAlpha*=.28;skPaint(c2,st,s);c2.restore();}else skPaint(c2,st,s);}
@@ -7090,7 +7090,17 @@ const skGKey=st=>S.skColTarget==='fill'&&st.vp&&skPClosed(st)?'pg':'cg';
 const skGTxt=g=>(g.k==='r'?'radial':'linear')+': '+skGStops(g).map(([o,c])=>String(c).toUpperCase()+' '+Math.round(o*100)+'%').join(' → ');
 const skGMix=(g,o)=>{const st=skGStops(g);if(!st.length)return '#000000';if(o<=st[0][0])return st[0][1];for(let i=1;i<st.length;i++)if(o<=st[i][0]){const [p0,c0]=st[i-1],[p1,c1]=st[i],t=(o-p0)/Math.max(1e-6,p1-p0),A=skHex(c0),B=skHex(c1);
     return '#'+A.map((v,k)=>Math.round((v+(B[k]-v)*t)*255).toString(16).padStart(2,'0')).join('').toUpperCase();}return st[st.length-1][1];};
-function skPaint(ctx,st,s){if(st.t==='sfill'){const p=st.p;if(!p||p.length<6)return;ctx.save();ctx.fillStyle=skCol(ctx,st,s);ctx.globalAlpha*=.85;ctx.beginPath();ctx.moveTo(p[0]*s,p[1]*s);for(let i=3;i<p.length;i+=3)ctx.lineTo(p[i]*s,p[i+1]*s);ctx.closePath();ctx.fill();ctx.restore();return;}
+/* ---------- clipping masks ----------
+   A mask is an ordinary shape marked isMask (mv: still drawn, as the visible water etc.); items clipped by it carry clip: <mask id>.
+   They share a group so they select and move together. Ctrl+7 makes one, Ctrl+Alt+7 releases it. */
+let SKMCTX=null;const SKMP=new WeakMap();
+const skMaskMap=list=>{const m=new Map();for(const st of list||[])if(st.isMask&&st.id)m.set(st.id,st);return m;};
+/* the mask's outline as polygons (lines count as their outline), cached until it changes */
+function skMaskPoly(m){const k=JSON.stringify([m.p&&m.p.length,m.p&&m.p[0],m.p&&m.p[1],m.r&&m.r.length,m.m||0,m.v&&m.v.k]);const c=SKMP.get(m);if(c&&c.k===k)return c.mp;let mp=[];try{mp=skPFShape(m)||[];}catch(e){}SKMP.set(m,{k,mp});return mp;}
+function skMaskPath(ctx,m,s){const mp=skMaskPoly(m);ctx.beginPath();for(const poly of mp)for(const r of poly){if(r.length<3)continue;ctx.moveTo(r[0][0]*s,r[0][1]*s);for(let i=1;i<r.length;i++)ctx.lineTo(r[i][0]*s,r[i][1]*s);ctx.closePath();}}
+const skMaskD=m=>{let d='';for(const poly of skMaskPoly(m))for(const r of poly){if(r.length<3)continue;d+='M'+r.map(q=>(Math.round(q[0]*100)/100)+' '+(Math.round(q[1]*100)/100)).join('L')+'Z';}return d;};
+function skPaint(ctx,st,s){if(st.isMask&&!st.mv)return;if(st.clip&&SKMCTX){const m=SKMCTX.get(st.clip);if(m){ctx.save();skMaskPath(ctx,m,s);ctx.clip('nonzero');try{skPaint0(ctx,st,s);}finally{ctx.restore();}return;}}skPaint0(ctx,st,s);}
+function skPaint0(ctx,st,s){if(st.t==='sfill'){const p=st.p;if(!p||p.length<6)return;ctx.save();ctx.fillStyle=skCol(ctx,st,s);ctx.globalAlpha*=.85;ctx.beginPath();ctx.moveTo(p[0]*s,p[1]*s);for(let i=3;i<p.length;i+=3)ctx.lineTo(p[i]*s,p[i+1]*s);ctx.closePath();ctx.fill();ctx.restore();return;}
   /* a closed pen path's own fill, under its stroke; with the stroke off only the fill shows */
   if(st.pf&&st.vp&&!st.r&&skPClosed(st)){const p=st.p;ctx.save();ctx.fillStyle=skFCol(ctx,st,s);ctx.beginPath();ctx.moveTo(p[0]*s,p[1]*s);for(let i=3;i<p.length;i+=3)ctx.lineTo(p[i]*s,p[i+1]*s);ctx.closePath();ctx.fill('nonzero');ctx.restore();if(st.ns)return;}
   if(st.t==='pen'&&!SKLIVE.has(st)&&!SKMOVING.has(st)&&st.p.length>=9&&skVar(st)&&(skAvgW(st)>=2.2||skTapered(st))&&skPolyLib()){ctx.save();ctx.fillStyle=skCol(ctx,st,s);ctx.beginPath();
@@ -7842,10 +7852,11 @@ function skSelBar(){if(!SKW)return null;const sel=skSel();if(!sel.length)return 
     ib('copy','Copy (Ctrl+C)',()=>skCopySel(false)),ib('cut','Cut (Ctrl+X)',()=>skCopySel(true)),ib('dup','Duplicate (Ctrl+J, or Alt+drag)',skDupSel),ib('group','Group (Ctrl+G)',skGroupSel,{disabled:sel.length<2}),ib('ungroup','Ungroup (Ctrl+Shift+G)',skUngroupSel),
     others.length?skPopBtn('sellayer','Move to layer',skIcoL('layers'),{popCls:'list',items:()=>others.slice().reverse().map(l=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;skSelToLayer(l.id);}},'Move to '+l.name))}):null,
     sel.length>1?skPopBtn('pathf','Pathfinder',skIcoL('pf_unite'),{popCls:'list skpfpop',items:()=>[h('div',{class:'skgh'},'Pathfinder'),skPFRow(),skPFFloatBtn()]}):null,
+    sel.some(st=>st.clip||st.isMask)?ib('clip','Release clipping mask (Ctrl+Alt+7)',skClipRelease,{pressed:true}):sel.length>1?ib('clip','Make clipping mask (Ctrl+7): the top shape clips the rest',skClipMake):null,
     sel.some(st=>!st.r&&st.p&&st.p.length>=9&&!skPClosed(st))?ib('closepath','Close path (Ctrl+Alt+J)',skCloseSel):null,ib('clear','Delete (Delete)',()=>skDelSel()),ib('x','Deselect (Ctrl+Shift+A)',skDeselect)));}
 /* ---------- Pathfinder (like Illustrator): combine the selected shapes. Lines count as their outlined shape; the results are plain filled shapes ---------- */
 const SK_PF=[['unite','Unite','Merge into one shape (top colour)'],['minusFront','Minus Front','Cut the shapes in front out of the back one'],['intersect','Intersect','Keep only where they all overlap'],['exclude','Exclude','Keep where they don’t overlap'],
-  ['divide','Divide','Split into every separate piece'],['trim','Trim','Remove the hidden parts, keep each colour'],['minusBack','Minus Back','Cut the shapes behind out of the front one']];
+  ['divide','Divide','Split into every separate piece'],['crop','Crop','Cut everything to the top shape, keep each colour (the top shape stays)'],['trim','Trim','Remove the hidden parts, keep each colour'],['minusBack','Minus Back','Cut the shapes behind out of the front one']];
 function skPFShape(st){const lib=skPolyLib(),pts=r=>{const o=[];for(let i=0;i<r.length;i+=2)o.push([r[i],r[i+1]]);o.push(o[0]);return o;};
   if(skIsFill(st)){const rs=(st.r||[]).filter(r=>r.length>=6).map(r=>[pts(r)]);if(!rs.length)return [];try{return rs.length>1?lib.xor(...rs):lib.union(rs[0]);}catch(e){return rs;}}
   if(skHasPFill(st)){const r=[];for(let j=0;j<st.p.length;j+=3)r.push([st.p[j],st.p[j+1]]);r.push(r[0]);let F=[[r]];try{F=lib.union([[r]]);}catch(e){}if(skStrokeOn(st)){try{F=lib.union(F,skOutline(st));}catch(e){}}return F;}
@@ -7863,14 +7874,15 @@ function skPathfinder(op){const d=SKW.doc,lib=skPolyLib();if(!lib){flash('Pathfi
     else if(op==='intersect')res.push({mp:lib.intersection(...it.map(x=>x.mp)),c:top.c});
     else if(op==='exclude')res.push({mp:lib.xor(...it.map(x=>x.mp)),c:top.c});
     else if(op==='trim'){split=true;for(let i=0;i<it.length;i++){const above=it.slice(i+1).map(x=>x.mp);const v=above.length?lib.difference(it[i].mp,...above):it[i].mp;res.push({mp:v,c:it[i].c});}}
+    else if(op==='crop'){split=true;for(const x of it.slice(0,-1)){const v=lib.intersection(x.mp,top.mp);if(v.length)res.push({mp:v,c:x.c});}}
     else if(op==='divide'){split=true;let pieces=[];for(const x of it){const np=[];for(const p of pieces){const a=lib.intersection(p.mp,x.mp),b=lib.difference(p.mp,x.mp);if(a.length)np.push({mp:a,c:x.c});if(b.length)np.push({mp:b,c:p.c});}
         const prev=pieces.length?U(pieces.map(p=>p.mp)):[],own=prev.length?lib.difference(x.mp,prev):x.mp;if(own.length)np.push({mp:own,c:x.c});pieces=np;}res.push(...pieces);}
     const ring=r=>{const q=skRDPRing(r.slice(0,-1),.12);const o=[];for(const p of q)o.push(Math.round(p[0]*10)/10,Math.round(p[1]*10)/10);return o;};
     const out=[],gid=split?'g'+skNewId():null,L=skLid(d,top.st);
     for(const r of res){if(!r.mp||!r.mp.length)continue;const polys=split?r.mp.map(p=>[p]):[r.mp];
-      for(const mp of polys){const rs=[];for(const poly of mp)for(const rr of poly){const o=ring(rr);if(o.length>=6)rs.push(o);}if(rs.length){const f={t:'fill',c:r.c,p:[],r:rs,l:L,id:skNewId(),m:Date.now()};if(gid)f.g=[gid];else if(top.st.g)f.g=top.st.g.slice();out.push(f);}}}
+      for(const mp of polys){const rs=[];for(const poly of mp)for(const rr of poly){const o=ring(rr);if(o.length>=6)rs.push(o);}if(rs.length){const f={t:'fill',c:r.c,p:[],r:rs,l:L,id:skNewId(),m:Date.now()};if(op==='crop')f.ov=true;if(gid)f.g=[gid];else if(top.st.g)f.g=top.st.g.slice();out.push(f);}}}
     if(!out.length){flash(op==='intersect'?'They don’t overlap.':'Nothing would be left.');return;}
-    const gone=new Set(it.map(x=>x.st));skLayerAct(dd=>{let at=dd.strokes.indexOf(top.st);const keep=dd.strokes.filter(st=>!gone.has(st));at=at<0?keep.length:dd.strokes.slice(0,at).filter(st=>!gone.has(st)).length+1;keep.splice(Math.min(at,keep.length),0,...out);dd.strokes=keep;});
+    const gone=new Set(it.map(x=>x.st));if(op==='crop')gone.delete(top.st);skLayerAct(dd=>{let at=dd.strokes.indexOf(op==='crop'?it[0].st:top.st);if(op==='crop')at=Math.max(0,at-1);const keep=dd.strokes.filter(st=>!gone.has(st));at=at<0?keep.length:dd.strokes.slice(0,at).filter(st=>!gone.has(st)).length+1;keep.splice(Math.min(at,keep.length),0,...out);dd.strokes=keep;});
     SKW.sel=out.slice();const nm=(SK_PF.find(x=>x[0]===op)||[,op])[1];flash(nm+': '+out.length+(out.length===1?' shape':' shapes')+' · Ctrl+Z to undo');}
   catch(e){flash('Pathfinder didn’t work on that selection.');}finally{S.skBusy=false;render();}},30);}
 function skPFRow(keep){const ok=skSel().length>1;return h('div',{class:'skpfrow'+(ok?'':' skpfoff'),role:'group','aria-label':'Pathfinder'},SK_PF.map(([k,n,t])=>h('button',{type:'button',class:'sklt',title:n+': '+t+(ok?'':' (select two or more items first)'),'aria-label':n,onclick:()=>{if(skSel().length<2){flash('Select two or more shapes or lines first.');return;}if(!keep)S.skPop=null;skPathfinder(k);}},skIcoL('pf_'+k))));}
@@ -7985,6 +7997,9 @@ function skCtxView(){const m=S.skCtx;if(!m||!SKW)return null;const d=SKW.doc,lis
     locked.length?row('unlock','Unlock',()=>skElSet(locked,'lk',false)):row('lock','Lock  (Ctrl+2)',()=>{skElSet(list,'lk',true);}),
     locked.length?null:row('eyeoff','Hide  (Ctrl+3)',()=>{skElSet(list,'hid',true);}),
     list.length>1?h('div',{class:'skctxpf'},h('div',{class:'skgh'},'Pathfinder'),h('div',{class:'skpfrow'},SK_PF.map(([k,n,t])=>h('button',{type:'button',class:'sklt',title:n+': '+t,'aria-label':n,onclick:()=>{S.skCtx=null;SKW.sel=list;skPathfinder(k);}},skIcoL('pf_'+k))))):null,
+    list.length>1&&!list.some(st=>st.clip||st.isMask)?row('clip','Make clipping mask  (Ctrl+7) — top shape clips the rest',()=>{SKW.sel=list;skClipMake();}):null,
+    list.some(st=>st.clip||st.isMask)?row('clip','Release clipping mask  (Ctrl+Alt+7)',()=>{SKW.sel=list;skClipRelease();}):null,
+    list.some(st=>st.isMask)?row('eye',list.some(st=>st.isMask&&st.mv)?'Hide the mask shape':'Show the mask shape',()=>{SKW.sel=list;skClipShowMask(!list.some(st=>st.isMask&&st.mv));}):null,
     row('group','Group  (Ctrl+G)',()=>{SKW.sel=list;skGroupSel();}),row('ungroup','Ungroup  (Ctrl+Shift+G)',()=>{SKW.sel=list;skUngroupSel();}),
     row('up','Bring forward  (Ctrl+])',()=>skArrange(1,list)),row('down','Send backward  (Ctrl+[)',()=>skArrange(-1,list)),
     row('front','Bring to front',()=>skArrange(2,list)),row('back','Send to back',()=>skArrange(-2,list)),
@@ -8007,6 +8022,7 @@ addEventListener('keydown',e=>{if(!skActive()||(e.target.closest&&e.target.close
     else if(lk==='j'&&e.altKey)skCloseSel();
     else if(lk==='j')skDupSel();
     else if(lk==='g'){e.shiftKey?skUngroupSel():skGroupSel();}
+    else if(c==='Digit7'||c==='Numpad7'){e.preventDefault();e.altKey?skClipRelease():skClipMake();}
     else if(c==='Digit2'||c==='Numpad2'){e.altKey?skElAll('lk',false):skElSel('lk',true);}
     else if(c==='Digit3'||c==='Numpad3'){e.altKey?skElAll('hid',false):skElSel('hid',true);}
     else if(c==='Equal'||c==='NumpadAdd'||k==='+'||k==='=')SKW.zoomBy&&SKW.zoomBy(1.25);
@@ -8851,6 +8867,8 @@ const SKI={pen:'<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0
   marker:'<path d="M5 21l1-4 8.6-8.6 3 3L9 20z"/><rect x="14.2" y="2.8" width="5" height="8" rx="1.2" transform="rotate(45 16.7 6.8)"/>',
   hl:'<path d="M4 21h9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M8.5 16.5l-1.5 1.5 2 2 1.5-1.5z"/><path d="M9.5 14.5l7.8-9.6a2 2 0 0 1 2.9-.2l.1.1a2 2 0 0 1-.1 2.9L10.6 15.6l1 1-2 2-2.6-2.6 2-2z"/>',
   hand:'<path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10V4a1.5 1.5 0 0 1 3 0v6V5.5a1.5 1.5 0 0 1 3 0V11v-2a1.5 1.5 0 0 1 3 0v5.5A7.5 7.5 0 0 1 12.5 22h-1a7 7 0 0 1-5.6-2.8L2.8 15a1.6 1.6 0 0 1 2.4-2.1L8 15z"/>',
+  clip:'<rect x="3" y="3" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="14" r="7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2"/><path d="M14 7a7 7 0 0 0-7 7h8V7z" opacity=".55"/>',
+  pf_crop:'<rect x="3" y="3" width="12" height="12" fill="currentColor" fill-opacity=".35"/><rect x="9" y="9" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="9" y="9" width="6" height="6" fill="currentColor"/>',
   maxi:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   grad:'<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="6.5" width="4" height="11" opacity=".85"/><rect x="9" y="6.5" width="4" height="11" opacity=".55"/><rect x="13" y="6.5" width="4" height="11" opacity=".28"/>',
   sfill:'<path d="M5 15c-2-4 1-9 6-10s9 2 8 6-5 3-6 6-4 5-8-2z"/><path d="M14 21l2.5-2.5 1.6 1.6-2.5 2.5z" opacity=".55"/>',
@@ -8952,6 +8970,17 @@ addEventListener('pointerdown',e=>{const sw=e.target.closest&&e.target.closest('
     const eat=k=>{k.stopImmediatePropagation();k.preventDefault();};addEventListener('click',eat,true);setTimeout(()=>removeEventListener('click',eat,true),60);
     if(ev.type==='pointerup'){const el=document.elementFromPoint(ev.clientX,ev.clientY);if(el&&el.closest&&el.closest('.skstage'))SKW.dropColor(ev.clientX,ev.clientY,c);}};
   addEventListener('pointermove',mv,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);},true);
+function skClipMake(){const d=SKW.doc,order=skVisStrokes(d),sel=new Set(skSel());const items=order.filter(st=>sel.has(st));if(items.length<2){flash('Select the mask shape (on top) and what it should clip.');return;}
+  const m=items[items.length-1],rest=items.slice(0,-1),gid='g'+skNewId(),mid=m.id||skNewId(),ml=skLid(d,m);
+  /* like a filled clipping path in Illustrator, the (visible) mask shape sits behind what it clips: it moves to just under the lowest clipped item on its layer */
+  const nsel=[];skLayerAct(dd=>{const map=new Map();for(const st of items){const g=(st.g||[]).concat([gid]);const c=Object.assign({},st,st===m?{id:mid,isMask:true,mv:true,clip:null,g}:{clip:mid,g});if(skIsFill(c))c.ov=true;map.set(st,c);nsel.push(c);}
+    let arr=dd.strokes.map(st=>map.get(st)||st);const mc=map.get(m);arr=arr.filter(x=>x!==mc);const low=arr.findIndex(x=>x.clip===mid&&skLid(dd,x)===ml);arr.splice(low<0?arr.length:low,0,mc);dd.strokes=arr;});
+  SKW.sel=nsel;
+  flash('Clipping mask: “'+skElName(m)+'” clips '+rest.length+(rest.length===1?' item':' items')+' · Ctrl+Alt+7 releases');}
+function skClipRelease(){const d=SKW.doc,sel=skSel(),mids=new Set(sel.filter(st=>st.isMask).map(st=>st.id).concat(sel.filter(st=>st.clip).map(st=>st.clip)));if(!mids.size){flash('Nothing selected is in a clipping mask.');return;}
+  const all=d.strokes.filter(st=>(st.isMask&&mids.has(st.id))||(st.clip&&mids.has(st.clip)));const gids=new Set();for(const st of all)if(st.g&&st.g.length)gids.add(st.g[st.g.length-1]);
+  skEditSel(all,st=>{const g=(st.g||[]).filter(x=>!gids.has(x));return {isMask:null,mv:null,clip:null,g:g.length?g:null};});flash('Clipping mask released');}
+function skClipShowMask(on){const ms=skSel().filter(st=>st.isMask);if(!ms.length)return;skEditSel(ms,()=>({mv:on}));}
 function skUseColor(c){S.skColor=c;if(skSel().length)skRecolor(c);saveUI();render();}
 function skPalNew(colors,name){const n=skPals().length+1;S.skPals=skPals().concat([{id:'p'+skNewId(),name:name||'Palette '+n,colors:colors||[]}]);skPalsSave();render();}
 function skDocColors(d){const m=new Map();for(const st of skAllStrokes()){const c=String(st.c||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))m.set(c,(m.get(c)||0)+1);}return [...m.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,24);}
@@ -9493,14 +9522,16 @@ function skSVG(doc,mode){const out=[`<svg xmlns="http://www.w3.org/2000/svg" xml
     defs.push(g.k==='r'?`<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${f2(g.a[0])}" cy="${f2(g.a[1])}" r="${f2(Math.hypot(g.b[0]-g.a[0],g.b[1]-g.a[1]))}">${st}</radialGradient>`
       :`<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f2(g.a[0])}" y1="${f2(g.a[1])}" x2="${f2(g.b[0])}" y2="${f2(g.b[1])}">${st}</linearGradient>`);return `url(#${id})`;};
   const fc=st=>st.cg?gref(st.cg):st.c,ff=st=>st.pg?gref(st.pg):st.pf;
+  const MM=skMaskMap(doc.strokes),cids=new Map(),clipId=m=>{if(!cids.has(m)){const id='clip-'+(cids.size+1);cids.set(m,id);defs.push(`<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><path d="${skMaskD(m)}"/></clipPath>`);}return cids.get(m);};
+  let inClip=false;const clipEnd=()=>{if(inClip){out.push('</g>');inClip=false;}};
   if(mode==='outline'){const {groups}=skOutlineGroups(doc);let k=0;for(const {l} of lays){const gs=groups.filter(g=>g.l===l.id);if(!gs.length)continue;open(l);
       for(const g of gs){const d=g.shapes.map(poly=>poly.map(skRingCurve).join('')).join('');out.push(`<path id="shape-${++k}" d="${d}" fill="${g.c}" fill-rule="${g.rule}"${g.hl?` fill-opacity="${SK_HL_ALPHA}"`:''}/>`);}out.push('</g>');}}
-  else{let i=0;for(const {l,strokes} of lays){if(!strokes.length)continue;open(l);for(const st of strokes){i++;
+  else{let i=0;for(const {l,strokes} of lays){if(!strokes.length)continue;open(l);for(const st of strokes){i++;clipEnd();if(st.isMask&&!st.mv)continue;{const cm=st.clip&&MM.get(st.clip);if(cm){out.push(`<g clip-path="url(#${clipId(cm)})">`);inClip=true;}}
       if(skIsFill(st)){out.push(`<path id="fill-${i}" d="${skFillD(st)}" fill="${fc(st)}" fill-rule="evenodd"/>`);continue;}
       if(skTapered(st)){const pf=skHasPFill(st);if(pf)out.push(`<path id="path-${i}-fill" d="${skPathD(st,true)}" fill="${ff(st)}"/>`);if(skStrokeOn(st))out.push(`<path id="path-${i}" d="${skOutlineD(st)}" fill="${fc(st)}" fill-rule="nonzero"/>`);continue;}
       if(skHasPFill(st)||skVecOk(st)){const pf=skHasPFill(st),so=skStrokeOn(st);out.push(`<path id="path-${i}" d="${skPathD(st,skPClosed(st))}" fill="${pf?ff(st):'none'}" stroke="${so?fc(st):'none'}"${so?` stroke-width="${f2(skAvgW(st))}" stroke-linecap="round" stroke-linejoin="round"`:''}/>`);continue;}
       const pts=skSmooth(st),cv=skCurve(pts);const d='M'+f2(cv.m[0])+' '+f2(cv.m[1])+cv.c.map(c=>'C'+c.map(p=>f2(p[0])+' '+f2(p[1])).join(' ')).join('');
-      out.push(`<path id="stroke-${i}" d="${d}" fill="none" stroke="${fc(st)}" stroke-width="${f2(skAvgW(st))}" stroke-linecap="round" stroke-linejoin="round"${st.t==='hl'?` stroke-opacity="${SK_HL_ALPHA}"`:''}/>`);}out.push('</g>');}}
+      out.push(`<path id="stroke-${i}" d="${d}" fill="none" stroke="${fc(st)}" stroke-width="${f2(skAvgW(st))}" stroke-linecap="round" stroke-linejoin="round"${st.t==='hl'?` stroke-opacity="${SK_HL_ALPHA}"`:''}/>`);}clipEnd();out.push('</g>');}}
   if(doc.bgc)out.splice(2,0,`<rect id="background" width="${doc.w}" height="${doc.h}" fill="${doc.bgc}"/>`);
   if(defs.length)out.splice(2,0,'<defs>'+defs.join('')+'</defs>');
   if(doc.sb)out.push(skSBSvg(doc));out.push('</svg>');return out.join('\n');}
@@ -9513,18 +9544,20 @@ function skPDF(doc,mode,pages){const s=SK_PDF_SCALE,ops=['1 J 1 j'];if(doc.bgc){
   const col=(c,fill)=>{const [r,g,b]=skHex(c);return `${f2(r)} ${f2(g)} ${f2(b)} ${fill?'rg':'RG'}`;};
   /* gradients: each is a shading pattern (one pattern per page, so it lines up with that page's coordinates) */
   const pats=[],pat=g=>{pats.push(g);return '/P'+(pats.length-1);};
+  const MM=skMaskMap(doc.strokes);let inClip=false;const clipEnd=()=>{if(inClip){ops.push('Q');inClip=false;}};
   const gc=(st,fill)=>st.cg?`/Pattern ${fill?'cs':'CS'} ${pat(st.cg)} ${fill?'scn':'SCN'}`:col(st.c,fill),gf=st=>st.pg?`/Pattern cs ${pat(st.pg)} scn`:col(st.pf,true);
   const lays=skByLayer(doc).filter(x=>x.strokes.length),gsx=[],gsk=new Map(),gs=a=>{a=Math.round(a*1000)/1000;if(a>=.999)return '';if(!gsk.has(a)){gsk.set(a,'/G'+gsk.size);gsx.push(a);}return gsk.get(a)+' gs';};
   const outl=mode==='outline'?skOutlineGroups(doc).groups:null;
   lays.forEach(({l,strokes},li)=>{const op=l.op==null?1:l.op;ops.push(`/OC /L${li} BDC`);
     if(outl){for(const g of outl.filter(g=>g.l===l.id)){ops.push('q',gs(op*(g.hl?SK_HL_ALPHA:1)),col(g.c,true));
       for(const poly of g.shapes)for(const r of poly)ops.push(skSvgToPdf(skRingCurve(r)));ops.push(g.rule==='evenodd'?'f*':'f','Q');}}
-    else for(const st of strokes){if(skIsFill(st)){ops.push('q',gs(op),gc(st,true),skSvgToPdf(skFillD(st)),'f*','Q');continue;}
+    else for(const st of strokes){clipEnd();if(st.isMask&&!st.mv)continue;{const cm=st.clip&&MM.get(st.clip);if(cm){ops.push('q',skSvgToPdf(skMaskD(cm)),'W n');inClip=true;}}
+      if(skIsFill(st)){ops.push('q',gs(op),gc(st,true),skSvgToPdf(skFillD(st)),'f*','Q');continue;}
       if(skTapered(st)){if(skHasPFill(st))ops.push('q',gs(op),gf(st),skSvgToPdf(skPathD(st,true)),'f','Q');if(skStrokeOn(st))ops.push('q',gs(op),gc(st,true),skSvgToPdf(skOutlineD(st)),'f','Q');continue;}
       if(skHasPFill(st)||skVecOk(st)){const pf=skHasPFill(st),so=skStrokeOn(st);ops.push('q',gs(op),pf?gf(st):'',so?gc(st,false):'',so?`${f2(skAvgW(st))} w`:'',skSvgToPdf(skPathD(st,skPClosed(st))),pf&&so?'B':pf?'f':'S','Q');continue;}
       const pts=skSmooth(st),cv=skCurve(pts);
       ops.push('q',gs(op*(st.t==='hl'?SK_HL_ALPHA:1)),gc(st,false),`${f2(skAvgW(st))} w`,`${f2(cv.m[0])} ${f2(cv.m[1])} m`,...cv.c.map(c=>c.map(p=>`${f2(p[0])} ${f2(p[1])}`).join(' ')+' c'),'S','Q');}
-    ops.push('EMC');});
+    clipEnd();ops.push('EMC');});
   /* pages: the whole drawing (with the storyboard's frames and notes), or one page per area (storyboard panels, art only) */
   const whole=!pages;pages=pages||[{x:0,y:0,w:doc.w,h:doc.h}];const body=ops.filter(Boolean).join('\n'),over=whole&&doc.sb?skSBPdfOps(doc).join('\n'):'';
   const pstr=t=>'('+String(t).replace(/[()\\]/g,'').replace(/[^\x20-\x7e]/g,'')+')',title=pstr(doc.name||'Sketch');
@@ -9564,7 +9597,7 @@ function skAELen(d){let L=0;for(const P of skAEPaths(d))for(let k=1;k<P.v.length
 function skAEScript(doc,mode,into){const rgb=c=>skHex(c).map(v=>Math.round(v*1000)/1000),SPEED=1500,GAP=.04;
   /* frames: each frame becomes its own set of shape layers, one frame long */
   const fr=skHasFrames(doc)&&doc.frames.length>1?doc.frames:null,FPS=fr?(doc.fps||12):24,replay=mode==='replay'&&!fr;
-  const build=doc=>{const lays=skByLayer(doc).filter(x=>x.strokes.length),L=[];let all=[];
+  const build=doc=>{const lays=skByLayer(doc).filter(x=>x.strokes.length),L=[],MMa=skMaskMap(doc.strokes);let all=[];
   if(mode==='outline'){const {groups}=skOutlineGroups(doc);let n=0;
     for(const {l} of lays){const items=groups.filter(g=>g.l===l.id).map(g=>({k:'f',n:'Shape '+(++n),c:rgb(g.c),a:g.hl?SK_HL_ALPHA*100:100,rule:g.rule==='evenodd'?2:1,p:skAEPaths(g.shapes.map(poly=>poly.map(skRingCurve).join('')).join(''))}));
       if(items.length)L.push({n:l.name||'Layer',bm:l.bm||'normal',op:Math.round((l.op==null?1:l.op)*100),items});}}
@@ -9573,6 +9606,10 @@ function skAEScript(doc,mode,into){const rgb=c=>skHex(c).map(v=>Math.round(v*100
         if(skHasPFill(st)||(skVecOk(st)&&st.t==='pen')){const d=skPathD(st,skPClosed(st)),out=[];if(skHasPFill(st))out.push({k:'f',n:'Path fill',c:rgb(st.pf),a:100,rule:1,p:skAEPaths(d),o:st._o,g:gA(st.pg)});
           if(skStrokeOn(st))out.push(skTapered(st)?{k:'f',n:'Path',c:rgb(st.c),a:100,rule:1,p:skAEPaths(skOutlineD(st)),o:st._o,g:gA(st.cg)}:{k:'s',n:'Path',c:rgb(st.c),w:Math.round(skAvgW(st)*100)/100,a:100,p:skAEPaths(d),len:replay?skAELen(d):0,o:st._o,g:gA(st.cg)});return out;}
           const d=skCurveD(st);return {k:'s',n:st.t==='hl'?'Highlighter':st.t==='marker'?'Marker':'Pen',c:rgb(st.c),w:Math.round(skAvgW(st)*100)/100,a:st.t==='hl'?SK_HL_ALPHA*100:100,p:skAEPaths(d),len:replay?skAELen(d):0,o:st._o,g:gA(st.cg)};})();
+          /* clipped by a mask: After Effects gets the already-trimmed shape (filled, in the item's colour); a hidden mask isn't sent */
+          if(st.isMask&&!st.mv)return [];
+          {const cm=st.clip&&MMa.get(st.clip),lib=cm&&skPolyLib();if(cm&&lib){let mp=[];try{mp=lib.intersection(skPFShape(st),skMaskPoly(cm));}catch(e){}if(!mp.length)return [];
+            const d=mp.map(poly=>poly.map(skRingCurve).join('')).join('');return [{k:'f',n:'Clipped',c:rgb(skPFCol(st)),a:100,rule:1,p:skAEPaths(d),o:st._o}];}}
           return [].concat(out0).filter(it=>{if(it&&!it.g)delete it.g;return !!it;});}));
       items.forEach((it,i)=>{it.n+=' '+(i+1);if(it.g){it.g.txt=(l.name||'Layer')+' · '+it.n+' · '+it.g.txt;}});L.push({n:l.name||'Layer',bm:l.bm||'normal',op:Math.round((l.op==null?1:l.op)*100),items});all=all.concat(items);}}
   return {L,all};};
