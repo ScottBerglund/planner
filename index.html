@@ -1400,6 +1400,10 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .skpalc .skcol{touch-action:none}
 .skpffloat{position:fixed;z-index:95;display:grid;gap:6px;padding:6px 8px 8px}
 .skpfoff .sklt{opacity:.45}
+/* layer target circle */
+.sktarget .sktgt{display:block;width:12px;height:12px;border-radius:50%;border:1.6px solid currentColor;box-sizing:border-box}
+.sktarget.on .sktgt{background:#1E88E5;border-color:#1E88E5;box-shadow:0 0 0 2px color-mix(in srgb,#1E88E5 30%,transparent)}
+.sklay.skel{cursor:pointer}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2924,7 +2928,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119115805',newer=false,want='',last=Date.now();
+  var MINE='20261119120634',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7271,8 +7275,8 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
       if(sg){const b=skPedBefore(P),dbl=Date.now()-(SKW.ptLast||0)<400&&SKW.ptLastAt&&scrD(SKW.ptLastAt[0],SKW.ptLastAt[1],sx,sy)<10;
         if(dbl){SKW.ptLast=0;const ni=skVecSplit(P.v,sg.i,sg.t);P.sel=new Set([ni]);skPedApply(P);skPedPush(P,b);later();return;}
         SKW.ptLast=Date.now();SKW.ptLastAt=[x,y];if(!e.shiftKey)P.sel=new Set();cur=Object.assign(base0,{vp:'seg',b,sg,o:A.map(a=>a.slice())});drawLive();return;}}
-    const hs=new Set(hits(x,y,st=>skLid(doc,st)===doc.cur)),order=skVisStrokes(doc);let hit=null;for(let i=order.length-1;i>=0;i--)if(hs.has(doc.strokes.indexOf(order[i]))){hit=order[i];break;}
-    if(hit&&(!P||hit!==P.st)){if(skIsFill(hit)){flash('Fills don’t have points to edit. Edit the lines around them.');return;}
+    const hs=new Set(hits(x,y,st=>skSelable(doc,st))),order=skVisStrokes(doc);let hit=null;for(let i=order.length-1;i>=0;i--)if(hs.has(doc.strokes.indexOf(order[i]))){hit=order[i];break;}
+    if(hit&&(!P||hit!==P.st)){if(skLid(doc,hit)!==doc.cur)doc.cur=skLid(doc,hit);if(skIsFill(hit)){flash('Fills don’t have points to edit. Edit the lines around them.');return;}
       SKW.ped={st:hit,p:null,sel:new Set()};if(!skPed()){flash('That line is too short to edit.');return;}SKW.ptLast=Date.now();SKW.ptLastAt=[x,y];drawLive();return;}
     if(P){cur=Object.assign(base0,{vp:'mq',ss:[sx,sy],cs:[sx,sy],add:e.shiftKey});drawLive();return;}
     SKW.ped=null;drawLive();};
@@ -7516,7 +7520,9 @@ function skIsoBar(){const I=SKW&&SKW.iso;if(!I)return null;const lv=[];for(let x
     h('button',{type:'button',class:'sklb',title:'Leave isolation (Esc, or double-click an empty spot)','aria-label':'Leave isolation',onclick:()=>skIsoExit(false)},skIcoL('up')),
     h('button',{type:'button',class:'skisol',title:'Back to the whole drawing',onclick:()=>skIsoExit(true)},skCurLayer(SKW.doc).name),
     lv.map(x=>[h('span',{class:'skisosep','aria-hidden':'true'},'›'),h('span',{class:'skisol'},nm(x))]));}
-function skSel(){if(!SKW||!SKW.sel||!SKW.sel.length)return [];const d=SKW.doc;const all=new Set(d.strokes);return SKW.sel=skGroupExpand(SKW.sel.filter(st=>all.has(st)&&skSelable(d,st)));}
+function skSel(){if(!SKW||!SKW.sel||!SKW.sel.length)return [];const d=SKW.doc;const all=new Set(d.strokes);SKW.sel=skGroupExpand(SKW.sel.filter(st=>all.has(st)&&skSelable(d,st)));
+  const sig=SKW.sel.map(st=>st.id).join(',');if(sig!==SKW.selSig){SKW.selSig=sig;if(SKW.sel.length){const rank=new Map((d.layers||[]).map((l,i)=>[l.id,i]));let top=null,tr=-1;for(const st of SKW.sel){const r=rank.get(skLid(d,st));if(r!=null&&r>tr){tr=r;top=skLid(d,st);}}if(top&&top!==d.cur)d.cur=top;}}
+  return SKW.sel;}
 /* groups (like Illustrator): st.g lists group ids, innermost first; picking any member picks its whole outermost group */
 const skTopG=st=>st.g&&st.g.length?st.g[st.g.length-1]:null;
 function skGroupExpand(list){const gs=new Set(),I=SKW&&SKW.iso,gOf=st=>{if(!st.g||!st.g.length)return null;if(I&&I.g){const k=st.g.indexOf(I.g);return k>0?st.g[k-1]:null;}return skTopG(st);};for(const st of list){const g=gOf(st);if(g)gs.add(g);}if(!gs.size)return list;const d=SKW.doc,set=new Set(list);
@@ -8685,16 +8691,28 @@ function skElThumb(items){const W=36,H=26,dpr=2,key=items.map(st=>(st.id||'')+':
     SKTH.set(items[0],c);}
   const im=h('span',{class:'skelth','aria-hidden':'true'});const cc=document.createElement('canvas');cc.width=c.width;cc.height=c.height;cc.getContext('2d').drawImage(c,0,0);im.appendChild(cc);return im;}
 /* a layer's items, top first; a group is one row that twirls open to its members */
+/* pick items from the Layers list: replace the selection, or with Shift / Ctrl / ⌘ add or take away */
+function skPickItems(items,e,l){const d=SKW.doc,L=l||(d.layers||[]).find(x=>x.id===skLid(d,items[0]));
+  if(L&&(L.locked||L.hidden)){flash('“'+L.name+'” is '+(L.locked?'locked':'hidden')+'. '+(L.locked?'Unlock':'Show')+' it to select its items.');return;}
+  if(items.some(x=>x.lk||x.hid)){flash(items.every(x=>x.hid)?'It’s hidden. Show it first.':'It’s locked. Unlock it first.');return;}
+  if(SKW.iso&&!items.every(skInIso))skIsoExit(true);const add=e&&(e.shiftKey||e.ctrlKey||e.metaKey),cs=skSel();
+  if(add){const on=items.every(x=>cs.includes(x));SKW.sel=on?cs.filter(x=>!items.includes(x)):cs.concat(items.filter(x=>!cs.includes(x)));}else SKW.sel=items.slice();
+  if(!skSelTool())S.skTool='ptr';render();}
+/* Illustrator's target circle: select everything on a layer (Shift / Ctrl adds); filled when some of it is selected */
+function skTargetBtn(items,name,l){const sel=new Set(skSel()),some=items.some(x=>sel.has(x));
+  return h('button',{type:'button',class:'sklb sktarget'+(some?' on':''),title:'Select everything in '+name+' (Shift or Ctrl+click to add)','aria-label':'Select everything in '+name,disabled:!items.length,
+    onclick:e=>{e.stopPropagation();skPickItems(items,e,l);}},h('span',{class:'sktgt'}));}
 function skElRows(l){const d=SKW.doc,list=skOrder(d.strokes.filter(st=>skLid(d,st)===l.id)).slice().reverse(),sel=new Set(skSel());
   const ents=[],seen=new Map();for(const st of list){const g=skTopG(st);if(g){let e=seen.get(g);if(!e){e={g,items:[]};seen.set(g,e);ents.push(e);}e.items.push(st);}else ents.push({st,items:[st]});}
   const all=(items,k)=>items.every(x=>x[k]);
-  const pick=items=>{if(items.some(x=>x.lk||x.hid)){flash(all(items,'hid')?'It’s hidden. Show it first.':'It’s locked. Unlock it first.');return;}if(SKW.iso&&!items.every(skInIso))skIsoExit(true);SKW.sel=items.slice();if(!skSelTool())S.skTool='ptr';render();};
+  const pick=(items,e)=>skPickItems(items,e,l);
   const sw=items=>skElThumb(items);
   const row=(items,name,cls,extra)=>{const hid=all(items,'hid'),lk=all(items,'lk'),on=items.every(x=>sel.has(x));
-    return h('div',{class:'sklay skel'+(cls?' '+cls:'')+(on?' on':'')+(hid?' hid':'')},extra||h('span',{class:'sktwsp'}),
+    return h('div',{class:'sklay skel'+(cls?' '+cls:'')+(on?' on':'')+(hid?' hid':''),title:'Click to select · Shift or Ctrl+click to add or remove',onclick:e=>{if(e.target.closest('.sklb'))return;pick(items,e);}},extra||h('span',{class:'sktwsp'}),
       h('button',{class:'sklb'+(hid?' off':''),title:hid?'Show':'Hide','aria-label':(hid?'Show ':'Hide ')+name,'aria-pressed':String(!hid),onclick:()=>skElSet(items,'hid',!hid)},skIcoL(hid?'eyeoff':'eye')),
-      sw(items),h('button',{class:'sklname skeln',title:'Select '+name,onclick:()=>pick(items)},name),
-      h('button',{class:'sklb'+(lk?'':' off'),title:lk?'Unlock':'Lock','aria-label':(lk?'Unlock ':'Lock ')+name,'aria-pressed':String(lk),onclick:()=>skElSet(items,'lk',!lk)},skIcoL(lk?'lock':'unlock')));};
+      sw(items),h('button',{class:'sklname skeln',title:'Select '+name+' (Shift or Ctrl+click to add)'},name),
+      h('button',{class:'sklb'+(lk?'':' off'),title:lk?'Unlock':'Lock','aria-label':(lk?'Unlock ':'Lock ')+name,'aria-pressed':String(lk),onclick:()=>skElSet(items,'lk',!lk)},skIcoL(lk?'lock':'unlock')),
+      cls==='grp'?skTargetBtn(items,name,l):null);};
   const out=[];let n=0;
   for(const e of ents){if(n++>=150){out.push(h('div',{class:'skelmore'},'+'+(ents.length-150)+' more'));break;}
     if(e.g){const open=!!(S.skGOpen&&S.skGOpen.includes(e.g)),nm='Group ('+e.items.length+')';
@@ -8743,6 +8761,7 @@ function skLayersPanel(floating){const d=SKW.doc,L=d.layers;
       on?h('input',{class:'sklname','data-keep':'1',value:l.name,maxlength:'40','aria-label':'Layer name',onchange:e=>{const v=e.target.value.trim()||l.name;if(v!==l.name)skLayerAct(d=>{d.layers.find(x=>x.id===l.id).name=v;});},onkeydown:e=>{if(e.key==='Enter')e.target.blur();}})
         :h('button',{class:'sklname',title:'Draw on this layer · Shift or Ctrl+click to select several',onclick:e=>{if(e.shiftKey||e.ctrlKey||e.metaKey||S.skLPick)return;d.cur=l.id;SKW.lsel=null;SKW.lanchor=l.id;S.confirm=null;skSave();render();}},l.name),
       h('button',{class:'sklb'+(l.locked?'':' off'),title:l.locked?'Unlock this layer':'Lock this layer','aria-label':(l.locked?'Unlock ':'Lock ')+l.name,'aria-pressed':String(!!l.locked),onclick:()=>{const v=!l.locked;for(const id of grp){const x=d.layers.find(y=>y.id===id);if(x)x.locked=v;}skSave();render();}},skIcoL(l.locked?'lock':'unlock')),
+      skTargetBtn(d.strokes.filter(st=>skLid(d,st)===l.id&&!st.lk&&!st.hid),'“'+l.name+'”',l),
       h('button',{class:'sklb',title:'Move up','aria-label':'Move '+l.name+' up',disabled:i===L.length-1,onclick:()=>skLayerMove(l.id,1)},skIcoL('up')),
       h('button',{class:'sklb',title:'Move down','aria-label':'Move '+l.name+' down',disabled:i===0,onclick:()=>skLayerMove(l.id,-1)},skIcoL('down')),
       h('button',{class:'sklb'+(arm?' skarm':''),title:arm?'Tap again to delete this layer and its drawing':'Delete layer','aria-label':'Delete '+l.name,disabled:L.length<2||grp.length>=L.length,onclick:()=>grp.length>1?skLayersDel(grp):skLayerDel(l.id)},skIcoL('clear')));
