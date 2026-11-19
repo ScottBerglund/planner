@@ -1412,6 +1412,8 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .skrz-n,.skrz-s{left:10px;right:10px;height:8px}.skrz-n{top:-4px;cursor:ns-resize}.skrz-s{bottom:-4px;cursor:ns-resize}
 .skrz-e,.skrz-w{top:10px;bottom:10px;width:8px}.skrz-e{right:-4px;cursor:ew-resize}.skrz-w{left:-4px;cursor:ew-resize}
 .skrz-ne,.skrz-nw,.skrz-se,.skrz-sw{width:14px;height:14px}.skrz-ne{top:-4px;right:-4px;cursor:nesw-resize}.skrz-sw{bottom:-4px;left:-4px;cursor:nesw-resize}.skrz-nw{top:-4px;left:-4px;cursor:nwse-resize}.skrz-se{bottom:-4px;right:-4px;cursor:nwse-resize}
+/* current layer: a dark bar on its left edge (the gray box marks layers holding the selection) */
+.sklay.skcur{box-shadow:inset 3px 0 0 var(--ink)}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2936,7 +2938,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119121202',newer=false,want='',last=Date.now();
+  var MINE='20261119121840',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8775,7 +8777,8 @@ function skLayersPanel(floating){const d=SKW.doc,L=d.layers;
   const row=l=>{const on=l.id===d.cur,i=L.indexOf(l),op=l.op==null?1:l.op,arm=S.confirm==='skldel:'+l.id;
     const tw=!!(S.skLOpen&&S.skLOpen.includes(l.id));
     const ms=skLMulti(),inM=ms.size>1&&ms.has(l.id),grp=inM?[...ms]:[l.id];
-    const r=h('div',{class:'sklay'+(on?' on':'')+(l.hidden?' hid':'')+(inM?' msel':''),'data-lid':l.id,
+    const hasSel=skSel().some(st=>skLid(d,st)===l.id),lit=hasSel||(on&&!skSel().length);
+    const r=h('div',{class:'sklay'+(lit?' on':'')+(on?' skcur':'')+(l.hidden?' hid':'')+(inM?' msel':''),'data-lid':l.id,
         onclick:e=>{if(e.target.closest('.sklb,.skgrip'))return;if(e.shiftKey||e.ctrlKey||e.metaKey||S.skLPick){e.preventDefault();skLPickRow(l.id,e);}},
         onpointerdown:e=>{if(e.pointerType!=='touch'||e.target.closest('.sklb,.skgrip,input'))return;const sx=e.clientX,sy=e.clientY,t=setTimeout(()=>{S.skLPick=true;SKW.lsel=new Set([d.cur,l.id]);try{navigator.vibrate&&navigator.vibrate(12);}catch(x){}render();},450);
           const stop=ev=>{if(ev.type==='pointermove'&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<8)return;clearTimeout(t);removeEventListener('pointermove',stop);removeEventListener('pointerup',stop);removeEventListener('pointercancel',stop);};
