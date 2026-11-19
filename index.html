@@ -2940,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119131725',newer=false,want='',last=Date.now();
+  var MINE='20261119131817',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7117,9 +7117,9 @@ function skPaintAll(cv,doc,s){const ctx=cv.getContext('2d'),dpr=cv._dpr||1;ctx.s
 /* square tiles: the preview is cropped to the area drawn on (fixed pages too), centred, and fills the square (edges may be trimmed) */
 function skThumbDoc(d){if(d.inf||d.sb)return skFlat(d);const b=skBBox(d,60);if(!b)return d;return skFlat(Object.assign({},d,{inf:true}));}
 /* a square preview: zoomed in on the drawing and centred. It fills the square but trims at most about a third of a very wide or tall drawing */
-function skThumb(doc,size,dprOver){if(skHasFrames(doc)){const fc=skPoster(doc),f0=doc.frames[0];doc=Object.assign({},doc,{strokes:(doc.strokes||[]).filter(st=>(doc.frames.includes(st.f)?st.f:f0)===fc)});}doc=skThumbDoc(doc);const W=doc.w,H=doc.h,dpr=dprOver||Math.min(2,devicePixelRatio||1),cv=document.createElement('canvas');
+function skThumb(doc,size,dprOver){const bgc=doc.bgc||null;if(skHasFrames(doc)){const fc=skPoster(doc),f0=doc.frames[0];doc=Object.assign({},doc,{strokes:(doc.strokes||[]).filter(st=>(doc.frames.includes(st.f)?st.f:f0)===fc)});}doc=skThumbDoc(doc);const W=doc.w,H=doc.h,dpr=dprOver||Math.min(2,devicePixelRatio||1),cv=document.createElement('canvas');
   const s=Math.min(size/Math.min(W,H),1.5*size/Math.max(W,H));cv.width=cv.height=Math.round(size*dpr);cv._dpr=dpr;cv.className='skthumbcv';
-  const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.translate((size-W*s)/2,(size-H*s)/2);skPaintDoc(ctx,doc,s);skSBPaint(ctx,doc,s);return cv;}
+  const ctx=cv.getContext('2d');if(bgc){ctx.fillStyle=bgc;ctx.fillRect(0,0,cv.width,cv.height);}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.translate((size-W*s)/2,(size-H*s)/2);skPaintDoc(ctx,doc,s);skSBPaint(ctx,doc,s);return cv;}
 const skPressAmt=()=>S.skPressAmt==null?.75:S.skPressAmt;
 /* tilt shading (pen tool): leaning the pen over widens the line, like the side of a pencil lead. 0 = upright … 1 = flat */
 const skTiltAmt=()=>S.skTiltAmt==null?.5:S.skTiltAmt;
