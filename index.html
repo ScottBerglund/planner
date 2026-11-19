@@ -2922,7 +2922,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119112740',newer=false,want='',last=Date.now();
+  var MINE='20261119114210',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8569,6 +8569,13 @@ function skSizeForm(go,w0,h0,label){const wi=h('input',{type:'number',class:'sks
     h('div',{class:'skszpre'},SK_PRESETS.map(([a,b])=>h('button',{class:'tlink',onclick:()=>{wi.value=a;hi.value=b;}},a+'×'+b))));}
 function skSnapSet(d,s){d.layers=s.layers.map(l=>Object.assign({},l));d.cur=s.cur;d.strokes=s.strokes.slice();}
 function skLayerAct(fn){const before=skSnap();if(fn(SKW.doc)===false)return;SKW.undo.push({type:'snap',before,after:skSnap()});SKW.redo.length=0;skSave();render();}
+/* duplicate a layer with everything on it: the copy sits just above, named "… copy", and becomes the current layer (one undo) */
+function skLayerDup(lid){skLayerAct(d=>{const L=d.layers.find(l=>l.id===(lid||d.cur));if(!L)return false;const id='l'+Date.now().toString(36)+Math.random().toString(36).slice(2,4);
+  let nm=L.name+' copy',k=2;while(d.layers.some(l=>l.name===nm))nm=L.name+' copy '+k++;
+  d.layers.splice(d.layers.indexOf(L)+1,0,Object.assign(skDeep(L),{id,name:nm,locked:false}));
+  const gmap=new Map(),gid=g=>{if(!gmap.has(g))gmap.set(g,'g'+skNewId());return gmap.get(g);};
+  const copies=d.strokes.filter(st=>st.l===L.id).map(st=>{const c=Object.assign(skDeep(st),{id:'s'+skNewId(),l:id});if(st.strokes)c.strokes=st.strokes;if(Array.isArray(c.g))c.g=c.g.map(gid);return c;});
+  d.strokes.push(...copies);d.cur=id;flash('Duplicated “'+L.name+'”'+(copies.length?' ('+copies.length+' item'+(copies.length===1?'':'s')+')':''));});}
 function skLayerAdd(){skLayerAct(d=>{let n=d.layers.length+1;while(d.layers.some(l=>l.name==='Layer '+n))n++;const id='l'+Date.now().toString(36)+Math.random().toString(36).slice(2,4);
   d.layers.splice(d.layers.findIndex(l=>l.id===d.cur)+1,0,{id,name:'Layer '+n,op:1});d.cur=id;});}
 function skLayerDel(id){const d=SKW.doc;if(d.layers.length<2)return;const has=d.strokes.some(st=>st.l===id);if(has&&S.confirm!=='skldel:'+id)return armConfirm('skldel:'+id);S.confirm=null;
@@ -8739,6 +8746,7 @@ function skLayersPanel(floating){const d=SKW.doc,L=d.layers;
   const tb=(ico,label,fn,dis,extra)=>h('button',Object.assign({type:'button',class:'sklt',title:label,'aria-label':label,disabled:!!dis,onclick:fn},extra||{}),skIcoL(ico));
   const tools=h('div',{class:'skltools',role:'toolbar','aria-label':'Layer actions'},
     tb('plus','New layer (Ctrl+Shift+N)',skLayerAdd),
+    tb('dup','Duplicate “'+curL.name+'” and everything on it',()=>skLayerDup(curL.id)),
     tb('image','Place an image as a guide — faded, locked, never exported',skGuidePlace),
     window.aeGrab?tb('camera','Grab the comp’s current frame as a guide',()=>skGuideGrab(false)):null,
     window.aeGrab&&skHasFrames(d0)&&d0.frames.length>1?tb('film','Grab one comp frame for each sketch frame, at '+(d0.fps||12)+' fps',()=>skGuideGrab(true)):null,
