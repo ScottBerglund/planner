@@ -2766,8 +2766,16 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
     #fbgate input{font:inherit;padding:10px 12px;border:1.5px solid #bbb;border-radius:10px}#fbgate button{font:inherit;font-weight:700;padding:10px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}#fbgate p{margin:0;font-size:.9rem;color:#555}#fbgate .gg{background:#fff;color:#111;border:1.5px solid #111}#fbgate .or{text-align:center;margin-top:4px}</style>
     <form><h2>Sign in</h2><button type="button" class="gg">Continue with Google</button><p class="or">or get a sign-in link by email</p><input type="email" required placeholder="you@example.com" autocomplete="email"><button>Email me a link</button><p class="msg"></p></form>`;
     document.body.appendChild(G);const f=G.querySelector('form'),inp=f.querySelector('input'),msg=f.querySelector('.msg');inp.value=localStorage.getItem('fbEmail')||'';
-    G.querySelector('.gg').onclick=async()=>{msg.textContent='Opening Google…';const pr=new firebase.auth.GoogleAuthProvider();
-      try{await auth.signInWithPopup(pr);msg.textContent='';}catch(err){if(/popup-blocked|operation-not-supported/.test(err.code||''))return auth.signInWithRedirect(pr);msg.textContent=err.code==='auth/popup-closed-by-user'?'':'Google sign-in didn’t work: '+err.message;}};
+    /* Google sign-in through Google's own popup (Google Identity Services), then handed to Firebase: no trip through
+       vector-sketch-e1e97.firebaseapp.com, which browsers that partition storage break ("missing initial state") */
+    const gsi=()=>window.google&&google.accounts&&google.accounts.oauth2;
+    if(!gsi()&&!document.getElementById('gsijs')){const sc=document.createElement('script');sc.id='gsijs';sc.src='https://accounts.google.com/gsi/client';sc.async=true;document.head.appendChild(sc);}
+    G.querySelector('.gg').onclick=()=>{if(!gsi()){msg.textContent='Google sign-in is still loading. Tap again in a second.';return;}msg.textContent='Opening Google…';
+      const tc=google.accounts.oauth2.initTokenClient({client_id:window.GC_CLIENT_ID,scope:'openid email profile',hint:localStorage.getItem('fbEmail')||'',
+        callback:async r=>{if(r.error){msg.textContent='Google sign-in didn’t finish.';return;}
+          try{await auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(null,r.access_token));msg.textContent='';}catch(err){msg.textContent='Google sign-in didn’t work: '+err.message;}},
+        error_callback:e=>{msg.textContent=e&&e.type==='popup_closed'?'':'Google sign-in didn’t open. Allow pop-ups for this site and try again.';}});
+      tc.requestAccessToken();};
     f.onsubmit=async e=>{e.preventDefault();msg.textContent='Sending…';try{await auth.sendSignInLinkToEmail(inp.value.trim(),{url:location.origin+location.pathname,handleCodeInApp:true});
       localStorage.setItem('fbEmail',inp.value.trim());msg.textContent='Check your email and open the link on this device.';}catch(err){msg.textContent='Couldn’t send it: '+err.message;}};}
   function panelCard(link){const d=document.createElement('div');d.id='fbpanel';d.innerHTML=`<style>#fbpanel{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:rgba(240,240,240,.96);font:16px system-ui,sans-serif;color:#111}
@@ -2886,7 +2894,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261118191811',newer=false,want='',last=Date.now();
+  var MINE='20261119094836',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
