@@ -2886,7 +2886,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261118185416',newer=false,want='',last=Date.now();
+  var MINE='20261118190545',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6716,12 +6716,29 @@ async function backupAll(){if(!S.db){flash('Not connected yet.');return;}flash('
   const n=Object.values(out.cols).reduce((a,m)=>a+Object.keys(m).length,0),txt=JSON.stringify(out),name='planner-backup-'+S.today+'.json';
   try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;if(dl){await dl.save({filename:name,data:new Blob([txt],{type:'application/json'})});flash('Saved '+n+' records to '+name);return;}}catch(e){if(e&&e.code==='dismissed')return;}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove();flash('Saved '+n+' records');}catch(e){flash('Couldn’t save the backup.');}}
+/* restore merges: a record comes in only when this planner doesn't have it, or the backup's copy is newer.
+   A drawing always comes in together with all of its parts (and guide images), so it can't arrive half-written. */
 function restoreAll(){const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;
   let B;try{B=JSON.parse(await f.text());}catch(e){flash('That isn’t a planner backup.');return;}if(!B||B.app!=='scotts-planner'||!B.cols){flash('That isn’t a planner backup.');return;}
-  const n=Object.values(B.cols).reduce((a,m)=>a+Object.keys(m||{}).length,0);if(!confirm('Bring in '+n+' records from '+String(B.made||'').slice(0,10)+'? Anything with the same name here is replaced.'))return;
-  flash('Restoring '+n+' records…');let k=0;
-  for(const [c,m] of Object.entries(B.cols))for(const [id,d] of Object.entries(m||{})){try{await S.db.collection(c).doc(id).set(d);k++;if(k%50===0)flash('Restoring… '+k+' of '+n);}catch(e){console.warn('restore',c,id,e);}}
-  flash('Restored '+k+' of '+n+' records');};inp.click();}
+  if(!confirm('Bring in what’s missing or newer from the backup of '+String(B.made||'').slice(0,10)+'? Anything newer here is kept.'))return;
+  flash('Checking the backup…');
+  const here=async c=>{const m=new Map();try{const q=await S.db.collection(c).get();q.docs.forEach(d=>m.set(d.id,d.data()));}catch(e){}return m;};
+  const ts=d=>String(d&&(d.updated||d.updatedAt||d.modified)||'');
+  const plan=[];const cols=B.cols,parts=cols.skparts||{},guides=cols.skguides||{};
+  const H={sketches:await here('sketches'),skparts:await here('skparts'),skguides:await here('skguides')};
+  const partial=(id,m)=>{for(let i=0;i<(m.parts||0);i++)if(!H.skparts.has(id+'~'+i))return true;return false;};
+  for(const [id,d] of Object.entries(cols.sketches||{})){const cur=H.sketches.get(id);
+    if(cur&&ts(d)<=ts(cur)&&!partial(id,cur))continue;
+    let ok=true;for(let i=0;i<(d.parts||0);i++)if(!parts[id+'~'+i])ok=false;if(!ok)continue;
+    for(let i=0;i<(d.parts||0);i++)plan.push(['skparts',id+'~'+i,parts[id+'~'+i]]);
+    for(const g of (d.guides||[]))if(g&&g.id&&guides[g.id])plan.push(['skguides',g.id,guides[g.id]]);
+    plan.push(['sketches',id,d]);}
+  for(const [c,m] of Object.entries(cols)){if(c==='sketches'||c==='skparts'||c==='skguides')continue;const cur=await here(c);
+    for(const [id,d] of Object.entries(m||{})){const x=cur.get(id);if(!x||ts(d)>ts(x))plan.push([c,id,d]);}}
+  if(!plan.length){flash('Nothing to bring in: everything here is up to date.');return;}
+  let k=0,bad=0;flash('Bringing in '+plan.length+' records…');
+  for(const [c,id,d] of plan){try{await S.db.collection(c).doc(id).set(d);k++;if(k%25===0)flash('Restoring… '+k+' of '+plan.length);}catch(e){bad++;console.warn('restore',c,id,e);}}
+  flash(bad?'Brought in '+k+' records; '+bad+' didn’t save. Run Restore again to retry them.':'Brought in '+k+' records.');};inp.click();}
 function render0(){if(S.inking){S.inkRender=true;return;}try{recipeWake();}catch(e){}if(S._trTab!==S.tab){S._trTab=S.tab;S.trayOpen=false;S.fabOpen=false;}try{document.documentElement.dataset.tab=S.tab;}catch(e){}if(['day','week','month'].includes(S.tab))S.calLast=S.tab;
   if(S.dragging){S.pendingRender=true;return;}
   if(S.spinBusy&&Date.now()-S.spinAt<5000){S.spinQ=true;return;}S.spinBusy=false;
@@ -6850,7 +6867,7 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
       h('option',{value:'loop',selected:d.pmode!=='pong'?'':null},'Loop'),h('option',{value:'pong',selected:d.pmode==='pong'?'':null},'Ping-pong')),
     h('select',{class:'skfps',title:'Frames per second','aria-label':'Frames per second',onchange:e=>{d.fps=+e.target.value;skSave();if(SKPLAY){skStop();skPlay();}}},[6,8,12,15,24].map(v=>h('option',{value:String(v),selected:(d.fps||12)===v?'':null},v+' fps'))),
     ib('collapse','Hide the frames panel',()=>{S.skFrMini=true;saveUI();render();}));}
-function skOpen(id){skColTargetSet('stroke');const d=S.sketches&&S.sketches.get(id);if(!d)return;if(S.skFromBoard&&!(skBoardGet(S.skFromBoard)||{panels:[]}).panels.some(p=>p.sk===id))S.skFromBoard=null;if(d._partial){flash('Still loading this sketch. Try again in a moment.');return;}SKW={id,doc:skLayersInit(skClone(d)),undo:[],redo:[],fitNext:true};skPrefsApply(SKW.doc.prefs);SKW.known=new Set(SKW.doc.strokes.map(st=>st.id));skSplitFrames();SKW.knownL=new Set(SKW.doc.layers.map(l=>l.id));skUndoRestore();/* always open fitted and centred */S.skFS=false;render();window.scrollTo(0,0);}
+function skOpen(id){skColTargetSet('stroke');const d=S.sketches&&S.sketches.get(id);if(!d)return;if(S.skFromBoard&&!(skBoardGet(S.skFromBoard)||{panels:[]}).panels.some(p=>p.sk===id))S.skFromBoard=null;if(d._partial){flash(Date.now()-(window.SKLOAD0||Date.now())>10000?'Part of this drawing is missing from this copy, so it can’t open safely. Bring it back with Restore a backup (◐ menu).':'Still loading this sketch. Try again in a moment.');return;}SKW={id,doc:skLayersInit(skClone(d)),undo:[],redo:[],fitNext:true};skPrefsApply(SKW.doc.prefs);SKW.known=new Set(SKW.doc.strokes.map(st=>st.id));skSplitFrames();SKW.knownL=new Set(SKW.doc.layers.map(l=>l.id));skUndoRestore();/* always open fitted and centred */S.skFS=false;render();window.scrollTo(0,0);}
 function skClose(){skColTargetSet('stroke');S.skTween=null;if(SKPLAY){clearInterval(SKPLAY);SKPLAY=0;}try{skPenFinish();}catch(e){}if(SKW&&SKW.simp)skSimpEnd(true);if(SKW)SKW.wantThumb=true;skSaveNow();skUndoKeep();SKW=null;S.skFS=false;S.skMenu=false;render();}
 let SKSAVE=0,SKLASTSAVE=0;
 /* saves right after each change (in the background, so drawing isn't held up); quick bursts are grouped, at most every quarter second */
@@ -6901,7 +6918,7 @@ function skAssemble(){const out=new Map();if(!S.skMain)return out;
   for(const [id,m] of S.skMain){if(!m.parts){out.set(id,Object.assign({},m));continue;}const strokes=[];let miss=false;for(let i=0;i<m.parts;i++){const pt=S.skParts&&S.skParts.get(id+'~'+i);if(pt&&pt.strokes)strokes.push(...pt.strokes);else miss=true;}
     const o=Object.assign({},m,{strokes});if(miss)Object.defineProperty(o,'_partial',{value:true});out.set(id,o);}
   return out;}
-function skSyncFromDb(){const keep=SKW&&S.sketches&&S.sketches.get(SKW.id);S.sketches=skAssemble();
+function skSyncFromDb(){if(!window.SKLOAD0)window.SKLOAD0=Date.now();const keep=SKW&&S.sketches&&S.sketches.get(SKW.id);S.sketches=skAssemble();
   if(keep){const d=S.sketches.get(SKW.id);if(!d||String(d.updated||'')<String(keep.updated||''))S.sketches.set(SKW.id,keep);}
   /* another computer's save (or our own echo): merge it into the open drawing, never replace it */
   if(SKW){const r=S.sketches.get(SKW.id);if(r&&r!==keep){SKW.remote=r;if(!S.inking){let ch=false;try{ch=skMergeRemote(SKW.remote);}catch(e){}if(ch){S.sketches.set(SKW.id,skClone(SKW.doc));SKW.repaint&&SKW.repaint();}}}}
