@@ -2940,7 +2940,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119122849',newer=false,want='',last=Date.now();
+  var MINE='20261119123255',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7060,7 +7060,8 @@ function skPaintDoc(ctx,d,s){const iso=SKISOPAINT&&SKW&&SKW.iso&&d===SKW.doc;for
   const cv=ctx.canvas;if(!SKOFF)SKOFF=document.createElement('canvas');const o=SKOFF;if(o.width!==cv.width||o.height!==cv.height){o.width=cv.width;o.height=cv.height;}
   const c2=o.getContext('2d');c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,o.width,o.height);c2.setTransform(ctx.getTransform());for(const st of g.strokes){if(iso&&!skInIso(st)){c2.save();c2.globalAlpha*=.28;skPaint(c2,st,s);c2.restore();}else skPaint(c2,st,s);}
   ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=op;if(bm)ctx.globalCompositeOperation=bm;ctx.drawImage(o,0,0);ctx.restore();}}
-const skOrder=list=>{const f=[],o=[];for(const st of list)(skIsFill(st)?f:o).push(st);return f.concat(o);};
+/* within a layer, bucket fills sit under the lines (so they tuck under their outlines), except fills you've restacked by hand (ov), which stay where you put them */
+const skOrder=list=>{const f=[],o=[];for(const st of list)(skIsFill(st)&&!st.ov?f:o).push(st);return f.concat(o);};
 function skFillPath(ctx,st,s){ctx.beginPath();for(const r of st.r){if(r.length<6)continue;ctx.moveTo(r[0]*s,r[1]*s);for(let i=2;i<r.length;i+=2)ctx.lineTo(r[i]*s,r[i+1]*s);ctx.closePath();}}
 const skVar=st=>{for(let i=5;i<st.p.length;i+=3)if(Math.abs(st.p[i]-st.p[2])>.05)return true;return false;};
 /* finished strokes are drawn from the same smoothed line the exports use, so the screen matches the files */
@@ -8781,7 +8782,7 @@ function skElDrag(e,items){if(e.button>0)return;e.preventDefault();e.stopPropaga
     if(nx&&!nx.layer){lid=nx.lid;anchor=nx.ids;mode='above';}else if(pv&&!pv.layer){lid=pv.lid;anchor=pv.ids;mode='below';}else if(pv&&pv.layer){lid=pv.lid;mode='top';}else if(nx&&nx.layer){lid=nx.lid;mode='top';}else{render();return;}
     if(anchor&&anchor.every(x=>mine.has(x))){render();return;}
     const tl=(d.layers||[]).find(x=>x.id===lid);if(tl&&tl.locked){flash('“'+tl.name+'” is locked. Unlock it to move things into it.');render();return;}
-    const newSel=[];skLayerAct(dd=>{const keep=dd.strokes.filter(st=>!mine.has(st)),mov=dd.strokes.filter(st=>mine.has(st)).map(st=>{const c=Object.assign({},st,{l:lid});newSel.push(c);return c;});
+    const newSel=[];skLayerAct(dd=>{const keep=dd.strokes.filter(st=>!mine.has(st)),mov=dd.strokes.filter(st=>mine.has(st)).map(st=>{const c=Object.assign({},st,{l:lid});if(skIsFill(c))c.ov=true;newSel.push(c);return c;});
       let idx=keep.length;if(anchor){const A=new Set(anchor),pos=keep.map((st,i)=>A.has(st)?i:-1).filter(i=>i>=0);if(pos.length)idx=mode==='above'?Math.max(...pos)+1:Math.min(...pos);}
       dd.strokes=keep.slice(0,idx).concat(mov,keep.slice(idx));dd.cur=lid;});
     SKW.sel=newSel;SKW.selIn=newSel.slice();render();};
