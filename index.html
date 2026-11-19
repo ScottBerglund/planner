@@ -2886,7 +2886,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261118191415',newer=false,want='',last=Date.now();
+  var MINE='20261118191811',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6711,10 +6711,14 @@ async function dialMorph(dir){const k=S.today,app=document.getElementById('app')
 const BK_COLS=['projects','tasks','plans','ideas','myrecipes','jobs','inbox','recipes','meals','groceries','checks','intentions','routines','sketches','skparts','skguides','settings','pantry'];
 async function backupAll(){if(!S.db){flash('Not connected yet.');return;}flash('Gathering everything…');
   const out={app:'scotts-planner',v:1,made:new Date().toISOString(),cols:{}};
-  for(const n of BK_COLS){out.cols[n]=await new Promise(res=>{let off=null,done=false;const fin=m=>{if(done)return;done=true;try{off&&off();}catch(e){}res(m);};
-      try{off=S.db.collection(n).onSnapshot(sn=>{const m={};for(const d of sn.docs){try{m[d.id]=d.data();}catch(e){}}fin(m);},()=>fin({}));}catch(e){fin({});}setTimeout(()=>fin({}),15000);});}
+  /* read each collection whole (a live listener's first delivery can be only the first pages, which once left drawings half-saved in a backup) */
+  for(const n of BK_COLS){flash('Gathering '+n+'…');out.cols[n]=await (async()=>{try{const q=await S.db.collection(n).get();const m={};for(const d of q.docs){try{m[d.id]=d.data();}catch(e){}}return m;}
+      catch(e){return await new Promise(res=>{let off=null,done=false;const fin=m=>{if(done)return;done=true;try{off&&off();}catch(x){}res(m);};
+        try{off=S.db.collection(n).onSnapshot(sn=>{if(sn.metadata&&sn.metadata.fromCache)return;const m={};for(const d of sn.docs){try{m[d.id]=d.data();}catch(x){}}fin(m);},()=>fin({}));}catch(x){fin({});}setTimeout(()=>fin({}),30000);});}})();}
+  /* say so if any drawing is still missing a part */
+  {const P=out.cols.skparts||{},bad=Object.entries(out.cols.sketches||{}).filter(([id,m])=>{for(let i=0;i<(m.parts||0);i++)if(!P[id+'~'+i])return true;return false;}).length;if(bad)console.warn('backup: drawings missing parts',bad);out.incomplete=bad||0;}
   const n=Object.values(out.cols).reduce((a,m)=>a+Object.keys(m).length,0),txt=JSON.stringify(out),name='planner-backup-'+S.today+'.json';
-  try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;if(dl){await dl.save({filename:name,data:new Blob([txt],{type:'application/json'})});flash('Saved '+n+' records to '+name);return;}}catch(e){if(e&&e.code==='dismissed')return;}
+  try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;if(dl){await dl.save({filename:name,data:new Blob([txt],{type:'application/json'})});flash('Saved '+n+' records to '+name+(out.incomplete?' ('+out.incomplete+' drawings incomplete: try again)':''));return;}}catch(e){if(e&&e.code==='dismissed')return;}
   try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove();flash('Saved '+n+' records');}catch(e){flash('Couldn’t save the backup.');}}
 /* restore merges: a record comes in only when this planner doesn't have it, or the backup's copy is newer.
    A drawing always comes in together with all of its parts (and guide images), so it can't arrive half-written. */
