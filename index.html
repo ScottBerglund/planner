@@ -1396,6 +1396,8 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .skbgcs .skcustom{position:relative;overflow:hidden;display:inline-block}
 .skbgcs .skcustom input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
 .skcloudg{display:inline-flex;gap:4px;margin-left:auto}
+.skdragcol{position:fixed;z-index:100001;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 0 0 1.5px var(--ink),0 4px 12px rgba(0,0,0,.3);pointer-events:none}
+.skpalc .skcol{touch-action:none}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2920,7 +2922,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119105325',newer=false,want='',last=Date.now();
+  var MINE='20261119110144',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7184,6 +7186,13 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
   const inFill=(st,x,y)=>{let c=false;for(const r of st.r)for(let i=0,j=r.length-2;i<r.length;j=i,i+=2){const xi=r[i],yi=r[i+1],xj=r[j],yj=r[j+1];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;}return c;};
   const hits=(x,y,keep)=>{const out=[];doc.strokes.forEach((st,i)=>{if(keep&&!keep(st))return;if(skIsFill(st)){if(inFill(st,x,y))out.push(i);return;}if(skHasPFill(st)){const r=[];for(let j=0;j<st.p.length;j+=3)r.push(st.p[j],st.p[j+1]);if(inFill({r:[r]},x,y)){out.push(i);return;}}const p=st.p,rad=Math.max(10/V.z,p[2]/2+6/V.z);
     if(p.length<6){if(Math.hypot(p[0]-x,p[1]-y)<rad)out.push(i);return;}for(let j=3;j<p.length;j+=3)if(segD(x,y,p[j-3],p[j-2],p[j],p[j+1])<rad){out.push(i);break;}});return out;};
+  const onLine=(st,x,y)=>{const p=st.p,rad=Math.max(10/V.z,(p[2]||1)/2+6/V.z);if(p.length<6)return Math.hypot(p[0]-x,p[1]-y)<rad;for(let j=3;j<p.length;j+=3)if(segD(x,y,p[j-3],p[j-2],p[j],p[j+1])<rad)return true;return false;};
+  /* the colour under a point: a filled pen shape gives its fill unless you're on its outline */
+  const colAt=(st,x,y)=>st.pf&&!skIsFill(st)&&(st.ns||!onLine(st,x,y))?{c:st.pf,fill:true}:{c:st.c,fill:skIsFill(st)};
+  /* a palette colour dropped on the canvas: the topmost line or shape there takes it (its fill if dropped inside a filled shape) */
+  SKW.dropColor=(cx,cy,c)=>{const r=live.getBoundingClientRect(),[x,y]=fromS(cx-r.left,cy-r.top),order=skVisStrokes(doc),hs=new Set(hits(x,y));let st=null;
+    for(let i=order.length-1;i>=0;i--){const s0=order[i];if(hs.has(doc.strokes.indexOf(s0))&&skSelable(doc,s0)){st=s0;break;}}
+    if(!st){flash('Drop the colour onto a line or shape.');return;}const f=colAt(st,x,y).fill&&!skIsFill(st);skEditSel([st],()=>f?{pf:c,pg:null}:(st.cg?{c,cg:null}:{c}));S.skColor=c;saveUI();flash('Colour applied');};
   /* partial eraser: cuts lines (and fills) only where the eraser passes, leaving the rest as separate pieces */
   const erasePart=(a,b,fillsOnly,path)=>{const R=Math.max(1.5,skBaseW('eraser')/2),bx0=Math.min(a[0],b[0])-R,bx1=Math.max(a[0],b[0])+R,by0=Math.min(a[1],b[1])-R,by1=Math.max(a[1],b[1])+R;let changed=false;
     const near=(x,y)=>segD(x,y,a[0],a[1],b[0],b[1])<R;const lib=skPolyLib();
@@ -7345,11 +7354,11 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
     if(skTool()==='pick'||(e.altKey&&e.pointerType==='mouse'&&!skSelTool()&&skTool()!=='pt'&&skTool()!=='vpen'&&skTool()!=='shape')){S.inking=false;const [x,y]=pt(e),order=skVisStrokes(doc),hs=new Set(hits(x,y));
       const top=keep=>{for(let i=order.length-1;i>=0;i--){const st=order[i];if(keep(st)&&hs.has(doc.strokes.indexOf(st)))return st;}return null;};
       const found=top(()=>true);
-      if(!found){flash('No colour there. Tap on a line or a filled area.');return;}
+      if(!found){flash('No colour there. Tap on a line or a filled area.');return;}const fc=colAt(found,x,y).c;
       /* something selected: copy the colour onto it (lines take it as their line colour, fills as their fill; with Fill active it always sets the fill) and stay on the eyedropper */
       const hasSel=skSel().length||(S.skColTarget==='fill'&&skPenSel().length);
-      if(hasSel){S.skColor=found.c;skRecolor(found.c);saveUI();flash('Colour applied to the selection');render();return;}
-      S.skColor=found.c;if(skTool()==='pick')S.skTool=S.skPrevTool&&S.skPrevTool!=='pick'?S.skPrevTool:'pen';saveUI();flash('Colour picked');render();return;}
+      if(hasSel){S.skColor=fc;S.skGStop=null;skRecolor(fc);saveUI();flash('Colour applied to the selection');render();return;}
+      S.skColor=fc;if(skTool()==='pick')S.skTool=S.skPrevTool&&S.skPrevTool!=='pick'?S.skPrevTool:'pen';saveUI();flash('Colour picked');render();return;}
     {const L=skCurLayer(doc);if((L.hidden||L.locked)&&!skSelTool()){S.inking=false;flash(L.hidden?'“'+L.name+'” is hidden. Show it, or pick another layer, to draw.':'“'+L.name+'” is locked. Unlock it to draw on it.');return;}}
     if(S.skSym&&S.skSym!=='off'&&(SK_SIZES[skTool()]||skTool()==='vpen'||skTool()==='shape')){const r=live.getBoundingClientRect(),c=skSymC();if(scrD(c[0],c[1],e.clientX-r.left,e.clientY-r.top)<hsz()/2+8){cur={vp:'symc',id:e.pointerId,sx:e.clientX,sy:e.clientY,moved:false};return;}}
     if(skTool()==='shape'){const [x,y]=pt(e),fo=!!S.skPenFillOn;cur={vp:'shape',id:e.pointerId,sx:e.clientX,sy:e.clientY,start:[x,y],moved:false,touch:e.pointerType==='touch',kind:S.skShape||'rect'};return;}
@@ -7760,7 +7769,7 @@ function skPaste(inPlace){if(!SKCLIP||!SKCLIP.length)return;let M=null;
   if(!inPlace&&SKW.vw){const b=skBoxOf(SKCLIP),V=SKW.view,cx=V.x+SKW.vw/2/V.z,cy=V.y+SKW.vh/2/V.z;M=[1,0,0,1,Math.round(cx-(b.x+b.w/2)),Math.round(cy-(b.y+b.h/2))];}skAddCopies(SKCLIP,M);}
 function skDupSel(){const sel=skSel();if(!sel.length)return;const o=Math.round(16/((SKW.view&&SKW.view.z)||1));skAddCopies(sel,[1,0,0,1,o,o]);}
 function skRecolor(c){const G=skGSel();if(G&&S.skGStop!=null){skGEdit(g=>{if(g.s[S.skGStop])g.s[S.skGStop][1]=c;});return;}
-  if(S.skColTarget==='fill'){const L=skPenSel();if(L.length)skEditSel(L,st=>skPClosed(st)?{pf:c,pg:null}:{});return;}const sel=skTool()==='pt'&&skPed()?[skPed().st]:skSel();if(sel.length)skEditSel(sel,st=>st.cg?{c,cg:null}:{c});}
+  if(S.skColTarget==='fill'){const L=[...new Set(skSel().concat(skPenSel()))];if(L.length)skEditSel(L,st=>st.vp?(skPClosed(st)?{pf:c,pg:null}:{}):(st.cg?{c,cg:null}:{c}));return;}const sel=skTool()==='pt'&&skPed()?[skPed().st]:skSel();if(sel.length)skEditSel(sel,st=>st.cg?{c,cg:null}:{c});}
 /* the selected items a gradient edit applies to, and the first one's gradient (null when none has one) */
 function skGItems(){const L=S.skColTarget==='fill'?skPenSel().filter(st=>skPClosed(st)):(skTool()==='pt'&&skPed()?[skPed().st]:skSel());return L;}
 function skGSel(){const L=skGItems();for(const st of L){const g=st[skGKey(st)];if(g)return g;}return null;}
@@ -8834,6 +8843,15 @@ function skParseColor(t){t=String(t||'').trim();let m=/^#?([0-9a-f]{3})$/i.exec(
 /* ---------- palettes: named rows of colours, shared by every drawing (settings/skpalettes) ---------- */
 const skPals=()=>Array.isArray(S.skPals)?S.skPals:[];
 function skPalsSave(){S.skPals=skPals().slice();saveUI();try{write(()=>col('settings').doc('skpalettes').set({pals:S.skPals,updated:new Date().toISOString()}));}catch(e){}}
+/* drag a palette swatch onto a line or shape to give it that colour */
+addEventListener('pointerdown',e=>{const sw=e.target.closest&&e.target.closest('.skpalc .skcol');if(!sw||e.button>0||!SKW||!SKW.dropColor)return;
+  const c=(sw.style.getPropertyValue('--c')||'').trim();if(!c)return;const sx=e.clientX,sy=e.clientY,id=e.pointerId;let ghost=null;
+  const mv=ev=>{if(ev.pointerId!==id)return;if(!ghost){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<8)return;ghost=h('div',{class:'skdragcol',style:`--c:${c}`});document.body.appendChild(ghost);}
+    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';};
+  const up=ev=>{if(ev.pointerId!==id)return;removeEventListener('pointermove',mv,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);if(!ghost)return;ghost.remove();
+    const eat=k=>{k.stopImmediatePropagation();k.preventDefault();};addEventListener('click',eat,true);setTimeout(()=>removeEventListener('click',eat,true),60);
+    if(ev.type==='pointerup'){const el=document.elementFromPoint(ev.clientX,ev.clientY);if(el&&el.closest&&el.closest('.skstage'))SKW.dropColor(ev.clientX,ev.clientY,c);}};
+  addEventListener('pointermove',mv,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);},true);
 function skUseColor(c){S.skColor=c;if(skSel().length)skRecolor(c);saveUI();render();}
 function skPalNew(colors,name){const n=skPals().length+1;S.skPals=skPals().concat([{id:'p'+skNewId(),name:name||'Palette '+n,colors:colors||[]}]);skPalsSave();render();}
 function skDocColors(d){const m=new Map();for(const st of skAllStrokes()){const c=String(st.c||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))m.set(c,(m.get(c)||0)+1);}return [...m.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,24);}
