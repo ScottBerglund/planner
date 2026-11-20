@@ -2877,6 +2877,10 @@ window.FB_CONFIG = {
 };
 /* Google sign-in for Calendar (OAuth web client, allowed only from https://scottberglund.github.io) */
 window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.googleusercontent.com";
+/* where each imported recipe's photo sits on the four photo sheets (fixed; used when the account's own copy of this record is missing) */
+window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
+  sheets:['_blob/629b47c0ab7b6d27c43d75667e1d1932.jpg','_blob/a5c737e9277a73c653df719977f3f5f5.jpg','_blob/c8d6096308745dd134c0ac7730016796.jpg','_blob/0b873a4336125c92dcb1b394f0b411e9.jpg'],
+  tcell:60,tcols:18,trows:18,thumbs:'_blob/88db36da04a704338f2083f6c7aaf44e.jpg'};
 </script><script>/* Standalone planner: the same page as in claude.ai, with claude.ai's storage swapped for Firebase.
    window.claude.use('db') hands the planner an object with the same calls it already uses (collection/doc, set/update/delete/get/onSnapshot),
    kept under users/<your sign-in>/… so each login only ever sees its own data. Each record is stored as one JSON string, because Firestore
@@ -3031,7 +3035,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120150150',newer=false,want='',last=Date.now();
+  var MINE='20261120161222',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -10378,7 +10382,7 @@ render();
   db.collection('plans').onSnapshot(s=>{S.plans=new Map(s.docs.map(d=>[d.id,d.data()]));
     if(S.plan.status==='ready'||S.plan.status==='accepted')S.plan={status:'idle'};
     renderSoon();},()=>{});
-  db.doc('settings/photos').onSnapshot(s=>{S.photoset=s.exists?s.data():null;renderSoon();},()=>{});
+  S.photoset=window.PHOTOSET_DEFAULT||null;db.doc('settings/photos').onSnapshot(s=>{const v=s.exists?s.data():null;S.photoset=v&&v.sheets&&v.sheets.length?v:(window.PHOTOSET_DEFAULT||null);renderSoon();},()=>{});
   db.collection('myrecipes').onSnapshot(s=>{S.myRecipes=s.docs.map(d=>Object.assign({},d.data(),{uid:'m-'+d.id}));setRecipes();renderSoon();},()=>{});
   db.collection('jobs').onSnapshot(s=>{S.jobs=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));if(S.tab==='jobs')renderSoon();},()=>{});
   db.doc('settings/sotd').onSnapshot(sn=>{S.sotdLoaded=true;S.sotd=sn.exists?sn.data():null;if(S.tab==='sketch')renderSoon();},()=>{S.sotdLoaded=true;});
