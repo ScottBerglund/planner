@@ -3008,7 +3008,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120134007',newer=false,want='',last=Date.now();
+  var MINE='20261120134733',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8308,6 +8308,8 @@ const skPanelDur=(B,p)=>{if(p&&+p.dur>0)return Math.max(.2,+p.dur);const m=/(\d+
 /* the part of a drawing a panel shows: the whole canvas scaled to fill the panel, centred, the rest cropped */
 function skBoardCrop(d,pw,ph){const b=d.inf?(skBBox(d,40)||{x:0,y:0,w:pw,h:ph}):{x:d.ox||0,y:d.oy||0,w:d.w,h:d.h};const k=Math.max(pw/b.w,ph/b.h),cw=pw/k,ch=ph/k;return {x:b.x+(b.w-cw)/2,y:b.y+(b.h-ch)/2,w:cw,h:ch,k};}
 const skFrameIds=d=>skHasFrames(d)&&d.frames.length>1?d.frames:null;
+/* the order a drawing's frames play in, honouring its playback mode: loop 1 2 3 1 2 3, ping-pong 1 2 3 2 1 2 3 */
+const skFrameSeq=d=>{const fr=skFrameIds(d);if(!fr)return null;return d.pmode==='pong'&&fr.length>2?fr.concat(fr.slice(1,-1).reverse()):fr;};
 const skPoster=d=>skHasFrames(d)?(d.frames.includes(d.poster)?d.poster:d.frames.includes(d.fcur)?d.fcur:d.frames[0]):null;
 function skFrameDoc(d,fid){if(!skHasFrames(d))return d;const f0=d.frames[0];fid=fid||skPoster(d);return Object.assign({},d,{strokes:(d.strokes||[]).filter(st=>(d.frames.includes(st.f)?st.f:f0)===fid)});}
 function skPanelPaint(ctx,d,c,s){ctx.save();ctx.setTransform(s,0,0,s,-c.x*s,-c.y*s);ctx.beginPath();ctx.rect(c.x,c.y,c.w,c.h);ctx.clip();skPaintDoc(ctx,skVisDoc(d),1);ctx.restore();}
@@ -8373,8 +8375,8 @@ function skBoardView(){const B=skBoardGet(S.skBoardOpen);if(!B){S.skBoardOpen=nu
   const move=(i,k)=>{const L=B.panels,a=L.indexOf(P[i]),b=L.indexOf(P[i+k]);if(a<0||b<0)return;[L[a],L[b]]=[L[b],L[a]];skBoardsSave();render();};
   const plays=[];
   const cardOf=(p,i)=>{const d=S.sketches.get(p.sk),ready=d&&!d._partial,fr=ready&&skFrameIds(d);let cv=ready?skPanelCv(d,B,280):h('span',{class:'skph'});
-    if(fr&&S.skBoardPlay){const cvs=new Map(),fps=B.fps||12;let k=0,last=0;plays.push(t=>{if(t-last<1000/fps)return;last=t;k=(k+1)%fr.length;const el=document.querySelector(`#app .skpanel[data-sk="${p.sk}"] .skpimg`);if(!el)return;
-      if(!cvs.has(k))cvs.set(k,skPanelCv(d,B,280,fr[k]));el.replaceChildren(cvs.get(k));});}
+    if(fr&&S.skBoardPlay){const cvs=new Map(),fps=B.fps||12,fq=skFrameSeq(d)||fr;let k=0,last=0;plays.push(t=>{if(t-last<1000/fps)return;last=t;k=(k+1)%fq.length;const el=document.querySelector(`#app .skpanel[data-sk="${p.sk}"] .skpimg`);if(!el)return;
+      if(!cvs.has(fq[k]))cvs.set(fq[k],skPanelCv(d,B,280,fq[k]));el.replaceChildren(cvs.get(fq[k]));});}
     return h('div',{class:'skpanel',draggable:'true','data-sk':p.sk,
         ondragstart:e=>{e.dataTransfer.setData('text/x-skpanel',p.sk);e.dataTransfer.effectAllowed='move';},ondragover:e=>{if([...e.dataTransfer.types].includes('text/x-skpanel')){e.preventDefault();}},
         ondrop:e=>{const sk=e.dataTransfer.getData('text/x-skpanel');if(!sk||sk===p.sk)return;e.preventDefault();const L=B.panels,a=L.findIndex(x=>x.sk===sk);const it=L.splice(a,1)[0];L.splice(L.findIndex(x=>x.sk===p.sk)+(a<=L.findIndex(x=>x.sk===p.sk)?1:0),0,it);skBoardsSave();render();}},
@@ -8645,7 +8647,7 @@ function skBoardPlayer(B,opt){skBoardNorm(B);opt=opt||{};const list=[],num=[];B.
     if(!playing||!sound||R||!m||a<0||a>=m.dur){if(!aud.paused)aud.pause();return;}
     if(aud.paused){try{aud.currentTime=a;}catch(e){}aud.play().catch(()=>{});}else if(Math.abs(aud.currentTime-a)>.15){try{aud.currentTime=a;}catch(e){}}};
   const at=t=>{let i=0;while(i<list.length-1&&t>=starts[i+1])i++;return i;};
-  const draw=force=>{const i=at(t),p=list[i],d=S.sketches.get(p.sk);if(!d)return;const fr=skFrameIds(d);let fid=null;
+  const draw=force=>{const i=at(t),p=list[i],d=S.sketches.get(p.sk);if(!d)return;const fr=skFrameSeq(d);let fid=null;
     if(fr){const local=t-starts[i];let k=0,acc=0;const holds=fr.map(f=>skHold(d,f)/fps),cyc=holds.reduce((a,b)=>a+b,0)||1,u=local%cyc;for(;k<fr.length;k++){acc+=holds[k];if(u<acc)break;}fid=fr[Math.min(k,fr.length-1)];}
     const key=i+'|'+(fid||'')+'|'+scr.clientWidth+'x'+scr.clientHeight;
     if(force||key!==shown){shown=key;const W=Math.max(200,Math.min(scr.clientWidth,scr.clientHeight*B.pw/B.ph));const ck=p.sk+'|'+(fid||'')+'|'+Math.round(W/40);let cv=CV.get(ck);if(!cv){cv=skPanelCv(d,B,Math.round(W/40)*40,fid);cv.classList.add('sbpcv');CV.set(ck,cv);if(CV.size>200)CV.delete(CV.keys().next().value);}scr.replaceChildren(cv);
