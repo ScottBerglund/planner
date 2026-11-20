@@ -1501,6 +1501,12 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .sksech2:hover{color:var(--ink)}.sksecc{display:inline-block;width:10px;font-size:.7rem}
 .sksecb[hidden]{display:none!important}.sksecb{display:flex;flex-direction:column}
 
+/* storyboard cards are 16:9 pages: same edge margins, the spare height goes between the two rows */
+.skbd6.notitle{aspect-ratio:16/9;container-type:size}
+.skbd6.notitle .skbd6in{height:100%;box-sizing:border-box;padding:5cqw}
+.skbd6.notitle .skbd6g{height:100%;grid-template-rows:auto auto;align-content:space-between;justify-items:center;row-gap:0}
+.skbd6.notitle .skbdcell{width:min(100%,calc((100cqh - 10cqw - 4cqw) / 2 * var(--arn,1.78)));box-sizing:border-box}
+
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
 .intfst{font-weight:900;font-size:clamp(1.6rem,4vw,2.6rem);letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
@@ -3024,7 +3030,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120142507',newer=false,want='',last=Date.now();
+  var MINE='20261120143056',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8384,7 +8390,7 @@ function skRenameDrawing(id,name){const m=S.skMain&&S.skMain.get(id);if(!m)retur
 /* a board as a little storyboard page: its title at the top, then the first six panels in 3x2 frames, like the opened board (no notes or times) */
 function skBoardSheet6(B,W,title){const ps=skBoardPanels(B).slice(0,6),L=skBdLook(B);
   /* the board's colours and frame line; spacing is the same on every card so they all line up */
-  const st=`--ar:${B.pw}/${B.ph};--fw:${L.fw>0?Math.max(.8,L.fw/4):0}px;background:${L.bg};color:${L.tc}`;
+  const st=`--ar:${B.pw}/${B.ph};--arn:${B.pw/B.ph};--fw:${L.fw>0?Math.max(.8,L.fw/4):0}px;background:${L.bg};color:${L.tc}`;
   return h('span',{class:'skbd6'+(title?'':' notitle'),style:st},h('span',{class:'skbd6in'},title?h('span',{class:'skbd6t'},title):null,
     h('span',{class:'skbd6g'},[0,1,2,3,4,5].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk),ok=d&&!d._partial;return h('span',{class:'skbdcell',style:`border-color:${L.fc};background:${ok?'#fff':L.ec}`},ok?skPanelCv(d,B,W||140):null);}))));}
 function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id,open=()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);};
