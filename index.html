@@ -1014,7 +1014,7 @@ html:root #app{max-width:none!important;padding-inline:var(--gut)!important}
 .skthumb{display:block;width:100%;aspect-ratio:1;border:1.5px solid var(--rule);border-radius:var(--r-lg,16px);background:#fff;cursor:pointer;padding:0;overflow:hidden}
 .skthumb canvas{display:block;width:100%!important;height:100%!important;object-fit:cover;object-position:center;background:#fff}
 .skmeta{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s2)}
-.skn{font-weight:800}.skd{font-size:.8rem;color:var(--graphite)}
+.skn{font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif);font-weight:900;font-stretch:118%;text-transform:uppercase;letter-spacing:-.005em;line-height:1.05;font-size:1.02rem;overflow-wrap:anywhere;white-space:normal}.skd{font-size:.8rem;color:var(--graphite)}
 .sktop{display:flex;gap:var(--s2);align-items:center;margin:var(--s2) 0}
 .skname{flex:1;min-width:0;font-weight:800}
 .skbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s4);margin:var(--s2) 0 var(--s3)}
@@ -1185,10 +1185,10 @@ input.sklname{background:var(--sheet,#fff);border:1px solid var(--line,#ddd);cur
 .skbdgrid{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;border-radius:6px}.skbdgrid:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 /* a storyboard as a little page: title, then 3x2 rounded frames (like the opened board) */
 .skbd6{display:block;container-type:inline-size;background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08);text-align:left}
-.skbd6in{display:block;padding:var(--pad,6cqw)}
+.skbd6in{display:block;padding:5cqw}
 .skbd6t{display:block;margin:0 0 4cqw;font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif);font-weight:900;font-stretch:118%;text-transform:uppercase;letter-spacing:-.01em;line-height:.95;font-size:clamp(.8rem,8cqw,1.6rem);color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .skbd6te{cursor:text}.skbd6in input.skninp{display:block;width:100%;margin:0 0 4cqw;font-weight:800;font-size:1rem}
-.skbd6g{display:grid;grid-template-columns:repeat(3,1fr);column-gap:var(--cg,4cqw);row-gap:var(--rg,8cqw)}
+.skbd6g{display:grid;grid-template-columns:repeat(3,1fr);gap:4cqw}
 .skbdcell{display:block;aspect-ratio:var(--ar);background:#fff;overflow:hidden;border:var(--fw,1.2px) solid #1a1a1a;border-radius:5px}
 .skbdcell canvas{display:block;width:100%;height:100%}
 /* the Storyboards folder: the cover board's page on a small pile, built in the sketchbooks' 3D stage (same camera, same parallax) */
@@ -1493,6 +1493,13 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skfcell i{position:absolute;right:3px;top:2px;font:700 9px/1 system-ui,sans-serif;font-style:normal;color:#fff;background:rgba(0,0,0,.45);padding:1px 3px;border-radius:3px}
 .skfcell.on{box-shadow:0 0 0 2px var(--accent,#3b6fd8)}.skfcell.on b{background:var(--accent,#3b6fd8)}
 .skfcell.lift{opacity:.55;transform:translateY(-3px)}.skfcell.drop{box-shadow:-3px 0 0 0 var(--accent,#3b6fd8),0 0 0 1px var(--rule,#ddd)}
+
+/* sketchbook cover labels: the same all-caps Red Hat as the names; a long name wraps and the label grows upward */
+.skbklab{font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif)!important;font-weight:900!important;font-stretch:118%;text-transform:uppercase;letter-spacing:-.005em;line-height:1.05;white-space:normal!important;text-overflow:clip!important;overflow:visible!important;height:auto!important;top:auto!important;overflow-wrap:anywhere}
+/* collapsible sections in menus */
+.sksech2{display:flex!important;align-items:center;gap:6px;width:100%;white-space:nowrap;border:0;background:none;cursor:pointer;text-align:left;font:inherit;padding:8px 10px 6px!important}
+.sksech2:hover{color:var(--ink)}.sksecc{display:inline-block;width:10px;font-size:.7rem}
+.sksecb[hidden]{display:none!important}.sksecb{display:flex;flex-direction:column}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3017,7 +3024,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120141232',newer=false,want='',last=Date.now();
+  var MINE='20261120142507',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8375,17 +8382,14 @@ function skInlineName(key,text,save){if(S.skGalEdit===key){const done=(el,ok)=>{
 function skRenameDrawing(id,name){const m=S.skMain&&S.skMain.get(id);if(!m)return;const nm=Object.assign({},m,{name,updated:new Date().toISOString()});S.skMain.set(id,nm);
   const d=S.sketches&&S.sketches.get(id);if(d){d.name=name;d.updated=nm.updated;}write(()=>col('sketches').doc(id).set(nm));}
 /* a board as a little storyboard page: its title at the top, then the first six panels in 3x2 frames, like the opened board (no notes or times) */
-function skBoardSheet6(B,W,title,titleEl){const ps=skBoardPanels(B).slice(0,6),L=skBdLook(B),mx=Math.max(B.pw,B.ph),cw=100/3;
-  /* the board's own spacing and colours, scaled to the card (cqw = 1% of the sheet's width) */
-  const st=`--ar:${B.pw}/${B.ph};--pad:${(L.m*B.pw/mx)*cw/100+3}cqw;--cg:${L.gx*cw/100*B.pw/mx}cqw;--rg:${(L.gy*mx+L.nt*B.ph)/B.pw*cw/100+1.5}cqw;--fw:${L.fw>0?Math.max(.8,L.fw/4):0}px;background:${L.bg};color:${L.tc}`;
-  return h('span',{class:'skbd6',style:st},h('span',{class:'skbd6in'},titleEl||h('span',{class:'skbd6t'},title||B.name||'Storyboard'),
+function skBoardSheet6(B,W,title){const ps=skBoardPanels(B).slice(0,6),L=skBdLook(B);
+  /* the board's colours and frame line; spacing is the same on every card so they all line up */
+  const st=`--ar:${B.pw}/${B.ph};--fw:${L.fw>0?Math.max(.8,L.fw/4):0}px;background:${L.bg};color:${L.tc}`;
+  return h('span',{class:'skbd6'+(title?'':' notitle'),style:st},h('span',{class:'skbd6in'},title?h('span',{class:'skbd6t'},title):null,
     h('span',{class:'skbd6g'},[0,1,2,3,4,5].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk),ok=d&&!d._partial;return h('span',{class:'skbdcell',style:`border-color:${L.fc};background:${ok?'#fff':L.ec}`},ok?skPanelCv(d,B,W||140):null);}))));}
 function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id,open=()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);};
-  /* the name is the title on the sheet: double-click it to rename; anywhere else on the sheet opens the board */
-  const tEl=S.skGalEdit==='bd:'+B.id?skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}):skDblTap(h('span',{class:'skbd6t skbd6te',title:'Double-click to rename',onclick:e=>e.stopPropagation()},B.name||'Storyboard'),()=>{S.skGalEdit='bd:'+B.id;render();});
-  if(tEl.classList)tEl.classList.add('skbd6t');
-  return h('div',{class:'skcard skbdcard'},h('div',{class:'skbdgrid',role:'button',tabindex:'0','aria-label':'Open storyboard '+B.name,onclick:open,onkeydown:e=>{if(e.key==='Enter'&&e.target===e.currentTarget)open();}},skBoardSheet6(B,160,null,tEl)),
-    h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
+  return h('div',{class:'skcard skbdcard'},h('div',{class:'skbdgrid',role:'button',tabindex:'0','aria-label':'Open storyboard '+B.name,onclick:open,onkeydown:e=>{if(e.key==='Enter'&&e.target===e.currentTarget)open();}},skBoardSheet6(B,160)),
+    skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
     h('div',{class:'skcardb'},
       h('button',{class:'tlink skcovb'+(isCov?' on':''),title:isCov?'This storyboard is on top of the Storyboards folder':'Put this storyboard on top of the Storyboards folder','aria-pressed':String(isCov),disabled:isCov,
         onclick:()=>{skBoards().forEach(b=>{if(b.cover)delete b.cover;});B.cover=true;skBoardsSave();render();flash('“'+B.name+'” is on top of the Storyboards folder');}},isCov?'★ Cover':'☆ Make cover'),
@@ -8574,11 +8578,12 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
   stage.addEventListener('wheel',e=>{e.preventDefault();const r=stage.getBoundingClientRect();if(e.ctrlKey||e.metaKey)skBoardZoom(Math.exp(-e.deltaY*.0025),e.clientX-r.left,e.clientY-r.top);else{SKBV.x-=e.deltaX;SKBV.y-=e.deltaY;skBoardApply();}},{passive:false});
   /* top bar: everything else lives in its menus */
   const set=skPopBtn('sbset','Storyboard settings',skIcoL('more'),{popCls:'list sbsetpop',items:()=>{const num=(lab,v,min,max,on)=>h('label',{class:'sklop'},lab,h('input',{type:'number',class:'skszin',min:String(min),max:String(max),value:String(v),onkeydown:e=>e.stopPropagation(),onchange:e=>on(Math.max(min,Math.min(max,+e.target.value||min)))}));
-    return [h('div',{class:'skgh'},'Layout · each page'),num('Rows',B.rows,1,8,v=>skBoardSetLayout(B,v,B.cols)),num('Across',B.cols,1,8,v=>skBoardSetLayout(B,B.rows,v)),
+    return skSecs('sb',[h('div',{class:'skgh'},'Layout · each page'),num('Rows',B.rows,1,8,v=>skBoardSetLayout(B,v,B.cols)),num('Across',B.cols,1,8,v=>skBoardSetLayout(B,B.rows,v)),
       h('div',{class:'skgh'},'Panel size'),skSizeForm((w,hh)=>{B.pw=w;B.ph=hh;SKBCV.clear();skBoardsSave();SKBV=null;S.skPop=null;render();},B.pw,B.ph,'Apply'),
       h('div',{class:'skgh'},'Pages · '+B.pages),h('button',{class:'skrow',onclick:()=>{B.pages++;skBoardNorm(B);skBoardsSave();render();}},skIcoL('plus'),'Add a page'),
       B.pages>1?h('button',{class:'skrow'+(S.confirm==='sbpgdel'?' skarm':''),onclick:()=>{const per=B.rows*B.cols,last=B.panels.slice(-per);if(last.some(p=>p.sk||p.note)&&S.confirm!=='sbpgdel')return armConfirm('sbpgdel');S.confirm=null;B.panels.length-=per;B.pages--;skBoardsSave();render();}},skIcoL('clear'),S.confirm==='sbpgdel'?'The last page has panels. Tap again to remove it':'Remove the last page'):null,
       h('button',{class:'skrow','aria-pressed':String(!!B.header),onclick:()=>{B.header=!B.header;skBoardsSave();SKBV=null;render();}},skIcoL('note'),'Page header (name, page, date): '+(B.header?'on':'off')),
+      h('div',{class:'skgh'},'Timing'),
       num('Hold each panel (sec)',B.dur||2,.2,60,v=>{B.dur=v;skBoardsSave();}),
       h('label',{class:'sklop',title:'Every comp sent to After Effects uses this rate, whatever each drawing is set to'},'Master frame rate',h('select',{class:'skszin','aria-label':'Master frame rate',onchange:e=>{B.fps=+e.target.value;skBoardsSave();}},[8,12,15,24,25,30].map(v=>h('option',{value:String(v),selected:v===(B.fps||12)?'':null},v+' fps')))),
       skBoardLookRows(B),
@@ -8587,7 +8592,8 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
       h('button',{class:'skrow',title:'The panels play from the start while you talk into the mic',onclick:()=>{S.skPop=null;render();skBoardPlayer(B,{record:true});}},skIcoL('mic'),B.audio?'Record again':'Record in the player'),
       h('button',{class:'skrow',onclick:()=>{S.skPop=null;render();skAudioPick(B);}},skIcoL('import'),B.audio?'Replace with an audio file…':'Bring in an audio file…'),
       B.audio?h('button',{class:'skrow'+(S.confirm==='sbauddel'?' skarm':''),onclick:()=>{if(S.confirm!=='sbauddel')return armConfirm('sbauddel');S.confirm=null;S.skPop=null;skAudioRemove(B);}},skIcoL('clear'),S.confirm==='sbauddel'?'Tap again to remove the track':'Remove the scratch track'):null,
-      h('button',{class:'skrow',onclick:()=>{S.skPop=null;if(S.confirm!=='skbddel')return armConfirm('skbddel');S.confirm=null;S.skBoards=skBoards().filter(x=>x!==B);skAudioDrop(B.audio);S.skBoardOpen=null;skBoardsSave();render();flash('Storyboard deleted. Its drawings are untouched.');}},skIcoL('clear'),S.confirm==='skbddel'?'Tap again to delete the storyboard':'Delete storyboard')];}});
+      h('hr',{class:'sksecend'}),
+      h('button',{class:'skrow',onclick:()=>{S.skPop=null;if(S.confirm!=='skbddel')return armConfirm('skbddel');S.confirm=null;S.skBoards=skBoards().filter(x=>x!==B);skAudioDrop(B.audio);S.skBoardOpen=null;skBoardsSave();render();flash('Storyboard deleted. Its drawings are untouched.');}},skIcoL('clear'),S.confirm==='skbddel'?'Tap again to delete the storyboard':'Delete storyboard')]);}});
   const exp=skPopBtn('bdexp','Export',skIcoL('export'),{popCls:'list',items:()=>[['png','Pages · PNG'],['pdf','Pages · PDF'],['ppng','Panels · one PNG each (zip)'],['psvg','Panels · one SVG each (zip)'],['ppdf','Panels · PDF, one per page'],
       window.aeRun?['aerun','Build / update the animatic in After Effects']:['ae','After Effects · animatic (script)'],['file',window.AEP?'Storyboard file (to share or move)':'Storyboard file · for Planner ↔ After Effects']].map(([f,l])=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;render();skBoardExport(B,f);}},l))});
   const bar=h('div',{class:'skbar sbbar'},h('div',{class:'skgrp'},h('button',{class:'tlink skback',title:'Back to Storyboards',onclick:()=>{S.skBoardOpen=null;S.skFromBoard=null;S.skPop=null;SKBV=null;saveUI();render();}},tri('l')),
@@ -8606,6 +8612,15 @@ function skPanelDurEdit(B,i,fs){const p0=B.panels[i]||{},id='sbdurin'+i,inp=h('i
   const k=B.id+':'+i;inp.addEventListener('input',()=>{SKDURSEL=k;});if(SKDURSEL!==k){requestAnimationFrame(()=>{const el=document.getElementById(id);if(el){el.focus();el.select();}});}return inp;}
 let SKDURSEL=null;
 /* ⋯ Storyboard settings → Look: spacing, frame thickness and colours for the whole board */
+/* turn a menu list into collapsible sections: each .skgh header starts one (folded until opened; remembered); an <hr class=sksecend> ends the sections */
+function skSecs(key,list){const fold=S.skSecFold||(S.skSecFold={}),out=[];let body=null;
+  for(const el of list.flat(Infinity)){if(el==null||el===false)continue;
+    if(el.classList&&el.classList.contains('sksecend')){body=null;continue;}
+    if(el.classList&&el.classList.contains('skgh')){const id=key+':'+el.textContent.replace(/·.*$/,'').trim(),open=fold[id]===true;
+      out.push(h('button',{class:'skgh sksech2','aria-expanded':String(open),onclick:e=>{e.stopPropagation();fold[id]=!open;saveUI();render();}},h('span',{class:'sksecc'},open?'▾':'▸'),el.textContent));
+      body=h('div',{class:'sksecb',hidden:open?null:''});out.push(body);continue;}
+    if(body)body.appendChild(el);else out.push(el);}
+  return out;}
 function skBoardLookRows(B){const L=skBdLook(B),set=(k,v)=>{B.look=Object.assign({},B.look||{},{[k]:v});SKBCV.clear();skBoardsSave();render();};
   const sl=(lab,k,min,max,step,unit,title)=>h('label',{class:'sklop',title},lab,h('input',{type:'range',min:String(min),max:String(max),step:String(step),value:String(L[k]),'aria-label':lab,
       oninput:e=>{e.target.nextSibling.textContent=e.target.value+unit;},onchange:e=>set(k,+e.target.value)}),h('span',null,L[k]+unit));
