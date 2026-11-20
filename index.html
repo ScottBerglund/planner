@@ -1184,16 +1184,18 @@ input.sklname{background:var(--sheet,#fff);border:1px solid var(--line,#ddd);cur
 .skbdnew{display:flex;flex-direction:column;gap:.4rem;max-width:440px;margin:.2rem 0 1rem}.skbdname{width:100%!important;font-weight:700}.skbdl{font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.55}
 .skbdgrid{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;border-radius:6px}.skbdgrid:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 /* a storyboard as a little page: title, then 3x2 rounded frames (like the opened board) */
-.skbd6{display:block;padding:7% 5% 6%;background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08);text-align:left}
-.skbd6t{display:block;margin:0 0 5%;font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif);font-weight:900;font-stretch:118%;text-transform:uppercase;letter-spacing:-.01em;line-height:.9;font-size:clamp(.8rem,1.6vw,1.25rem);color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.skbd6g{display:grid;grid-template-columns:repeat(3,1fr);gap:9% 4%}
-.skbdcell{display:block;aspect-ratio:var(--ar);background:#fff;overflow:hidden;border:1.2px solid #1a1a1a;border-radius:5px}
+.skbd6{display:block;container-type:inline-size;background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.08);text-align:left}
+.skbd6in{display:block;padding:var(--pad,6cqw)}
+.skbd6t{display:block;margin:0 0 4cqw;font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif);font-weight:900;font-stretch:118%;text-transform:uppercase;letter-spacing:-.01em;line-height:.95;font-size:clamp(.8rem,8cqw,1.6rem);color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skbd6te{cursor:text}.skbd6in input.skninp{display:block;width:100%;margin:0 0 4cqw;font-weight:800;font-size:1rem}
+.skbd6g{display:grid;grid-template-columns:repeat(3,1fr);column-gap:var(--cg,4cqw);row-gap:var(--rg,8cqw)}
+.skbdcell{display:block;aspect-ratio:var(--ar);background:#fff;overflow:hidden;border:var(--fw,1.2px) solid #1a1a1a;border-radius:5px}
 .skbdcell canvas{display:block;width:100%;height:100%}
 /* the Storyboards folder: the cover board's page on a small pile, built in the sketchbooks' 3D stage (same camera, same parallax) */
 .skbdcam{display:flex!important;align-items:center;justify-content:center;transform-style:preserve-3d}
 .skbdpile{position:relative;width:404px;transform-style:preserve-3d}
-.skbdpile .skbd6{position:relative;transform:translateZ(14px);box-shadow:0 0 0 1px rgba(0,0,0,.04);border-radius:5px;padding:24px 20px 22px}
-.skbdpile .skbd6t{font-size:34px;margin-bottom:16px}
+.skbdpile .skbd6{position:relative;transform:translateZ(14px);box-shadow:0 0 0 1px rgba(0,0,0,.04);border-radius:5px}.skbdpile .skbd6in{padding:24px 20px 22px}
+.skbdpile .skbd6t{font-size:34px;margin-bottom:16px;color:#111}
 .skbdpile .skbd6g{gap:16px 12px}
 .skbdpile .skbdcell{border-width:2px;border-radius:7px}
 .skbdunder{position:absolute;inset:0;border-radius:5px;background:#f6f6f6;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
@@ -1480,6 +1482,8 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skbkwin canvas{width:100%;height:100%;object-fit:cover;display:block}
 .skbdfoldname{font-weight:800;font-size:1.1rem}
 
+
+.sblookc{gap:10px}.sblookc .skcol{width:20px;height:20px;flex:0 0 20px}.sblookhex{margin-left:auto;font-size:.75rem;opacity:.6;font-variant-numeric:tabular-nums}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3004,7 +3008,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120132244',newer=false,want='',last=Date.now();
+  var MINE='20261120134007',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8322,17 +8326,23 @@ function skBoardNewForm(){const nm=h('input',{class:'skszin skbdname',placeholde
     h('button',{class:'tlink',onclick:()=>{S.skBoardNew=false;render();}},'Cancel'));}
 /* names on the main screen: double-click (double-tap) to edit in place; Enter saves, Esc cancels */
 function skInlineName(key,text,save){if(S.skGalEdit===key){const done=(el,ok)=>{if(S.skGalEdit!==key)return;S.skGalEdit=null;const v=el.value.trim();if(ok&&v&&v!==text)save(v);render();};
-    const inp=h('input',{id:'skgn-'+key.replace(/[^a-z0-9]/gi,''),class:'skn skninp','data-keep':'1',value:text,maxlength:'80','aria-label':'Name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')done(e.target,true);else if(e.key==='Escape')done(e.target,false);},onblur:e=>done(e.target,true),onclick:e=>e.stopPropagation()});
-    requestAnimationFrame(()=>{if(document.activeElement!==inp){inp.focus();inp.select();}});return inp;}
+    const inp=h('input',{id:'skgn-'+key.replace(/[^a-z0-9]/gi,''),class:'skn skninp','data-keep':'1',value:text,maxlength:'80','aria-label':'Name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')done(e.target,true);else if(e.key==='Escape')done(e.target,false);},onblur:e=>{const el=e.target;setTimeout(()=>{if(el.isConnected&&document.activeElement!==el)done(el,true);},0);},onclick:e=>e.stopPropagation(),onpointerdown:e=>e.stopPropagation()});
+    requestAnimationFrame(()=>{const cur=document.getElementById(inp.id)||inp;if(document.activeElement!==cur){cur.focus();cur.select();}});return inp;}
   return skDblTap(h('div',{class:'skn',title:'Double-click to rename'},text),()=>{S.skGalEdit=key;render();});}
 function skRenameDrawing(id,name){const m=S.skMain&&S.skMain.get(id);if(!m)return;const nm=Object.assign({},m,{name,updated:new Date().toISOString()});S.skMain.set(id,nm);
   const d=S.sketches&&S.sketches.get(id);if(d){d.name=name;d.updated=nm.updated;}write(()=>col('sketches').doc(id).set(nm));}
 /* a board as a little storyboard page: its title at the top, then the first six panels in 3x2 frames, like the opened board (no notes or times) */
-function skBoardSheet6(B,W,title){const ps=skBoardPanels(B).slice(0,6);
-  return h('span',{class:'skbd6'},h('span',{class:'skbd6t'},title||B.name||'Storyboard'),h('span',{class:'skbd6g',style:`--ar:${B.pw}/${B.ph}`},[0,1,2,3,4,5].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk);return h('span',{class:'skbdcell'},d&&!d._partial?skPanelCv(d,B,W||140):null);})));}
-function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id;
-  return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,onclick:()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);}},skBoardSheet6(B,160)),
-    skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
+function skBoardSheet6(B,W,title,titleEl){const ps=skBoardPanels(B).slice(0,6),L=skBdLook(B),mx=Math.max(B.pw,B.ph),cw=100/3;
+  /* the board's own spacing and colours, scaled to the card (cqw = 1% of the sheet's width) */
+  const st=`--ar:${B.pw}/${B.ph};--pad:${(L.m*B.pw/mx)*cw/100+3}cqw;--cg:${L.gx*cw/100*B.pw/mx}cqw;--rg:${(L.gy*mx+L.nt*B.ph)/B.pw*cw/100+1.5}cqw;--fw:${L.fw>0?Math.max(.8,L.fw/4):0}px;background:${L.bg};color:${L.tc}`;
+  return h('span',{class:'skbd6',style:st},h('span',{class:'skbd6in'},titleEl||h('span',{class:'skbd6t'},title||B.name||'Storyboard'),
+    h('span',{class:'skbd6g'},[0,1,2,3,4,5].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk),ok=d&&!d._partial;return h('span',{class:'skbdcell',style:`border-color:${L.fc};background:${ok?'#fff':L.ec}`},ok?skPanelCv(d,B,W||140):null);}))));}
+function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id,open=()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);};
+  /* the name is the title on the sheet: double-click it to rename; anywhere else on the sheet opens the board */
+  const tEl=S.skGalEdit==='bd:'+B.id?skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}):skDblTap(h('span',{class:'skbd6t skbd6te',title:'Double-click to rename',onclick:e=>e.stopPropagation()},B.name||'Storyboard'),()=>{S.skGalEdit='bd:'+B.id;render();});
+  if(tEl.classList)tEl.classList.add('skbd6t');
+  return h('div',{class:'skcard skbdcard'},h('div',{class:'skbdgrid',role:'button',tabindex:'0','aria-label':'Open storyboard '+B.name,onclick:open,onkeydown:e=>{if(e.key==='Enter'&&e.target===e.currentTarget)open();}},skBoardSheet6(B,160,null,tEl)),
+    h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
     h('div',{class:'skcardb'},
       h('button',{class:'tlink skcovb'+(isCov?' on':''),title:isCov?'This storyboard is on top of the Storyboards folder':'Put this storyboard on top of the Storyboards folder','aria-pressed':String(isCov),disabled:isCov,
         onclick:()=>{skBoards().forEach(b=>{if(b.cover)delete b.cover;});B.cover=true;skBoardsSave();render();flash('“'+B.name+'” is on top of the Storyboards folder');}},isCov?'★ Cover':'☆ Make cover'),
@@ -8400,25 +8410,30 @@ function skBoardView(){const B=skBoardGet(S.skBoardOpen);if(!B){S.skBoardOpen=nu
    B.rows × B.cols slots per page, B.pages pages; B.panels has one entry per slot: {sk:null|id, note}. B.header shows the name, page and date on each page. */
 function skBoardNorm(B){B.fps=B.fps||12;B.rows=B.rows||2;B.cols=B.cols||3;const per=B.rows*B.cols,L=(B.panels||[]).map(p=>p&&typeof p==='object'?Object.assign({sk:p.sk||null,note:p.note||''},+p.dur>0?{dur:+p.dur}:{}):{sk:null,note:''});
   let last=-1;L.forEach((p,i)=>{if(p.sk||p.note)last=i;});B.pages=Math.max(1,B.pages||0,Math.ceil((last+1)/per));while(L.length<B.pages*per)L.push({sk:null,note:''});L.length=B.pages*per;B.panels=L;return B;}
-function skBoardLay(B){const pw=B.pw,ph=B.ph,g=Math.round(Math.max(pw,ph)*.05),th=Math.round(ph*.22),hh=B.header?Math.round(ph*.3):0,per=B.rows*B.cols;
-  const W=2*g+B.cols*pw+(B.cols-1)*g,H=2*g+hh+B.rows*(ph+th)+(B.rows-1)*g,slot=j=>{const c=j%B.cols,rw=Math.floor(j/B.cols);return {x:g+c*(pw+g),y:g+hh+rw*(ph+th+g),w:pw,h:ph,ty:g+hh+rw*(ph+th+g)+ph,th};};
-  return {pw,ph,g,th,hh,per,W,H,slot,fs:Math.max(12,Math.round(th*.17)),gap:Math.round(g*3)};}
+/* each storyboard's look, one setting for the whole board: margins and gaps (% of the panel's long side), notes space (% of panel height),
+   frame thickness (px on a 1920-wide panel) and colours. Missing values fall back to these defaults. */
+const SK_BDLOOK={m:5,gx:5,gy:5,nt:22,fw:4,bg:'#FFFFFF',fc:'#1A1A1A',tc:'#1A1A1A',ec:'#FFFFFF'};
+const skBdLook=B=>Object.assign({},SK_BDLOOK,B&&B.look||{});
+function skBoardLay(B){const L=skBdLook(B),pw=B.pw,ph=B.ph,mx=Math.max(pw,ph),g=Math.round(mx*L.m/100),gx=Math.round(mx*L.gx/100),gy=Math.round(mx*L.gy/100),th=Math.round(ph*L.nt/100),hh=B.header?Math.round(ph*.3):0,per=B.rows*B.cols;
+  const W=2*g+B.cols*pw+(B.cols-1)*gx,H=2*g+hh+B.rows*(ph+th)+(B.rows-1)*gy,slot=j=>{const c=j%B.cols,rw=Math.floor(j/B.cols);return {x:g+c*(pw+gx),y:g+hh+rw*(ph+th+gy),w:pw,h:ph,ty:g+hh+rw*(ph+th+gy)+ph,th};};
+  return {pw,ph,g,th,hh,per,W,H,slot,fs:Math.max(12,Math.round(ph*.22*.17)),gap:Math.round(mx*.15),fw:L.fw*pw/1920,L};}
 const skBoardDate=()=>{const d=new Date();return MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate()+', '+d.getFullYear();};
 /* one page of the sheet, painted (exports) */
-function skBoardPagePaint(ctx,B,pg,sc){const Ly=skBoardLay(B),font=(w,fs)=>`${w} ${fs}px "Red Hat Display",Arial,sans-serif`;ctx.save();ctx.scale(sc,sc);ctx.fillStyle='#fff';ctx.fillRect(0,0,Ly.W,Ly.H);ctx.fillStyle='#1a1a1a';ctx.textBaseline='top';
+function skBoardPagePaint(ctx,B,pg,sc){const Ly=skBoardLay(B),LK=Ly.L,font=(w,fs)=>`${w} ${fs}px "Red Hat Display",Arial,sans-serif`;ctx.save();ctx.scale(sc,sc);ctx.fillStyle=LK.bg;ctx.fillRect(0,0,Ly.W,Ly.H);ctx.fillStyle=LK.tc;ctx.textBaseline='top';
   if(B.header){const fs=Ly.hh*.38;ctx.font=font(900,fs);ctx.fillText(B.name||'Storyboard',Ly.g,Ly.g+Ly.hh*.15);ctx.font=font(500,fs*.6);ctx.textAlign='right';ctx.fillText('Page '+(pg+1)+' of '+B.pages+'   ·   '+skBoardDate(),Ly.W-Ly.g,Ly.g+Ly.hh*.15+fs*.3);ctx.textAlign='left';}
   if(!SKMEAS)SKMEAS=document.createElement('canvas').getContext('2d');
   for(let j=0;j<Ly.per;j++){const i=pg*Ly.per+j,p=B.panels[i],rc=Ly.slot(j),d=p&&p.sk&&S.sketches&&S.sketches.get(p.sk);
     /* panels on the sheet have slightly rounded corners (the panels themselves, and After Effects, stay square) */
     const rad=Math.min(rc.w,rc.h)*.025,rr=()=>{ctx.beginPath();ctx.moveTo(rc.x+rad,rc.y);ctx.arcTo(rc.x+rc.w,rc.y,rc.x+rc.w,rc.y+rc.h,rad);ctx.arcTo(rc.x+rc.w,rc.y+rc.h,rc.x,rc.y+rc.h,rad);ctx.arcTo(rc.x,rc.y+rc.h,rc.x,rc.y,rad);ctx.arcTo(rc.x,rc.y,rc.x+rc.w,rc.y,rad);ctx.closePath();};
+    if(!d||d._partial){ctx.save();ctx.fillStyle=LK.ec;rr();ctx.fill();ctx.restore();}
     if(d&&!d._partial){const c=skBoardCrop(d,B.pw,B.ph),k=rc.w/c.w;ctx.save();rr();ctx.clip();ctx.transform(k,0,0,k,rc.x-c.x*k,rc.y-c.y*k);ctx.beginPath();ctx.rect(c.x,c.y,c.w,c.h);ctx.clip();skPaintDoc(ctx,skVisDoc(skFrameDoc(d)),1);ctx.restore();}
-    ctx.strokeStyle='#1a1a1a';ctx.lineWidth=Math.max(2,B.pw/480);rr();ctx.stroke();
-    const fs=Ly.fs,pad=fs*.55;let x=rc.x;ctx.font=font(900,fs*1.15);ctx.fillText(String(i+1),x,rc.ty+pad);x+=ctx.measureText(String(i+1)).width+fs*.7;
+    if(Ly.fw>0){ctx.strokeStyle=LK.fc;ctx.lineWidth=Ly.fw;rr();ctx.stroke();}
+    if(Ly.th<Ly.fs*1.4)continue;const fs=Ly.fs,pad=fs*.55;let x=rc.x;ctx.font=font(900,fs*1.15);ctx.fillText(String(i+1),x,rc.ty+pad);x+=ctx.measureText(String(i+1)).width+fs*.7;
     if(p&&p.note){ctx.font=font(500,fs);SKMEAS.font=ctx.font;let yy=rc.ty+pad+fs*.05;for(const para of String(p.note).split('\n')){let line='';const flush=()=>{if(yy+fs<=rc.ty+rc.th-pad*.3)ctx.fillText(line,x,yy);yy+=fs*1.28;line='';};
       for(const w of para.split(/\s+/)){const tt=line?line+' '+w:w;if(SKMEAS.measureText(tt).width>rc.x+rc.w-x&&line){flush();line=w;}else line=tt;}flush();}}}
   ctx.restore();}
-const SKBCV=new Map();
-function skBoardPanelCv(id,d,B,fid,W){W=W||480;const k=[id,d.updated,B.pw,B.ph,fid||'',W].join('|');let cv=SKBCV.get(k);if(cv)return cv;cv=skPanelCv(d,B,W,fid);SKBCV.set(k,cv);if(SKBCV.size>300)SKBCV.delete(SKBCV.keys().next().value);return cv;}
+const SKBCV=new Map();const SKBCVU=new Set();let SKBCVQ=false;const skBCVUse=cv=>{SKBCVU.add(cv);if(!SKBCVQ){SKBCVQ=true;queueMicrotask(()=>{SKBCVQ=false;SKBCVU.clear();});}};
+function skBoardPanelCv(id,d,B,fid,W){W=W||480;const k=[id,d.updated,B.pw,B.ph,fid||'',W].join('|');let cv=SKBCV.get(k);if(cv){if(!cv.isConnected&&!SKBCVU.has(cv)){skBCVUse(cv);return cv;}/* the same drawing in two panels: give the second its own copy */const c2=document.createElement('canvas');c2.width=cv.width;c2.height=cv.height;c2.className=cv.className;c2.getContext('2d').drawImage(cv,0,0);return c2;}cv=skPanelCv(d,B,W,fid);SKBCV.set(k,cv);skBCVUse(cv);if(SKBCV.size>300)SKBCV.delete(SKBCV.keys().next().value);return cv;}
 let SKBV=null,SKBSP=false,SKBPLAY=0;
 function skBoardFit(){const st=document.querySelector('#app .sbstage');if(!st||!SKBV)return;const B=skBoardGet(S.skBoardOpen);if(!B)return;const Ly=skBoardLay(B),tw=Ly.W,thh=B.pages*Ly.H+(B.pages-1)*Ly.gap,r=st.getBoundingClientRect();
   const z=Math.min((r.width-48)/tw,(r.height-48)/Math.min(thh,Ly.H*1.02));SKBV.z=z;SKBV.x=(r.width-tw*z)/2;SKBV.y=24;skBoardApply();}
@@ -8438,13 +8453,13 @@ function skBoardMove(B,a,b,zone){if(a===b)return;const L=B.panels;if(zone==='m'|
 function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skBoardNorm(B);const Ly=skBoardLay(B);clearInterval(SKBPLAY);SKBPLAY=0;
   const pages=[];
   for(let pg=0;pg<B.pages;pg++){const kids=[];
-    if(B.header)kids.push(h('div',{class:'sbhead',style:`left:${Ly.g}px;right:${Ly.g}px;top:${Ly.g}px;height:${Ly.hh}px`},h('b',{style:`font-size:${Ly.hh*.38}px`},B.name||'Storyboard'),h('span',{style:`font-size:${Ly.hh*.23}px`},'Page '+(pg+1)+' of '+B.pages+'   ·   '+skBoardDate())));
+    if(B.header)kids.push(h('div',{class:'sbhead',style:`color:${Ly.L.tc};left:${Ly.g}px;right:${Ly.g}px;top:${Ly.g}px;height:${Ly.hh}px`},h('b',{style:`font-size:${Ly.hh*.38}px`},B.name||'Storyboard'),h('span',{style:`font-size:${Ly.hh*.23}px`},'Page '+(pg+1)+' of '+B.pages+'   ·   '+skBoardDate())));
     for(let j=0;j<Ly.per;j++){const i=pg*Ly.per+j,p=B.panels[i],rc=Ly.slot(j),d=p.sk&&S.sketches&&S.sketches.get(p.sk),ready=d&&!d._partial;
-      const img=h('div',{class:'sbimg'+(p.sk?'':' empty'),style:`left:${rc.x}px;top:${rc.y}px;width:${rc.w}px;height:${rc.h}px;border-width:${Math.max(2,B.pw/480)}px;border-radius:${Math.min(rc.w,rc.h)*.025}px`,'data-i':String(i)},
+      const img=h('div',{class:'sbimg'+(p.sk?'':' empty'),style:`left:${rc.x}px;top:${rc.y}px;width:${rc.w}px;height:${rc.h}px;border-width:${Ly.fw}px;border-color:${Ly.L.fc};background:${p.sk?'#fff':Ly.L.ec};border-radius:${Math.min(rc.w,rc.h)*.025}px`,'data-i':String(i)},
         ready?skBoardPanelCv(p.sk,d,B):p.sk?h('span',{class:'sbmiss',style:`font-size:${Ly.fs*1.2}px`},d||!S.skMain?'Loading…':'Missing drawing'):h('span',{class:'sbplus',style:`font-size:${Ly.ph*.18}px`},'+'));
-      kids.push(img,h('div',{class:'sbnote','data-n':String(i),style:`left:${rc.x}px;top:${rc.ty}px;width:${rc.w}px;height:${rc.th}px;font-size:${Ly.fs}px;padding-top:${Ly.fs*.55}px`},
+      kids.push(img,Ly.th<Ly.fs*1.4?null:h('div',{class:'sbnote','data-n':String(i),style:`left:${rc.x}px;top:${rc.ty}px;width:${rc.w}px;height:${rc.th}px;font-size:${Ly.fs}px;padding-top:${Ly.fs*.55}px;color:${Ly.L.tc}`},
         h('b',{style:`font-size:${Ly.fs*1.15}px`},String(i+1)),h('span',null,p.note||(p.sk&&d?'':'')),d&&!p.note?h('i',null,d.name||''):null));}
-    pages.push(h('div',{class:'sbpage',style:`width:${Ly.W}px;height:${Ly.H}px;top:${pg*(Ly.H+Ly.gap)}px`},kids));}
+    pages.push(h('div',{class:'sbpage',style:`width:${Ly.W}px;height:${Ly.H}px;top:${pg*(Ly.H+Ly.gap)}px;background:${Ly.L.bg};color:${Ly.L.tc}`},kids));}
   const sheet=h('div',{class:'sbsheet',style:`width:${Ly.W}px;height:${B.pages*Ly.H+(B.pages-1)*Ly.gap}px`},pages);
   const stage=h('div',{class:'sbstage'},sheet);
   /* pointer: pan on the background, click a panel to open it (or fill it), hold and drag to reorder, long-press / right-click for the panel menu */
@@ -8523,6 +8538,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
       h('button',{class:'skrow','aria-pressed':String(!!B.header),onclick:()=>{B.header=!B.header;skBoardsSave();SKBV=null;render();}},skIcoL('note'),'Page header (name, page, date): '+(B.header?'on':'off')),
       num('Hold each panel (sec)',B.dur||2,.2,60,v=>{B.dur=v;skBoardsSave();}),
       h('label',{class:'sklop',title:'Every comp sent to After Effects uses this rate, whatever each drawing is set to'},'Master frame rate',h('select',{class:'skszin','aria-label':'Master frame rate',onchange:e=>{B.fps=+e.target.value;skBoardsSave();}},[8,12,15,24,25,30].map(v=>h('option',{value:String(v),selected:v===(B.fps||12)?'':null},v+' fps')))),
+      skBoardLookRows(B),
       h('div',{class:'skgh'},'Scratch track'+(B.audio?' · '+skFmtT(B.audio.dur):'')),
       B.audio?h('div',{class:'sbaudname',title:B.audio.name},B.audio.name+' · '+(B.audio.size/1e6).toFixed(1)+' MB'):null,
       h('button',{class:'skrow',title:'The panels play from the start while you talk into the mic',onclick:()=>{S.skPop=null;render();skBoardPlayer(B,{record:true});}},skIcoL('mic'),B.audio?'Record again':'Record in the player'),
@@ -8546,6 +8562,17 @@ function skPanelDurEdit(B,i,fs){const p0=B.panels[i]||{},id='sbdurin'+i,inp=h('i
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')done(true);else if(e.key==='Escape')done(false);});inp.addEventListener('blur',()=>setTimeout(()=>{if(!inp.isConnected||document.activeElement===inp)return;done(true);},0));inp.addEventListener('pointerdown',e=>e.stopPropagation());
   const k=B.id+':'+i;inp.addEventListener('input',()=>{SKDURSEL=k;});if(SKDURSEL!==k){requestAnimationFrame(()=>{const el=document.getElementById(id);if(el){el.focus();el.select();}});}return inp;}
 let SKDURSEL=null;
+/* ⋯ Storyboard settings → Look: spacing, frame thickness and colours for the whole board */
+function skBoardLookRows(B){const L=skBdLook(B),set=(k,v)=>{B.look=Object.assign({},B.look||{},{[k]:v});SKBCV.clear();skBoardsSave();render();};
+  const sl=(lab,k,min,max,step,unit,title)=>h('label',{class:'sklop',title},lab,h('input',{type:'range',min:String(min),max:String(max),step:String(step),value:String(L[k]),'aria-label':lab,
+      oninput:e=>{e.target.nextSibling.textContent=e.target.value+unit;},onchange:e=>set(k,+e.target.value)}),h('span',null,L[k]+unit));
+  const sw=(lab,k)=>h('button',{class:'skrow sblookc','aria-pressed':String(S.skBdWheel===k),onclick:()=>{S.skBdWheel=S.skBdWheel===k?null:k;render();}},h('i',{class:'skcol'+(L[k]==='#FFFFFF'?' white':''),style:`--c:${L[k]}`}),lab,h('span',{class:'sblookhex'},L[k]));
+  const wheel=k=>S.skBdWheel===k?skWheelPanel({get:()=>skBdLook(B)[k],commit:c=>set(k,c)}):null;
+  return [h('div',{class:'skgh'},'Look'),
+    sl('Page margin','m',0,15,.5,'%','Space around the edge of the page'),sl('Gap across','gx',0,15,.5,'%','Space between panels side to side'),sl('Gap down','gy',0,15,.5,'%','Space between rows (below the notes)'),
+    sl('Notes space','nt',0,60,1,'%','Room under each panel for its number and notes (0 hides them)'),sl('Frame thickness','fw',0,16,.5,' px','Panel frame line (as on a 1920-wide panel); 0 hides it'),
+    sw('Page colour','bg'),wheel('bg'),sw('Frame colour','fc'),wheel('fc'),sw('Text colour','tc'),wheel('tc'),sw('Empty panels','ec'),wheel('ec'),
+    B.look?h('button',{class:'skrow',onclick:()=>{delete B.look;S.skBdWheel=null;SKBCV.clear();skBoardsSave();render();}},skIcoL('clear'),'Reset the look'):null];}
 /* ---------- scratch audio: one track per storyboard (B.audio = {id,n,size,mime,name,dur,off,pk}) ----------
    SKA is the file store. Today it keeps a file as pieces in the 'skaudio' collection (each piece fits a database record);
    a product version can point put/get/del at Cloud Storage or R2 without touching anything that uses it. */
