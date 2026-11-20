@@ -1449,9 +1449,18 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 /* stacked floating panels */
 .skstackhint{position:fixed;z-index:10001;height:4px;margin-top:-1px;border-radius:2px;background:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.25);pointer-events:none;display:none}
+/* a stack reads as one panel: no gaps, one shadow (the backing behind it), square inner corners, a hairline between panels */
+.skstackbg{position:fixed;z-index:94;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);pointer-events:none}
+.skstacked{box-shadow:none!important;border-radius:0!important;background:var(--sheet,#fff)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.skstacked.skstackhead{border-top-left-radius:12px!important;border-top-right-radius:12px!important}
+.skstacked.skstacklast{border-bottom-left-radius:12px!important;border-bottom-right-radius:12px!important}
+.skstacked:not(.skstackhead){border-top:1px solid var(--rule,#e2e2e2)!important}
 .skstacked:not(.skstackhead) .sklfh{cursor:grab}
 .skstacked.skstackhead .sklfh{cursor:move}
 .skstacked{box-sizing:border-box!important;min-width:0!important;max-width:none!important}
+
+.skbkwin canvas{width:100%;height:100%;object-fit:cover;display:block}
+.skbdfoldname{font-weight:800;font-size:1.1rem}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2976,7 +2985,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120101015',newer=false,want='',last=Date.now();
+  var MINE='20261120101910',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8300,7 +8309,7 @@ function skInlineName(key,text,save){if(S.skGalEdit===key){const done=(el,ok)=>{
 function skRenameDrawing(id,name){const m=S.skMain&&S.skMain.get(id);if(!m)return;const nm=Object.assign({},m,{name,updated:new Date().toISOString()});S.skMain.set(id,nm);
   const d=S.sketches&&S.sketches.get(id);if(d){d.name=name;d.updated=nm.updated;}write(()=>col('sketches').doc(id).set(nm));}
 function skBoardCard(B){skBoardNorm(B);const ps=skBoardPanels(B).slice(0,4);
-  return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,style:`aspect-ratio:${B.pw*2+8}/${B.ph*2+8}`,onclick:()=>{S.skBoardOpen=B.id;S.skBook=null;SKBV=null;saveUI();render();window.scrollTo(0,0);}},
+  return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,style:`aspect-ratio:${B.pw*2+8}/${B.ph*2+8}`,onclick:()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);}},
       [0,1,2,3].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk);return h('span',{class:'skbdcell',style:`aspect-ratio:${B.pw}/${B.ph}`},d&&!d._partial?skPanelCv(d,B,140):null);})),
     skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
     h('div',{class:'skcardb'},h('button',{class:'tlink',title:'Make a copy of this storyboard with its own copies of every drawing',disabled:!!S.skBoardDup,onclick:()=>skBoardDup(B)},S.skBoardDup===B.id?'Duplicating…':'Duplicate')));}
@@ -8491,7 +8500,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
       h('button',{class:'skrow',onclick:()=>{S.skPop=null;if(S.confirm!=='skbddel')return armConfirm('skbddel');S.confirm=null;S.skBoards=skBoards().filter(x=>x!==B);skAudioDrop(B.audio);S.skBoardOpen=null;skBoardsSave();render();flash('Storyboard deleted. Its drawings are untouched.');}},skIcoL('clear'),S.confirm==='skbddel'?'Tap again to delete the storyboard':'Delete storyboard')];}});
   const exp=skPopBtn('bdexp','Export',skIcoL('export'),{popCls:'list',items:()=>[['png','Pages · PNG'],['pdf','Pages · PDF'],['ppng','Panels · one PNG each (zip)'],['psvg','Panels · one SVG each (zip)'],['ppdf','Panels · PDF, one per page'],
       window.aeRun?['aerun','Build / update the animatic in After Effects']:['ae','After Effects · animatic (script)'],['file',window.AEP?'Storyboard file (to share or move)':'Storyboard file · for Planner ↔ After Effects']].map(([f,l])=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;render();skBoardExport(B,f);}},l))});
-  const bar=h('div',{class:'skbar sbbar'},h('div',{class:'skgrp'},h('button',{class:'tlink skback',title:'Back to all sketches',onclick:()=>{S.skBoardOpen=null;S.skFromBoard=null;S.skPop=null;SKBV=null;saveUI();render();}},tri('l')),
+  const bar=h('div',{class:'skbar sbbar'},h('div',{class:'skgrp'},h('button',{class:'tlink skback',title:'Back to Storyboards',onclick:()=>{S.skBoardOpen=null;S.skFromBoard=null;S.skPop=null;SKBV=null;saveUI();render();}},tri('l')),
       h('input',{class:'skname sbname',value:B.name,maxlength:'40','aria-label':'Storyboard name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();},onchange:e=>{B.name=e.target.value.trim()||B.name;skBoardsSave();render();}})),
     h('div',{class:'skgrp'},ib('play','Play the storyboard (each panel for its own time)',()=>skBoardPlayer(B))),
     h('div',{class:'skgrp'},ib('zoomout','Zoom out (Ctrl+−)',()=>skBoardZoom(1/1.25)),h('button',{class:'tlink sbzl',title:'Fit (Ctrl+0)',onclick:skBoardFit},'100%'),ib('zoomin','Zoom in (Ctrl+=)',()=>skBoardZoom(1.25))),
@@ -8845,16 +8854,21 @@ function skStackSoon(){if(SKSTQ)return;SKSTQ=true;queueMicrotask(()=>{SKSTQ=fals
 function skStackLayout(){for(const st of skStacks()){const els=st.k.map(skPanelEl).filter(Boolean);if(!els.length)continue;
     const k=parseFloat(getComputedStyle(els[0]).getPropertyValue('--skui'))||1;if(st.w)els.forEach(el=>{el.style.width=st.w+'px';});
     const W=els[0].getBoundingClientRect().width;let x=Math.max(4,Math.min(innerWidth-W-4,st.x)),y=Math.max(4,Math.min(innerHeight-40,st.y));
-    els.forEach((el,i)=>{el.style.left=x+'px';el.style.top=y+'px';el.style.right='auto';el.style.bottom='auto';el.classList.add('skstacked');el.classList.toggle('skstackhead',i===0);y+=el.getBoundingClientRect().height+4;});}
-  document.querySelectorAll('.skstacked').forEach(el=>{if(!skStackOf(el.dataset.skp))el.classList.remove('skstacked','skstackhead');});}
+    const y0=y;els.forEach((el,i)=>{el.style.left=x+'px';el.style.top=y+'px';el.style.right='auto';el.style.bottom='auto';el.classList.add('skstacked');el.classList.toggle('skstackhead',i===0);el.classList.toggle('skstacklast',i===els.length-1);y+=el.getBoundingClientRect().height;});
+    /* one shadow and one rounded outline for the whole stack, drawn behind it */
+    const par=els[0].parentElement;let bg=par&&[...par.querySelectorAll(':scope > .skstackbg')].find(b=>b.dataset.head===els[0].dataset.skp);
+    if(els.length>1&&par){if(!bg){bg=h('div',{class:'skstackbg','aria-hidden':'true'});bg.dataset.head=els[0].dataset.skp;par.insertBefore(bg,els[0]);}bg.style.cssText=`left:${x}px;top:${y0}px;width:${W}px;height:${y-y0}px`;bg._live=1;}else if(bg)bg.remove();}
+  document.querySelectorAll('.skstackbg').forEach(b=>{if(!b._live)b.remove();b._live=0;});
+  document.querySelectorAll('.skstacked').forEach(el=>{if(!skStackOf(el.dataset.skp))el.classList.remove('skstacked','skstackhead','skstacklast');});}
 function skStackClean(){S.skStacks=skStacks().filter(st=>st.k.length>1);}
 function skStackDrag(e,el,key){const st0=skStackOf(key),whole=!!(st0&&skStackHead(st0)===key);
   if(st0&&!whole){st0.k=st0.k.filter(k=>k!==key);if(st0.k.length<2){const rest=st0.k[0],re=rest&&skPanelEl(rest);if(re&&re._skpos)re._skpos(st0.x,st0.y);}skStackClean();el.classList.remove('skstacked','skstackhead');skStackLayout();}
-  const moving=whole?st0.k.map(skPanelEl).filter(Boolean):[el],mkeys=whole?st0.k.slice():[key];
+  const moving=whole?st0.k.map(skPanelEl).filter(Boolean):[el],mkeys=whole?st0.k.slice():[key];if(whole){const bg=document.querySelector('.skstackbg[data-head="'+key+'"]');if(bg)moving.push(bg);}
   const r0=el.getBoundingClientRect(),starts=moving.map(m=>{const r=m.getBoundingClientRect();return [r.left,r.top];}),sx=e.clientX,sy=e.clientY,hd=e.target.closest('.sklfh');
   try{hd.setPointerCapture(e.pointerId);}catch(_){}
   const hint=h('div',{class:'skstackhint'});document.body.appendChild(hint);let tgt=null;
   const others=()=>[...document.querySelectorAll('[data-skp]')].filter(o=>!moving.includes(o));
+  
   const mv=ev=>{let dx=ev.clientX-sx,dy=ev.clientY-sy;dx=Math.max(4-r0.left,Math.min(innerWidth-r0.width-4-r0.left,dx));dy=Math.max(4-r0.top,Math.min(innerHeight-40-r0.top,dy));
     moving.forEach((m,i)=>{m.style.left=(starts[i][0]+dx)+'px';m.style.top=(starts[i][1]+dy)+'px';});
     const L=r0.left+dx,T=r0.top+dy;tgt=null;let best=34;
@@ -9425,7 +9439,7 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   const all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
   const books=skBookList(),has=new Set(books.map(b=>b.id)),inBook=d=>d.book&&has.has(d.book)?d.book:null;
   if(S.skBoardOpen){const v=skBoardEditor();if(v)return [v];}
-  const ob=S.skBook&&has.has(S.skBook)?books.find(b=>b.id===S.skBook):null;
+  const ob=S.skBook&&has.has(S.skBook)?books.find(b=>b.id===S.skBook):null;const bf=S.skBook==='__boards';
   const nb=(k,l)=>h('button',{class:'btn sm',onclick:()=>skNew(k)},l);
   const card=([id,d])=>h('div',{class:'skcard'},
     h('button',{class:'skthumb'+(d.bg==='grid'?' grid':d.bg==='dots'?' dots':''),'aria-label':'Open '+(d.name||'sketch'),onclick:()=>skOpen(id)},skThumbEl(id,d)),
@@ -9441,13 +9455,18 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
       S.skBookNew?skBookNameInput(id):h('button',{class:'btn sm',onclick:()=>{S.skBookNew=true;render();}},'+ New sketchbook')):null);
   /* everything you can start lives in one + New menu, so the gallery stays clear */
   const mi=(l,fn)=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;fn();render();}},l);
-  const newRow=h('div',{class:'sknewrow'},skPopBtn('sknew','New',h('span',{class:'sknewb'},'+ New'+(ob?' in “'+ob.name+'”':'')),{popCls:'list',items:()=>[h('div',{class:'skgh'},'Sketch'),
+  const newRow=bf?h('div',{class:'sknewrow'},h('button',{class:'tlink',onclick:()=>{S.skBoardNew=!S.skBoardNew;render();}},h('span',{class:'sknewb'},S.skBoardNew?'Cancel':'+ New storyboard')),window.AEPCLOUDUI||window.aeRun?h('span',{class:'skcloudg'},window.AEPCLOUDUI?AEPCLOUDUI({kind:'gallery'}):null,skMaxBtn()):null):h('div',{class:'sknewrow'},skPopBtn('sknew','New',h('span',{class:'sknewb'},'+ New'+(ob?' in “'+ob.name+'”':'')),{popCls:'list',items:()=>[h('div',{class:'skgh'},'Sketch'),
       mi('▭  Landscape',()=>skNew('land')),mi('▯  Portrait',()=>skNew('port')),mi('□  Square',()=>skNew('square')),mi('⬚  Custom size…',()=>{S.skNewCustom=true;}),mi('∞  Infinite canvas',()=>skNew('inf')),
-      ob?null:h('div',{class:'skgh'},'Collections'),ob?null:mi('Storyboard…',()=>{S.skBoardNew=true;}),ob?null:mi('Sketchbook…',()=>{S.skBookNew=true;S.skMoveFor=null;}),
+      ob?null:h('div',{class:'skgh'},'Collections'),ob?null:mi('Storyboard…',()=>{S.skBoardNew=true;S.skBook='__boards';saveUI();}),ob?null:mi('Sketchbook…',()=>{S.skBookNew=true;S.skMoveFor=null;}),
       h('div',{class:'skgh'},'Import'),mi('Drawing or storyboard file…',skImportPick)]}),
     S.skNewCustom?h('button',{class:'tlink',onclick:()=>{S.skNewCustom=false;render();}},'Cancel custom size'):null,
     window.AEPCLOUDUI||window.aeRun?h('span',{class:'skcloudg'},window.AEPCLOUDUI?AEPCLOUDUI({kind:'gallery'}):null,skMaxBtn()):null);
   const custom=S.skNewCustom?h('div',{class:'sknewcustom'},skSizeForm((w,hh)=>{S.skNewCustom=false;const o=S.skSBNew;if(o&&o.on){const L=skSBLayout(w,hh,o.n,o.cols);if(L.w>16000||L.h>16000){flash('That storyboard is too big. Use fewer or smaller panels.');S.skNewCustom=true;return;}skNew('custom',L.w,L.h,{pw:w,ph:hh,n:L.n,cols:L.cols,texts:[],dur:2});}else skNew('custom',w,hh);},1920,1080,'Create')):null;
+  if(bf){const boards=skBoards();
+    return [head,h('div',{class:'skbookbar'},h('button',{class:'tlink',onclick:()=>{S.skBook=null;S.skBoardNew=false;saveUI();render();}},triT('l'),'All sketches'),
+        h('span',{class:'skbookname skbdfoldname'},'Storyboards'),h('span',{class:'skd'},boards.length+(boards.length===1?' storyboard':' storyboards'))),
+      newRow,S.skBoardNew?skBoardNewForm():null,
+      boards.length?h('div',{class:'skgal skbdgal0'},boards.map(skBoardCard)):h('p',{class:'calnote'},'No storyboards yet. + New storyboard starts one.')];}
   if(ob){const list=all.filter(([,d])=>inBook(d)===ob.id);
     return [head,h('div',{class:'skbookbar'},h('button',{class:'tlink',onclick:()=>{S.skBook=null;S.skMoveFor=null;saveUI();render();}},triT('l'),'All sketches'),
         h('input',{class:'skbookname','data-keep':'1',value:ob.name,maxlength:'60','aria-label':'Sketchbook name',onchange:e=>{const v=e.target.value.trim();if(v&&v!==ob.name){ob.name=v;skBooksSave();}},onkeydown:e=>{if(e.key==='Enter')e.target.blur();}}),
@@ -9464,10 +9483,14 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
         skBookFit(skBook3D([h('span',{class:'skbkwin'},top?skThumbEl(top[0],top[1]):h('span',{class:'skbookempty'},'Empty')),h('span',{class:'skbklab'},b.name)],312,380,24,{box:440,p:960,tr:'rotateX(38deg) rotateZ(var(--skz,-10deg))'}))),
       h('div',{class:'skd skbkn'},its.length+(its.length===1?' drawing':' drawings')));};
   const addBook=()=>S.skBookNew&&!S.skMoveFor?skBookNameInput(null):null;
-  const boards=skBoards(),boardSec=boards.length||S.skBoardNew?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Storyboards')),
-    S.skBoardNew?skBoardNewForm():null,boards.length?h('div',{class:'skgal skbdgal0'},boards.map(skBoardCard)):null]:null;
+  const boards=skBoards(),boardSec=S.skBoardNew?skBoardNewForm():null;
+  /* every storyboard lives in one Storyboards folder, shown like a sketchbook with the newest board's first panel in the window */
+  const boardFold=()=>{const B=boards[boards.length-1],P=B?skBoardPanels(skBoardNorm(B)):[],d=P[0]&&S.sketches.get(P[0].sk);
+    return h('div',{class:'skcard skbook skbdfold'},h('button',{class:'skbk','aria-label':'Open the Storyboards folder',onclick:()=>{S.skBook='__boards';S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},
+        skBookFit(skBook3D([h('span',{class:'skbkwin'},d&&!d._partial?skBoardPanelCv(P[0].sk,d,B,null,280):h('span',{class:'skbookempty'},'Empty')),h('span',{class:'skbklab'},'Storyboards')],312,380,24,{box:440,p:960,tr:'rotateX(38deg) rotateZ(var(--skz,-10deg))'}))),
+      h('div',{class:'skd skbkn'},boards.length+(boards.length===1?' storyboard':' storyboards')));};
   return [head,typeof sotdCard==='function'?sotdCard():null,newRow,custom,boardSec,
-    books.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),h('div',{class:'skgal skbooks'},books.map(bookCard)),
+    books.length||boards.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),h('div',{class:'skgal skbooks'},(boards.length?[boardFold()]:[]).concat(books.map(bookCard))),
       h('h2',{class:'sksec'},'Loose drawings')]
       :h('div',{class:'sksech'},addBook()),
     loose.length?h('div',{class:'skgal'},loose.map(card)):
