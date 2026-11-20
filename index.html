@@ -1182,7 +1182,8 @@ input.sklname{background:var(--sheet,#fff);border:1px solid var(--line,#ddd);cur
 .sbmenu{position:fixed;z-index:120;flex-direction:column;min-width:240px;width:max-content;right:auto}.sbpick{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:110;width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 110px);overflow:auto;background:var(--sheet,#fff);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);padding:12px}.sbsetpop{min-width:270px}
 .sknewb{font-weight:800;font-size:.95rem;padding:0 .3rem}
 .skbdnew{display:flex;flex-direction:column;gap:.4rem;max-width:440px;margin:.2rem 0 1rem}.skbdname{width:100%!important;font-weight:700}.skbdl{font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.55}
-.skbdgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:100%;padding:6px;border:0;border-radius:10px;background:#2b2b2d;cursor:pointer}.skbdcell{display:block;background:#f2eee3;overflow:hidden;border-radius:2px}.skbdcell canvas,.skpimg canvas{display:block;width:100%;height:100%}
+.skbdgrid{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;border-radius:3px}.skbdgrid:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.skbd6{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;padding:1px;background:#bdbab3;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.08)}.skbdcell{display:block;aspect-ratio:var(--ar);background:#fff;overflow:hidden}.skbdcell canvas,.skpimg canvas{display:block;width:100%;height:100%}
 .skbdhead{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin:.4rem 0 1rem}.skbdtitle{font:inherit;font-size:1.6rem;font-weight:900;border:0;background:transparent;color:inherit;min-width:6ch;max-width:100%;padding:0 .2rem;border-radius:6px}.skbdtitle:focus{outline:1px solid var(--rule,#ccc)}.skbdf{display:flex;align-items:center;gap:.3rem;font-size:.85rem}.skbdf .skszin{width:4rem}.skbdexl{font-weight:700;font-size:.85rem;padding:0 .4rem}
 .skbdgal{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:18px}@media (max-width:700px){.skbdgal{grid-template-columns:1fr 1fr}}
 .skpanel{display:flex;flex-direction:column;gap:4px}.skpimg{display:block;width:100%;padding:0;border:1.5px solid #1a1a1a;background:#fff;cursor:pointer;overflow:hidden}.skph2{display:flex;align-items:center;gap:4px}.skph2 b{font-weight:900;font-size:1.1rem;margin-right:2px}.skpn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;opacity:.7}.skpfr{font-size:.7rem;font-weight:700;opacity:.6}
@@ -1461,6 +1462,30 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 
 .skbkwin canvas{width:100%;height:100%;object-fit:cover;display:block}
 .skbdfoldname{font-weight:800;font-size:1.1rem}
+
+/* Storyboards folder: three sheets floating at the sketchbooks' camera angle */
+.skbdfold3d{perspective:960px}
+.skbdsheets{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(38deg) rotateZ(-10deg)}
+.skbdsheet{position:absolute;left:8%;width:80%;top:50%;transform-style:preserve-3d;transform:translate3d(calc(var(--i) * 4%),calc(var(--i) * -44%),calc(var(--i) * -26px)) rotateZ(calc(var(--i) * 3deg));padding:5%;background:#fff;border-radius:3px;
+  box-shadow:0 1px 0 rgba(0,0,0,.06),0 18px 26px -6px rgba(0,0,0,calc(.22 - var(--i) * .05));filter:brightness(calc(1 - var(--i) * .05))}
+.skbdsheet .skbd6{box-shadow:none}
+.skbdsheet .skbookempty{display:block;padding:22% 0;text-align:center}
+.skbk:hover .skbdsheet{transition:transform .35s cubic-bezier(.2,.8,.2,1)}.skbk:hover .skbdsheet{transform:translate3d(calc(var(--i) * 5%),calc(var(--i) * -38%),calc(var(--i) * -30px + 14px)) rotateZ(calc(var(--i) * 4deg))}
+.skbdlab{position:absolute;left:8%;bottom:6%;padding:.3rem .6rem;border-radius:3px;background:#151515;color:#fff;font-weight:800;font-size:.82rem;letter-spacing:.02em;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+/* floating colour / pen settings / size panels */
+.skcolfloat .skscr{display:grid;grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:7px;padding:4px 2px 2px;justify-items:center}
+.skcolfloat .skscr>.skgrow,.skcolfloat .skscr>.skwheel,.skcolfloat .skscr>.skrow{justify-self:stretch}
+.skpenfloat .skscr{display:flex;flex-direction:column;gap:2px}
+.sksizefloat{width:13rem}
+.skszpad{position:relative;display:flex;align-items:center;gap:10px;height:52px;margin:2px 2px 6px;padding:0 12px;border-radius:10px;background:color-mix(in srgb,var(--ink) 6%,transparent);cursor:ew-resize;touch-action:none;user-select:none}
+.skszpad::before{content:'';position:absolute;left:12px;right:12px;bottom:8px;height:3px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--ink) 10%,transparent),color-mix(in srgb,var(--ink) 35%,transparent))}
+.skszpad.on{background:color-mix(in srgb,var(--ink) 12%,transparent)}
+.skszpadd{flex:0 0 42px;height:42px;display:flex;align-items:center;justify-content:center}
+.skszpadd i{display:block;border-radius:50%;background:var(--ink)}
+.skszpad b{font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
+.skszfl{display:flex;gap:12px;padding:0 6px 6px}.skszfl .tlink{display:inline-flex;align-items:center;gap:5px;font-size:.8rem}.skszfl svg{width:16px;height:16px}
+.skeyecol{display:flex;align-items:center;justify-content:center;background:var(--sheet,#fff)!important;box-shadow:0 0 0 1.5px var(--rule)}.skeyecol svg{width:16px;height:16px}
+.skeyeb svg{width:18px;height:18px}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2985,7 +3010,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120101910',newer=false,want='',last=Date.now();
+  var MINE='20261120105951',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6890,7 +6915,7 @@ const skW2t=(w,t)=>{const [a,b]=SK_WR[t||skDrawTool()];return Math.log(w/a)/Math
 /* smoothing: 0 = your raw line … 10 = very smooth; saved with each stroke */
 const skSmoothLv=()=>S.skSmooth==null?4:S.skSmooth;
 /* show the brush size live in the toolbar without redrawing everything */
-function skSizeSync(){const w=skBaseW(),dt=skDrawTool(),d=Math.min(22,Math.max(4,w*(dt==='pen'?2:0.8)));document.querySelectorAll('#app .skpb .skdot').forEach(el=>{el.style.width=el.style.height=d+'px';});
+function skSizeSync(){const w=skBaseW(),dt=skDrawTool(),d=Math.min(22,Math.max(4,w*(dt==='pen'?2:0.8)));document.querySelectorAll('.skszpad').forEach(p=>p._show&&p._show());document.querySelectorAll('#app .skpb .skdot').forEach(el=>{el.style.width=el.style.height=d+'px';});
   document.querySelectorAll('#app .skszv').forEach(el=>{el.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';});const sl=document.querySelector('#app .skszr');if(sl&&document.activeElement!==sl)sl.value=String(Math.round(skW2t(w)*1000));
   const th=document.querySelector('#app .skstrip i');if(th)th.style.bottom=(skW2t(w)*100)+'%';}
 const skColor=()=>S.skColor||(skTool()==='hl'?'#FFC107':'#23374A');
@@ -8308,11 +8333,21 @@ function skInlineName(key,text,save){if(S.skGalEdit===key){const done=(el,ok)=>{
   return skDblTap(h('div',{class:'skn',title:'Double-click to rename'},text),()=>{S.skGalEdit=key;render();});}
 function skRenameDrawing(id,name){const m=S.skMain&&S.skMain.get(id);if(!m)return;const nm=Object.assign({},m,{name,updated:new Date().toISOString()});S.skMain.set(id,nm);
   const d=S.sketches&&S.sketches.get(id);if(d){d.name=name;d.updated=nm.updated;}write(()=>col('sketches').doc(id).set(nm));}
-function skBoardCard(B){skBoardNorm(B);const ps=skBoardPanels(B).slice(0,4);
-  return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,style:`aspect-ratio:${B.pw*2+8}/${B.ph*2+8}`,onclick:()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);}},
-      [0,1,2,3].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk);return h('span',{class:'skbdcell',style:`aspect-ratio:${B.pw}/${B.ph}`},d&&!d._partial?skPanelCv(d,B,140):null);})),
+/* a board's first six panels as a 3x2 sheet with hairline gutters (used on its card and in the folder's floating sheets) */
+function skBoardSheet6(B,W){const ps=skBoardPanels(B).slice(0,6);
+  return h('span',{class:'skbd6',style:`--ar:${B.pw}/${B.ph}`},[0,1,2,3,4,5].map(i=>{const p=ps[i],d=p&&S.sketches.get(p.sk);return h('span',{class:'skbdcell'},d&&!d._partial?skPanelCv(d,B,W||140):null);}));}
+function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id;
+  return h('div',{class:'skcard skbdcard'},h('button',{class:'skbdgrid','aria-label':'Open storyboard '+B.name,onclick:()=>{S.skBoardOpen=B.id;S.skBook='__boards';SKBV=null;saveUI();render();window.scrollTo(0,0);}},skBoardSheet6(B,140)),
     skInlineName('bd:'+B.id,B.name,v=>{B.name=v;skBoardsSave();}),h('div',{class:'skd'},skBoardPanels(B).length+' of '+B.panels.length+' panels · '+B.pages+(B.pages===1?' page':' pages')),
-    h('div',{class:'skcardb'},h('button',{class:'tlink',title:'Make a copy of this storyboard with its own copies of every drawing',disabled:!!S.skBoardDup,onclick:()=>skBoardDup(B)},S.skBoardDup===B.id?'Duplicating…':'Duplicate')));}
+    h('div',{class:'skcardb'},
+      h('button',{class:'tlink skcovb'+(isCov?' on':''),title:isCov?'This storyboard is on top of the Storyboards folder':'Put this storyboard on top of the Storyboards folder','aria-pressed':String(isCov),disabled:isCov,
+        onclick:()=>{skBoards().forEach(b=>{if(b.cover)delete b.cover;});B.cover=true;skBoardsSave();render();flash('“'+B.name+'” is on top of the Storyboards folder');}},isCov?'★ Cover':'☆ Make cover'),
+      h('button',{class:'tlink',title:'Make a copy of this storyboard with its own copies of every drawing',disabled:!!S.skBoardDup,onclick:()=>skBoardDup(B)},S.skBoardDup===B.id?'Duplicating…':'Duplicate')));}
+const skBoardCoverId=()=>{const L=skBoards(),c=L.find(b=>b.cover);return c?c.id:(L.length?L[L.length-1].id:null);};
+/* the folder: the cover board on top, then the newest ones, as sheets of paper floating over each other at the sketchbooks' camera angle */
+function skBoardFolderArt(){const L=skBoards(),cid=skBoardCoverId(),order=[L.find(b=>b.id===cid)].concat(L.slice().reverse().filter(b=>b.id!==cid)).filter(Boolean).slice(0,3);
+  const sheets=order.slice().reverse().map((B,k,a)=>{const i=a.length-1-k;skBoardNorm(B);return h('span',{class:'skbdsheet',style:`--i:${i}`},skBoardSheet6(B,96));});
+  return h('span',{class:'skbkbox skbdfold3d'},h('span',{class:'skbdsheets'},sheets.length?sheets:h('span',{class:'skbdsheet',style:'--i:0'},h('span',{class:'skbookempty'},'Empty'))),h('span',{class:'skbdlab'},'Storyboards'));}
 /* duplicate a storyboard: new copies of every panel drawing (and their guide images), so the copy can change without touching the original */
 async function skBoardDup(B){if(S.skBoardDup)return;S.skBoardDup=B.id;render();
   try{const map=new Map(),stamp=new Date().toISOString();
@@ -9143,11 +9178,12 @@ const skHex2=v=>Math.round(v).toString(16).padStart(2,'0');
 function skHsv2Hex(hh,ss,vv){const f=n=>{const k=(n+hh/60)%6;return vv-vv*ss*Math.max(0,Math.min(k,4-k,1));};return ('#'+skHex2(f(5)*255)+skHex2(f(3)*255)+skHex2(f(1)*255)).toUpperCase();}
 function skHex2Hsv(c){const m=/^#?([0-9a-f]{6})$/i.exec(c||'');if(!m)return [210,.5,.3];const n=parseInt(m[1],16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
   let hh=0;if(d){hh=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;hh*=60;if(hh<0)hh+=360;}return [hh,mx?d/mx:0,mx];}
-function skWheelPanel(){const R=130,dpr=Math.min(3,devicePixelRatio||1);let [hh,ss,vv]=skHex2Hsv(skColor());if(!S.skWheelHS)S.skWheelHS=null;
-  if(S.skWheelHS&&skHsv2Hex(S.skWheelHS[0],S.skWheelHS[1],vv)===skColor().toUpperCase()){[hh,ss]=S.skWheelHS;}/* keep hue when brightness is 0 */
+/* o (optional) points the wheel at something other than the drawing colour: {get, commit(hex)} */
+function skWheelPanel(o){const G=o&&o.get?o.get:skColor,R=130,dpr=Math.min(3,devicePixelRatio||1);let [hh,ss,vv]=skHex2Hsv(G());if(!S.skWheelHS)S.skWheelHS=null;
+  if(!o&&S.skWheelHS&&skHsv2Hex(S.skWheelHS[0],S.skWheelHS[1],vv)===skColor().toUpperCase()){[hh,ss]=S.skWheelHS;}/* keep hue when brightness is 0 */
   const cv=h('canvas',{width:String(R*2*dpr),height:String(R*2*dpr)}),dot=h('i'),wrap=h('div',{class:'skwh','aria-label':'Colour wheel'},cv,dot);
   const val=h('input',{type:'range',class:'skwv',min:'0',max:'100',step:'1',value:String(Math.round(vv*100)),'aria-label':'Brightness'});
-  const sw=h('b'),hex=h('input',{value:skColor().toUpperCase(),maxlength:'40','aria-label':'Hex colour (or paste rgb(…))',spellcheck:'false'});
+  const sw=h('b'),hex=h('input',{value:G().toUpperCase(),maxlength:'40','aria-label':'Hex colour (or paste rgb(…))',spellcheck:'false'});
   /* exact numbers: RGB 0–255 and HSB (H 0–360, S and B 0–100) */
   const fld=(lab,max)=>h('input',{type:'number',min:'0',max:String(max),step:'1','aria-label':lab,title:lab});
   const F={r:fld('Red',255),g:fld('Green',255),b:fld('Blue',255),h:fld('Hue',360),s:fld('Saturation',100),v:fld('Brightness',100)};
@@ -9159,13 +9195,14 @@ function skWheelPanel(){const R=130,dpr=Math.min(3,devicePixelRatio||1);let [hh,
   const show=()=>{const c=skHsv2Hex(hh,ss,vv),a=hh*Math.PI/180;dot.style.left=(R+Math.cos(a)*ss*R)+'px';dot.style.top=(R-Math.sin(a)*ss*R)+'px';dot.style.setProperty('--c',c);
     val.style.background=`linear-gradient(90deg,#000,${skHsv2Hex(hh,ss,1)})`;val.style.setProperty('--c',c);sw.style.setProperty('--c',c);if(document.activeElement!==hex)hex.value=c;
     const [r8,g8,b8]=rgbOf(c),set=(el,v)=>{if(document.activeElement!==el)el.value=String(v);};set(F.r,r8);set(F.g,g8);set(F.b,b8);set(F.h,Math.round(hh)%360);set(F.s,Math.round(ss*100));set(F.v,Math.round(vv*100));
+    if(o){if(o.live)o.live(c);return;}
     S.skColor=c;S.skWheelHS=[hh,ss];liveApply(c);document.querySelectorAll('#app .skcol.cur').forEach(el=>{el.style.setProperty('--c',c);el.classList.toggle('white',c==='#FFFFFF');});};
   let ready=false;const LIVE=new Map();
   /* live preview while dragging: the same rule as applying a colour (closed pen shapes take it as fill when Fill is picked; everything else as its colour; a gradient gives way to the flat colour) */
   const liveApply=c=>{if(!ready||!SKW)return;const fillT=S.skColTarget==='fill',list=fillT?[...new Set(skSel().concat(skPenSel()))]:(skTool()==='pt'&&skPed()?[skPed().st]:skSel());if(!list.length)return;
     if(skGSel()&&S.skGStop!=null)return;
     for(const st of list){const asFill=(fillT&&st.vp&&skPClosed(st))||skFillOnly(st);if(fillT&&st.vp&&!asFill)continue;if(!LIVE.has(st))LIVE.set(st,asFill?{pf:st.pf,pg:st.pg}:{c:st.c,cg:st.cg});if(asFill){st.pf=c;st.pg=null;}else{st.c=c;st.cg=null;}}SKW.repaint&&SKW.repaint();};
-  const commit=()=>{const c=skColor().toUpperCase();if(!SK_COLORS.includes(c))S.skCustom=[c].concat((S.skCustom||[]).filter(x=>x!==c)).slice(0,4);
+  const commit=()=>{if(o){o.commit(skHsv2Hex(hh,ss,vv).toUpperCase());return;}const c=skColor().toUpperCase();if(!SK_COLORS.includes(c))S.skCustom=[c].concat((S.skCustom||[]).filter(x=>x!==c)).slice(0,4);
     for(const [st,o] of LIVE)Object.assign(st,o);LIVE.clear();if(skSel().length||(S.skColTarget==='fill'&&skPenSel().length)||(skTool()==='pt'&&skPed()))skRecolor(c);saveUI();};
   const at=e=>{const r=cv.getBoundingClientRect(),q=(r.width/(2*R))||1,dx=(e.clientX-r.left)/q-R,dy=(e.clientY-r.top)/q-R;hh=(Math.atan2(-dy,dx)*180/Math.PI+360)%360;ss=Math.min(1,Math.hypot(dx,dy)/R);if(vv<.05){vv=1;val.value='100';}show();};
   wrap.addEventListener('pointerdown',e=>{e.preventDefault();wrap.setPointerCapture(e.pointerId);at(e);});
@@ -9173,7 +9210,7 @@ function skWheelPanel(){const R=130,dpr=Math.min(3,devicePixelRatio||1);let [hh,
   wrap.addEventListener('pointerup',()=>commit());
   val.addEventListener('input',()=>{vv=+val.value/100;show();});val.addEventListener('change',commit);
   const setHex=v=>{[hh,ss,vv]=skHex2Hsv(v);val.value=String(Math.round(vv*100));show();commit();};
-  hex.addEventListener('change',()=>{const v=skParseColor(hex.value);if(!v){hex.value=skColor();return;}setHex(v);});
+  hex.addEventListener('change',()=>{const v=skParseColor(hex.value);if(!v){hex.value=G();return;}setHex(v);});
   const clamp=(el,max)=>Math.max(0,Math.min(max,Math.round(+el.value)||0));
   [F.r,F.g,F.b].forEach(el=>el.addEventListener('change',()=>setHex('#'+[F.r,F.g,F.b].map(x=>skHex2(clamp(x,255))).join(''))));
   [F.h,F.s,F.v].forEach(el=>el.addEventListener('change',()=>{hh=clamp(F.h,360)%360;ss=clamp(F.s,100)/100;vv=clamp(F.v,100)/100;val.value=String(Math.round(vv*100));show();commit();}));
@@ -9251,7 +9288,7 @@ function skPalSoloViews(){if(!SKW)return null;const P=skPals(),cur=skColor().toU
       h('div',{class:'sklfh',title:'Drag to move',onpointerdown:e=>{if(e.button>0||(e.target.closest&&e.target.closest('button')))return;e.preventDefault();const g=e.currentTarget,r=el.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;g.setPointerCapture(e.pointerId);
           const mv=ev=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,ev.clientX-ox)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,ev.clientY-oy));el.style.left=x+'px';el.style.top=y+'px';o.x=Math.round(x);o.y=Math.round(y);};
           const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);saveUI();};g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);}},
-        h('span',null,pl.name),
+        h('span',null,pl.name),skEyeBtn(),
         h('button',{class:'sklb',title:'Add the current colour','aria-label':'Add the current colour to '+pl.name,onclick:()=>{if(!pl.colors.includes(cur)){pl.colors=pl.colors.concat([cur]);skPalsSave();render();}}},skIcoL('plus')),
         h('button',{class:'sklb',title:'Close (it stays in the Palettes list)','aria-label':'Close '+pl.name,onclick:()=>skPalSolo(pl.id)},skIcoL('x'))),
       h('div',{class:'skpalc'},pl.colors.length?pl.colors.map(c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(cur===c),title:c+' · Alt+click (or right-click) to remove',style:`--c:${c}`,
@@ -9263,13 +9300,73 @@ function skPalFloatView(){if(!SKW||!S.skPalFloat||!S.skPalShow)return null;const
     h('div',{class:'sklfh',title:'Drag to move',onpointerdown:e=>{if(e.button>0||(e.target.closest&&e.target.closest('button')))return;e.preventDefault();const g=e.currentTarget,r=el.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;g.setPointerCapture(e.pointerId);
         const mv=ev=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,ev.clientX-ox)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,ev.clientY-oy));el.style.left=x+'px';el.style.top=y+'px';S.skPPos={x:Math.round(x),y:Math.round(y)};};
         const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);saveUI();};g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);}},
-      h('span',null,'Palettes'),h('button',{class:'sklb',title:'Hide (Shift+P brings it back)','aria-label':'Hide the Palettes panel',onclick:()=>{S.skPalShow=false;saveUI();render();}},skIcoL('x'))),
+      h('span',null,'Palettes'),skEyeBtn(),h('button',{class:'sklb',title:'Hide (Shift+P brings it back)','aria-label':'Hide the Palettes panel',onclick:()=>{S.skPalShow=false;saveUI();render();}},skIcoL('x'))),
     skPalettesView(true));
   requestAnimationFrame(()=>{const x=Math.max(4,Math.min(innerWidth-el.getBoundingClientRect().width-4,pos.x)),y=Math.max(4,Math.min(innerHeight-el.getBoundingClientRect().height-4,pos.y));el.style.left=x+'px';el.style.top=y+'px';});
   return skSizer(el,'pals',(x,y)=>{S.skPPos={x,y};});}
 function skPick(fn){return ()=>{fn();S.skPop=null;saveUI();render();};}
 function skSelColorSync(){if(!SKW)return;const sel=skSel(),sig=sel.map(st=>st.id||'').join(',');if(sig===SKW._selSig)return;SKW._selSig=sig;if(!sel.length||(skPenCtx&&skPenCtx()))return;
   const top=sel[sel.length-1];let c=null;if(S.skColTarget==='fill'){const f=sel.slice().reverse().find(st=>st.pf);c=f?f.pf:null;}if(!c)c=top.c;if(c&&/^#/.test(c))S.skColor=String(c).toUpperCase();}
+/* when a menu floats, its toolbar button shows or hides the floating panel instead */
+function skPanelTgl(key,label,content,o){const hidKey=key==='color'?'skColHide':'skPenHide',shown=!S[hidKey];
+  return h('div',{class:'skpk'+(o&&o.cls?' '+o.cls:'')},h('button',{class:'sktool skpb'+(shown?' open':''),title:label+(shown?' (floating: tap to hide)':' (floating: tap to show)'),'aria-label':label,'aria-pressed':String(shown),onclick:()=>{S[hidKey]=shown;saveUI();render();}},content));}
+/* eyedropper: anywhere on the screen where the browser allows it (Chrome, Edge, the After Effects panel); otherwise the canvas eyedropper for one pick */
+async function skEyeDrop(){if(window.EyeDropper){try{const r=await new EyeDropper().open(),hx=skParseColor(r.sRGBHex);if(!hx)return;
+      S.skColor=hx;S.skGStop=null;if(skSel().length||(S.skColTarget==='fill'&&skPenSel().length))skRecolor(hx);saveUI();render();flash('Colour picked: '+hx);}catch(e){}return;}
+  S.skPop=null;skSetTool('pick');render();flash('Tap a line or a filled area to pick its colour');}
+const skEyeBtn=()=>h('button',{class:'sklb skeyeb',title:'Eyedropper: pick a colour from anywhere on the screen (or the canvas)','aria-label':'Eyedropper',onclick:e=>{e.stopPropagation();skEyeDrop();}},skIcoL('eyedrop'));
+/* the size pad: drag left or right on it to change the brush size (like Concepts); the dot shows the size */
+function skSizePad(){const dot=h('i'),val=h('b'),pad=h('div',{class:'skszpad',title:'Drag left or right to change the brush size','aria-label':'Brush size pad',role:'slider'},h('span',{class:'skszpadd'},dot),val);
+  const show=()=>{const dt=skDrawTool(),w=skBaseW(dt);dot.style.width=dot.style.height=Math.max(2,Math.min(40,w))+'px';val.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';pad.setAttribute('aria-valuenow',String(w));};pad._show=show;
+  let sx=0,t0=0;
+  pad.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();pad.setPointerCapture(e.pointerId);sx=e.clientX;t0=skW2t(skBaseW(skDrawTool()),skDrawTool());pad.classList.add('on');});
+  pad.addEventListener('pointermove',e=>{if(!pad.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),t=Math.max(0,Math.min(1,t0+(e.clientX-sx)/280));skSetW(skT2w(t,dt),dt);skSizeSync();});
+  const end=()=>{pad.classList.remove('on');saveUI();};pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);
+  requestAnimationFrame(show);show();return pad;}
+/* floating panels for the colour menu, the pen settings and the size pad (all stackable) */
+function skFloatPanel(cls,title,o,key,kids,btns){const el=h('div',{class:'skpop sklfloat '+cls,style:`left:${o.x}px;top:${o.y}px`},h('div',{class:'sklfh'},h('span',null,title),btns),kids);
+  requestAnimationFrame(()=>{const r=el.getBoundingClientRect(),x=Math.max(4,Math.min(innerWidth-r.width-4,o.x)),y=Math.max(4,Math.min(innerHeight-r.height-4,o.y));el.style.left=x+'px';el.style.top=y+'px';});
+  return skSizer(el,key,(x,y)=>{o.x=x;o.y=y;});}
+const skDockB=(lab,fn)=>h('button',{class:'sklb',title:'Dock back into the toolbar','aria-label':'Dock the '+lab,onclick:()=>{fn();saveUI();render();}},skIcoL('dock'));
+const skHideB=(lab,fn)=>h('button',{class:'sklb',title:'Hide (the toolbar button brings it back)','aria-label':'Hide the '+lab,onclick:()=>{fn();saveUI();render();}},skIcoL('x'));
+function skColFloatView(){if(!SKW||!S.skColFloat||S.skColHide)return null;
+  return skFloatPanel('skcolfloat','Colour',S.skColFloat,'col',skColorItems(),[skEyeBtn(),skDockB('colour panel',()=>{S.skColFloat=null;S.skColHide=false;}),skHideB('colour panel',()=>{S.skColHide=true;})]);}
+function skPenFloatView(){if(!SKW||!S.skPenFloat||S.skPenHide)return null;
+  return skFloatPanel('skpenfloat','Pen settings',S.skPenFloat,'pen',skSizeItems(),[skDockB('pen settings',()=>{S.skPenFloat=null;S.skPenHide=false;}),skHideB('pen settings',()=>{S.skPenHide=true;})]);}
+function skSizeFloatView(){if(!SKW||!S.skSizeFloat)return null;
+  return skFloatPanel('sksizefloat','Size',S.skSizeFloat,'size',[skSizePad()],[h('button',{class:'sklb',title:'Close the size panel','aria-label':'Close the size panel',onclick:()=>{S.skSizeFloat=null;saveUI();render();}},skIcoL('x'))]);}
+/* the colour menu and the pen settings, as functions so each can also live in its own floating panel */
+function skColorItems(){const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(skColor().toUpperCase()===c),title:c==='#FFFFFF'?'White':c,'aria-label':c==='#FFFFFF'?'White':c,style:`--c:${c}`,onclick:skPick(()=>{S.skColor=c;if(skSel().length)skRecolor(c);})});
+          /* the rainbow swatch opens the system colour picker; the last few custom colours are kept after the standard ones */
+          const recent=(S.skRecent||[]).slice(0,8);
+          const pick=h('button',{class:'skcol skcustom','aria-pressed':String(!!S.skWheel),title:'Colour wheel: pick any colour','aria-label':'Colour wheel','aria-expanded':String(!!S.skWheel),onclick:()=>{S.skWheel=!S.skWheel;render();}});
+          const pc=skPenCtx()?(()=>{const cs=skPenCols(),tg=S.skColTarget==='fill'?'fill':'stroke',L=skPenSel(),fOn=L.length?L.some(skHasPFill):!!S.skPenFillOn,sOn=L.length?L.some(st=>!st.ns):!S.skPenNoStroke;
+              const chip=(k,lab,c,on)=>h('button',{class:'skpchip'+(tg===k?' on':''),'aria-pressed':String(tg===k),title:'Pick the '+lab.toLowerCase()+' colour (X switches)',onclick:()=>{skColTargetSet(k);render();}},h('i',{class:'skpcs '+k+(on?'':' none'),style:`--c:${c}`}),lab);
+              return [h('div',{class:'skpenc skgrow'},chip('stroke','Stroke',cs.stroke,sOn),chip('fill','Fill',cs.fill,fOn),
+                h('button',{class:'sklb',title:'Swap fill and stroke colours (Shift+X)','aria-label':'Swap fill and stroke colours',onclick:skPenSwap},'⇄')),
+                h('div',{class:'skpenc skgrow'},h('label',{class:'skpent'},h('input',{type:'checkbox',checked:sOn||!fOn,disabled:!fOn,onchange:e=>skPenStrokeSet(e.target.checked)}),'Stroke'),
+                  h('label',{class:'skpent'},h('input',{type:'checkbox',checked:fOn,onchange:e=>skPenFillSet(e.target.checked)}),'Fill (closed paths)'))];})():[];
+          const eye=h('button',{class:'skcol skeyecol',title:'Eyedropper: pick a colour from anywhere on the screen (or the canvas)','aria-label':'Eyedropper',onclick:e=>{e.stopPropagation();skEyeDrop();}},skIcoL('eyedrop'));
+          return pc.concat([skGradPanel()],SK_COLORS.map(sw)).concat(recent.length?[h('div',{class:'skgh skgrow'},'Recent')]:[],recent.map(sw),[pick,eye],S.skWheel?[skWheelPanel()]:[],S.skPalFloat?[h('button',{class:'skrow skgrow',onclick:()=>{S.skPalShow=!S.skPalShow;S.skPop=null;saveUI();render();}},skIcoL('palette'),(S.skPalShow?'Hide':'Show')+' Palettes panel  (Shift+P)')]:[skPalettesView(false)],S.skColFloat?[]:[h('button',{class:'skrow skgrow',onclick:()=>{S.skPop=null;S.skColFloat={x:Math.max(8,innerWidth-380),y:90};S.skColHide=false;saveUI();render();}},skIcoL('float'),'Float the colour panel')]);}
+function skSizeItems(){const t=skTool(),dt=skDrawTool(),doc=SKW.doc;return [skSizePad(),h('div',{class:'skszfl'},S.skPenFloat?null:h('button',{class:'tlink',title:'Float these pen settings in their own panel',onclick:()=>{S.skPop=null;S.skPenFloat={x:Math.max(8,innerWidth-640),y:90};S.skPenHide=false;saveUI();render();}},skIcoL('float'),'Float'),
+    h('button',{class:'tlink',title:'Keep just the size pad on screen in its own small panel','aria-pressed':String(!!S.skSizeFloat),onclick:()=>{S.skPop=null;S.skSizeFloat=S.skSizeFloat?null:{x:Math.max(8,innerWidth-260),y:Math.max(90,innerHeight-260)};saveUI();render();}},skIcoL('popout'),S.skSizeFloat?'Close size panel':'Size panel'))].concat((()=>{const w=skBaseW(dt);
+        const tpr=skPenCtx()?(()=>{const L=skPenSel(),st=L[0],a=st?((st.tp&&st.tp[0])||0):(+S.skTaperS||0),b=st?((st.tp&&st.tp[1])||0):(+S.skTaperE||0),ink=st?!!st.ink:!!S.skInk;
+            const sl=(lab,v,set)=>{const out=h('span',null,Math.round(v*100)+'%');return h('label',{class:'sklop'},lab,h('input',{type:'range',min:'0',max:'50',step:'1',value:String(Math.round(v*100)),'aria-label':lab,oninput:e=>{out.textContent=e.target.value+'%';},onchange:e=>set(+e.target.value/100)}),out);};
+            return [h('div',{class:'skmh'},'Pen paths and shapes'),sl('Taper start',a,v=>skTaperSet(v,b,ink)),sl('Taper end',b,v=>skTaperSet(a,v,ink)),
+              h('button',{class:'skrow','aria-pressed':String(ink),onclick:()=>skTaperSet(a,b,!ink)},skIcoL('pressure'),'Ink texture '+(ink?'on':'off'))];})():[];
+        return tpr.concat([h('div',{class:'skszrow'},h('input',{type:'range',class:'skszr',min:'0',max:'1000',step:'1',value:String(Math.round(skW2t(w,dt)*1000)),'aria-label':'Brush size',
+            oninput:e=>{skSetW(skT2w(+e.target.value/1000,dt),dt);skSizeSync();},onchange:()=>saveUI()}),h('span',{class:'skszv'},(w<10?w.toFixed(1):Math.round(w))+' px')),
+          h('div',{class:'skszhint'},'[ and ] step the size · Alt + right-drag (or pen button) on the canvas'),
+          h('button',{class:'skrow','aria-pressed':String(!!S.skStrip),onclick:skPick(()=>{S.skStrip=!S.skStrip;})},skIcoL('sizestrip'),S.skStrip?'Hide the size strip':'Show the size strip'),
+          (()=>{const v=skSmoothLv(),lab=h('span',null,String(v));return h('label',{class:'sklop sksmooth',title:'How much your lines are smoothed: 0 = exactly as drawn, 10 = very smooth (new lines)'},'Smoothing',
+            h('input',{type:'range',min:'0',max:'10',step:'1',value:String(v),'aria-label':'Smoothing',oninput:e=>{S.skSmooth=+e.target.value;lab.textContent=e.target.value;},onchange:()=>saveUI()}),lab);})(),
+          h('div',{class:'skmh'},'Pen'+(t==='pen'?'':' (pen tool only)')),
+          h('button',{class:'skrow'+(t==='pen'?'':' skoff'),'aria-pressed':String(S.skPress!==false),onclick:()=>{S.skPress=S.skPress===false;saveUI();render();}},skIcoL('pressure'),'Pressure '+(S.skPress!==false?'on':'off')),
+          S.skPress!==false?(()=>{const v=Math.round(skPressAmt()*100),lab=h('span',null,v+'%');return h('label',{class:'sklop skpress'+(t==='pen'?'':' skoff'),title:'How much pen pressure changes the line width'},'Range',
+            h('input',{type:'range',min:'0',max:'100',step:'5',value:String(v),'aria-label':'Pressure range',oninput:e=>{S.skPressAmt=+e.target.value/100;lab.textContent=e.target.value+'%';},onchange:()=>saveUI()}),lab);})():null,
+          h('button',{class:'skrow'+(t==='pen'?'':' skoff'),'aria-pressed':String(S.skTilt!==false),onclick:()=>{S.skTilt=S.skTilt===false;saveUI();render();}},skIcoL('tilt'),'Tilt shading '+(S.skTilt!==false?'on':'off')),
+          S.skTilt!==false?(()=>{const v=Math.round(skTiltAmt()*100),lab=h('span',null,v+'%');return h('label',{class:'sklop skpress'+(t==='pen'?'':' skoff'),title:'How much leaning the pen widens the line'},'Strength',
+            h('input',{type:'range',min:'0',max:'100',step:'5',value:String(v),'aria-label':'Tilt strength',oninput:e=>{S.skTiltAmt=+e.target.value/100;lab.textContent=e.target.value+'%';},onchange:()=>saveUI()}),lab);})():null]);})());}
 function skToolbar(){try{skSelColorSync();}catch(e){}const fl=!!S.skFloat,t=skTool(),doc=SKW.doc,dt=skDrawTool(),nd=!SK_SIZES[t]&&t!=='vpen'&&t!=='shape',nc=nd&&t!=='fill'&&t!=='sfill'&&!skSelTool()&&t!=='pt'&&t!=='pick'&&!skSel().length;
   const tools=SK_TOOLS,cur=tools.find(([k])=>k===t)||tools[0];
   const dot=(w,tool)=>{const d=Math.min(22,Math.max(4,w*(tool==='pen'?2:0.8)));return h('i',{class:'skdot',style:`width:${d}px;height:${d}px`});};
@@ -9296,36 +9393,9 @@ function skToolbar(){try{skSelColorSync();}catch(e){}const fl=!!S.skFloat,t=skTo
           skErasePart()?h('div',{class:'skszrow'},h('input',{type:'range',class:'skszr',min:'0',max:'1000',step:'1',value:String(Math.round(skW2t(w,'eraser')*1000)),'aria-label':'Eraser size',
             oninput:e=>{skSetW(skT2w(+e.target.value/1000,'eraser'),'eraser');const v=document.querySelector('#app .skszv');if(v)v.textContent=Math.round(skBaseW('eraser'))+' px';},onchange:()=>saveUI()}),h('span',{class:'skszv'},Math.round(w)+' px')):null,
           h('div',{class:'skszhint'},'Shift+E switches modes · [ and ] change the eraser size')];}}):
-      skPopBtn('size','Size: '+skBaseW(dt)+' px',dot(skBaseW(dt),dt),{cls:nd?'skoff':'',popCls:'list skszpop',items:()=>{const w=skBaseW(dt);
-        const tpr=skPenCtx()?(()=>{const L=skPenSel(),st=L[0],a=st?((st.tp&&st.tp[0])||0):(+S.skTaperS||0),b=st?((st.tp&&st.tp[1])||0):(+S.skTaperE||0),ink=st?!!st.ink:!!S.skInk;
-            const sl=(lab,v,set)=>{const out=h('span',null,Math.round(v*100)+'%');return h('label',{class:'sklop'},lab,h('input',{type:'range',min:'0',max:'50',step:'1',value:String(Math.round(v*100)),'aria-label':lab,oninput:e=>{out.textContent=e.target.value+'%';},onchange:e=>set(+e.target.value/100)}),out);};
-            return [h('div',{class:'skmh'},'Pen paths and shapes'),sl('Taper start',a,v=>skTaperSet(v,b,ink)),sl('Taper end',b,v=>skTaperSet(a,v,ink)),
-              h('button',{class:'skrow','aria-pressed':String(ink),onclick:()=>skTaperSet(a,b,!ink)},skIcoL('pressure'),'Ink texture '+(ink?'on':'off'))];})():[];
-        return tpr.concat([h('div',{class:'skszrow'},h('input',{type:'range',class:'skszr',min:'0',max:'1000',step:'1',value:String(Math.round(skW2t(w,dt)*1000)),'aria-label':'Brush size',
-            oninput:e=>{skSetW(skT2w(+e.target.value/1000,dt),dt);skSizeSync();},onchange:()=>saveUI()}),h('span',{class:'skszv'},(w<10?w.toFixed(1):Math.round(w))+' px')),
-          h('div',{class:'skszhint'},'[ and ] step the size · Alt + right-drag (or pen button) on the canvas'),
-          h('button',{class:'skrow','aria-pressed':String(!!S.skStrip),onclick:skPick(()=>{S.skStrip=!S.skStrip;})},skIcoL('sizestrip'),S.skStrip?'Hide the size strip':'Show the size strip'),
-          (()=>{const v=skSmoothLv(),lab=h('span',null,String(v));return h('label',{class:'sklop sksmooth',title:'How much your lines are smoothed: 0 = exactly as drawn, 10 = very smooth (new lines)'},'Smoothing',
-            h('input',{type:'range',min:'0',max:'10',step:'1',value:String(v),'aria-label':'Smoothing',oninput:e=>{S.skSmooth=+e.target.value;lab.textContent=e.target.value;},onchange:()=>saveUI()}),lab);})(),
-          h('div',{class:'skmh'},'Pen'+(t==='pen'?'':' (pen tool only)')),
-          h('button',{class:'skrow'+(t==='pen'?'':' skoff'),'aria-pressed':String(S.skPress!==false),onclick:()=>{S.skPress=S.skPress===false;saveUI();render();}},skIcoL('pressure'),'Pressure '+(S.skPress!==false?'on':'off')),
-          S.skPress!==false?(()=>{const v=Math.round(skPressAmt()*100),lab=h('span',null,v+'%');return h('label',{class:'sklop skpress'+(t==='pen'?'':' skoff'),title:'How much pen pressure changes the line width'},'Range',
-            h('input',{type:'range',min:'0',max:'100',step:'5',value:String(v),'aria-label':'Pressure range',oninput:e=>{S.skPressAmt=+e.target.value/100;lab.textContent=e.target.value+'%';},onchange:()=>saveUI()}),lab);})():null,
-          h('button',{class:'skrow'+(t==='pen'?'':' skoff'),'aria-pressed':String(S.skTilt!==false),onclick:()=>{S.skTilt=S.skTilt===false;saveUI();render();}},skIcoL('tilt'),'Tilt shading '+(S.skTilt!==false?'on':'off')),
-          S.skTilt!==false?(()=>{const v=Math.round(skTiltAmt()*100),lab=h('span',null,v+'%');return h('label',{class:'sklop skpress'+(t==='pen'?'':' skoff'),title:'How much leaning the pen widens the line'},'Strength',
-            h('input',{type:'range',min:'0',max:'100',step:'5',value:String(v),'aria-label':'Tilt strength',oninput:e=>{S.skTiltAmt=+e.target.value/100;lab.textContent=e.target.value+'%';},onchange:()=>saveUI()}),lab);})():null]);}}),
-      skPopBtn('color','Colour',skPenCtx()?(()=>{const cs=skPenCols(),fo=skPenSel().length?skPenSel().some(skHasPFill):!!S.skPenFillOn;return h('span',{class:'skpenb'},h('i',{class:'skpcs fill'+(fo?'':' none'),style:`--c:${cs.fill}`}),h('i',{class:'skpcs stroke',style:`--c:${cs.stroke}`}));})():h('i',{class:'skcol cur'+(skColor().toUpperCase()==='#FFFFFF'?' white':''),style:`--c:${skColor()}`}),{cls:nc?'skoff':'',popCls:'grid skcolpop',
-        items:()=>{const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(skColor().toUpperCase()===c),title:c==='#FFFFFF'?'White':c,'aria-label':c==='#FFFFFF'?'White':c,style:`--c:${c}`,onclick:skPick(()=>{S.skColor=c;if(skSel().length)skRecolor(c);})});
-          /* the rainbow swatch opens the system colour picker; the last few custom colours are kept after the standard ones */
-          const recent=(S.skRecent||[]).slice(0,8);
-          const pick=h('button',{class:'skcol skcustom','aria-pressed':String(!!S.skWheel),title:'Colour wheel: pick any colour','aria-label':'Colour wheel','aria-expanded':String(!!S.skWheel),onclick:()=>{S.skWheel=!S.skWheel;render();}});
-          const pc=skPenCtx()?(()=>{const cs=skPenCols(),tg=S.skColTarget==='fill'?'fill':'stroke',L=skPenSel(),fOn=L.length?L.some(skHasPFill):!!S.skPenFillOn,sOn=L.length?L.some(st=>!st.ns):!S.skPenNoStroke;
-              const chip=(k,lab,c,on)=>h('button',{class:'skpchip'+(tg===k?' on':''),'aria-pressed':String(tg===k),title:'Pick the '+lab.toLowerCase()+' colour (X switches)',onclick:()=>{skColTargetSet(k);render();}},h('i',{class:'skpcs '+k+(on?'':' none'),style:`--c:${c}`}),lab);
-              return [h('div',{class:'skpenc skgrow'},chip('stroke','Stroke',cs.stroke,sOn),chip('fill','Fill',cs.fill,fOn),
-                h('button',{class:'sklb',title:'Swap fill and stroke colours (Shift+X)','aria-label':'Swap fill and stroke colours',onclick:skPenSwap},'⇄')),
-                h('div',{class:'skpenc skgrow'},h('label',{class:'skpent'},h('input',{type:'checkbox',checked:sOn||!fOn,disabled:!fOn,onchange:e=>skPenStrokeSet(e.target.checked)}),'Stroke'),
-                  h('label',{class:'skpent'},h('input',{type:'checkbox',checked:fOn,onchange:e=>skPenFillSet(e.target.checked)}),'Fill (closed paths)'))];})():[];
-          return pc.concat([skGradPanel()],SK_COLORS.map(sw)).concat(recent.length?[h('div',{class:'skgh skgrow'},'Recent')]:[],recent.map(sw),[pick],S.skWheel?[skWheelPanel()]:[],S.skPalFloat?[h('button',{class:'skrow skgrow',onclick:()=>{S.skPalShow=!S.skPalShow;S.skPop=null;saveUI();render();}},skIcoL('palette'),(S.skPalShow?'Hide':'Show')+' Palettes panel  (Shift+P)')]:[skPalettesView(false)]);}})),
+      (S.skPenFloat?skPanelTgl:skPopBtn)('size','Size: '+skBaseW(dt)+' px',dot(skBaseW(dt),dt),{cls:nd?'skoff':'',popCls:'list skszpop',items:skSizeItems}),
+      (S.skColFloat?skPanelTgl:skPopBtn)('color','Colour',skPenCtx()?(()=>{const cs=skPenCols(),fo=skPenSel().length?skPenSel().some(skHasPFill):!!S.skPenFillOn;return h('span',{class:'skpenb'},h('i',{class:'skpcs fill'+(fo?'':' none'),style:`--c:${cs.fill}`}),h('i',{class:'skpcs stroke',style:`--c:${cs.stroke}`}));})():h('i',{class:'skcol cur'+(skColor().toUpperCase()==='#FFFFFF'?' white':''),style:`--c:${skColor()}`}),{cls:nc?'skoff':'',popCls:'grid skcolpop',
+        items:skColorItems})),
     S.skPFFloat?ib('pf_unite','Pathfinder panel is floating — tap to close it',()=>{S.skPFFloat=null;saveUI();render();},{pressed:true}):skPopBtn('pathbar','Pathfinder (select two or more items)',skIcoL('pf_unite'),{popCls:'list skpfpop',items:()=>[h('div',{class:'skgh'},'Pathfinder'),skSel().length>1?null:h('div',{class:'skszhint'},'Select two or more shapes or lines.'),skPFRow(),skPFFloatBtn()]}),
     S.skLFloat?ib('layers',(S.skLHide?'Show':'Hide')+' the Layers panel',()=>{S.skLHide=!S.skLHide;saveUI();render();},{pressed:!S.skLHide}):skPopBtn('layers','Layers: '+skCurLayer(doc).name,skIcoL('layers'),{popCls:'list layers',items:skLayersPanel}),
     skPopBtn('zoom','Zoom',h('span',{class:'skzl'},Math.round(((SKW.view&&SKW.view.z)||1)*100)+'%'),{popCls:'row',items:()=>[
@@ -9374,7 +9444,8 @@ addEventListener('pointerup',e=>{if(e.button>0)return;const el=e.target.closest&
 function skBgColorRow(doc){const cur=(doc.bgc||'#FFFFFF').toUpperCase(),set=c=>{const v=c&&c.toUpperCase()!=='#FFFFFF'?c.toUpperCase():null;if((doc.bgc||null)===v)return;const b=doc.bgc||null;doc.bgc=v;SKW.undo.push({type:'bgc',a:b,b:v});SKW.redo.length=0;skSave();render();};
   const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(cur===c),title:c==='#FFFFFF'?'White':c,'aria-label':'Background '+(c==='#FFFFFF'?'white':c),style:`--c:${c}`,onclick:()=>set(c)});
   return h('div',{class:'skbgc'},h('div',{class:'skmh'},'Background colour'),h('div',{class:'skbgcs'},['#FFFFFF'].concat(SK_COLORS.filter(c=>c!=='#FFFFFF')).map(sw),
-    h('label',{class:'skcol skcustom',title:'Any colour'},h('input',{type:'color',value:cur.length===7?cur.toLowerCase():'#ffffff','aria-label':'Pick any background colour',onchange:e=>set(e.target.value)}))));}
+    h('button',{class:'skcol skcustom','aria-pressed':String(!!S.skBgWheel),title:'Any colour (colour wheel)','aria-label':'Pick any background colour',onclick:()=>{S.skBgWheel=!S.skBgWheel;render();}})),
+    S.skBgWheel?skWheelPanel({get:()=>(doc.bgc||'#FFFFFF'),live:c=>{const st=document.querySelector('#app .skstage');if(st)st.style.background=c;},commit:c=>set(c)}):null);}
 function skCorner(){const doc=SKW.doc;return h('div',{class:'skcorner'},skBackBtn(),skNameView(doc));}
 function skCornerOld(){const doc=SKW.doc;return h('div',{class:'skcorner'},h('button',{class:'tlink skback',title:'Back to all sketches','aria-label':'Back to all sketches',onclick:skClose},tri('l')),
   h('input',{id:'skname',class:'skname','data-keep':'1',value:doc.name||'',size:String(Math.max(3,(doc.name||'').length+1)),'aria-label':'Sketch name (tap to rename)',title:'Tap to rename',maxlength:'80',oninput:e=>{e.target.size=Math.max(3,e.target.value.length+1);},onchange:e=>{doc.name=e.target.value.trim()||'Untitled';skSave();}}));}
@@ -9388,7 +9459,7 @@ addEventListener('pointerdown',e=>{if(!S.skPop||!skActive())return;if(e.target.c
 addEventListener('keydown',e=>{if(e.key==='Escape'&&S.skPop&&skActive()){S.skPop=null;render();}});
 /* icon buttons for the sketch toolbar (label shows as a tooltip and to screen readers) */
 function ib(icon,label,fn,o){o=o||{};const a={class:'sktool skib'+(o.cls?' '+o.cls:''),title:label,'aria-label':label,onclick:fn};if(o.disabled)a.disabled=true;if(o.pressed!=null)a['aria-pressed']=String(!!o.pressed);if(o.expanded!=null)a['aria-expanded']=String(o.expanded);return h('button',a,skIcoL(icon));}
-const SKIL={mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
+const SKIL={eyedrop:'<path d="M14.5 4.5l5 5M17 2.8a2.3 2.3 0 0 1 3.2 3.2L17.6 8.6l-2.2-2.2z"/><path d="M15.4 6.4 5.6 16.2 5 19l2.8-.6 9.8-9.8"/>',popout:'<rect x="3" y="9" width="12" height="12" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/>',mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
   fit:'<circle cx="10.5" cy="10.5" r="7"/><path d="M16 16l5 5"/><path d="M6.8 11.6c1.1-2.6 2.2-2.6 3.2-.6s2.2 2 3.3-.7" stroke-width="1.7"/>',
   pressure:'<path d="M3 17c3-1 4-5 7-5s3 5 6 5 3-3 5-4" stroke-width="1.4"/><path d="M3 21c3-1.5 4-7 7-7s3 7 6 7 3-4 5-5" stroke-width="3"/><path d="M14.5 3.5l3 3-6 6H8.5v-3z" fill="currentColor" stroke="none"/>',
   undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',redo:'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
@@ -9435,7 +9506,7 @@ function skStackBottom(){skScrollKeep();const els=['.skframes','.sksel','.skbdna
 addEventListener('resize',()=>{if(SKW)skStackBottom();});
 function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'bigrow'},h('h1',{class:'wkh1 fith','aria-label':'Sketch'},'SKETCH'),bigClock()));
   if(SKW){const doc=SKW.doc;requestAnimationFrame(skStackBottom);
-    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
+    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
   const all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
   const books=skBookList(),has=new Set(books.map(b=>b.id)),inBook=d=>d.book&&has.has(d.book)?d.book:null;
   if(S.skBoardOpen){const v=skBoardEditor();if(v)return [v];}
@@ -9485,10 +9556,8 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   const addBook=()=>S.skBookNew&&!S.skMoveFor?skBookNameInput(null):null;
   const boards=skBoards(),boardSec=S.skBoardNew?skBoardNewForm():null;
   /* every storyboard lives in one Storyboards folder, shown like a sketchbook with the newest board's first panel in the window */
-  const boardFold=()=>{const B=boards[boards.length-1],P=B?skBoardPanels(skBoardNorm(B)):[],d=P[0]&&S.sketches.get(P[0].sk);
-    return h('div',{class:'skcard skbook skbdfold'},h('button',{class:'skbk','aria-label':'Open the Storyboards folder',onclick:()=>{S.skBook='__boards';S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},
-        skBookFit(skBook3D([h('span',{class:'skbkwin'},d&&!d._partial?skBoardPanelCv(P[0].sk,d,B,null,280):h('span',{class:'skbookempty'},'Empty')),h('span',{class:'skbklab'},'Storyboards')],312,380,24,{box:440,p:960,tr:'rotateX(38deg) rotateZ(var(--skz,-10deg))'}))),
-      h('div',{class:'skd skbkn'},boards.length+(boards.length===1?' storyboard':' storyboards')));};
+  const boardFold=()=>h('div',{class:'skcard skbook skbdfold'},h('button',{class:'skbk','aria-label':'Open the Storyboards folder',onclick:()=>{S.skBook='__boards';S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},skBoardFolderArt()),
+      h('div',{class:'skd skbkn'},boards.length+(boards.length===1?' storyboard':' storyboards')));
   return [head,typeof sotdCard==='function'?sotdCard():null,newRow,custom,boardSec,
     books.length||boards.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),h('div',{class:'skgal skbooks'},(boards.length?[boardFold()]:[]).concat(books.map(bookCard))),
       h('h2',{class:'sksec'},'Loose drawings')]
@@ -9967,10 +10036,10 @@ async function skImportText(txt){let o;try{o=JSON.parse(txt);}catch(e){o=null;}
   flash(bmsg+(parts.length?'Drawings: '+parts.join(', ')+'.':'No drawings in that file.'));render();}
 
 /* ---------- the host page (the planner, or the After Effects panel) calls these to load and save the drawing settings and to follow the database ---------- */
-function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skStacks=Array.isArray(store.skStacks)?store.skStacks.filter(st=>st&&Array.isArray(st.k)&&st.k.length>1&&typeof st.x==='number'):[];S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
+function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skColFloat=store.skColFloat&&typeof store.skColFloat.x==='number'?store.skColFloat:null;S.skPenFloat=store.skPenFloat&&typeof store.skPenFloat.x==='number'?store.skPenFloat:null;S.skSizeFloat=store.skSizeFloat&&typeof store.skSizeFloat.x==='number'?store.skSizeFloat:null;S.skColHide=!!store.skColHide;S.skPenHide=!!store.skPenHide;S.skStacks=Array.isArray(store.skStacks)?store.skStacks.filter(st=>st&&Array.isArray(st.k)&&st.k.length>1&&typeof st.x==='number'):[];S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
 /* remember the colour you had before the last change, for X */
 function skPrefsTrack(){if(S.skColor!==S._skColCur){if(S._skColCur!==undefined&&S._skColCur)S.skColorPrev=S._skColCur;S._skColCur=S.skColor;const c=String(S.skColor||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))S.skRecent=[c].concat((S.skRecent||[]).filter(x=>x!==c)).slice(0,8);}}
-function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skPFFloat:S.skPFFloat||null,skStacks:S.skStacks||[],skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
+function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skPFFloat:S.skPFFloat||null,skStacks:S.skStacks||[],skColFloat:S.skColFloat||null,skColHide:!!S.skColHide,skPenFloat:S.skPenFloat||null,skPenHide:!!S.skPenHide,skSizeFloat:S.skSizeFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
 function skListen(db){
   db.collection('sketches').onSnapshot(s=>{S.skMain=new Map(s.docs.map(d=>[d.id,d.data()]));skSyncFromDb();},()=>{});
   db.collection('skparts').onSnapshot(s=>{S.skParts=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.skMain)skSyncFromDb();},()=>{});
