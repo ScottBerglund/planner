@@ -1445,6 +1445,8 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 @keyframes sbrec{50%{opacity:.35}}
 .sbptime.rec{color:#ff7a7a}
 .sbaudname{padding:2px 12px 6px;font-size:12px;opacity:.7;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sbpdel svg{width:18px;height:18px;vertical-align:middle}.sbpdel.arm{background:#7a2323}
+body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2969,7 +2971,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119233504',newer=false,want='',last=Date.now();
+  var MINE='20261120095201',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8551,14 +8553,17 @@ function skBoardPlayer(B,opt){skBoardNorm(B);opt=opt||{};const list=[],num=[];B.
   const lb=tb('Loop','Play it again from the start',b=>{loop=!loop;b.classList.toggle('on',loop);try{localStorage.setItem('sbLoop',loop?'1':'0');}catch(e){}},loop);
   const sbb=tb('Notes','Show each panel’s notes as subtitles',b=>{subs=!subs;S.skBPSubs=subs;b.classList.toggle('on',subs);draw(true);},subs);
   const snd=tb('Sound','Play the scratch track',b=>{sound=!sound;S.skBPMute=!sound;b.classList.toggle('on',sound);if(!sound&&aud)aud.pause();},sound);
+  const del=h('button',{class:'sbpb sbpdel',title:'Delete the scratch track','aria-label':'Delete the scratch track'},skIcoL('clear'));let armDel=0;
+  del.onclick=()=>{if(R||!B.audio)return;if(Date.now()-armDel>3000){armDel=Date.now();del.classList.add('arm');flash('Press the bin again to delete the scratch track.');setTimeout(()=>del.classList.remove('arm'),3000);return;}
+    armDel=0;del.classList.remove('arm');if(aud)aud.pause();skAudioRemove(B);loadAud();};
   const rec=h('button',{class:'sbpb sbprec',title:'Record a scratch track: the panels play from the start while you talk (R)','aria-label':'Record a scratch track'},h('i'));
   const prev=h('button',{class:'sbpb',title:'Previous panel (←)','aria-label':'Previous panel'},'⏮'),next=h('button',{class:'sbpb',title:'Next panel (→)','aria-label':'Next panel'},'⏭'),close=h('button',{class:'sbpb sbpx',title:'Close (Esc)','aria-label':'Close the player'},'✕');
-  const ctl=h('div',{class:'sbpctl'},prev,pbtn,next,time,h('span',{class:'sbpgrow'}),rec,snd,sbb,lb,close);
+  const ctl=h('div',{class:'sbpctl'},prev,pbtn,next,time,h('span',{class:'sbpgrow'}),del,rec,snd,sbb,lb,close);
   ov.append(h('div',{class:'sbpstage'},scr,sub,big),h('div',{class:'sbpbottom'},bar,ctl));document.body.appendChild(ov);
   let t=0,playing=false,raf=0,last=0,shown='',aud=null,aurl=null,R=null,armRec=0,closed=false;const CV=new Map();
   /* the waveform sits under the panel strip, placed where the track falls in time */
   const paintWave=()=>{const m=B.audio,r=bar.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);wave.width=Math.max(1,Math.round(r.width*dpr));wave.height=Math.max(1,Math.round(r.height*dpr));
-    const c=wave.getContext('2d');c.clearRect(0,0,wave.width,wave.height);snd.style.display=m?'':'none';if(!m||!m.pk||!tot)return;
+    const c=wave.getContext('2d');c.clearRect(0,0,wave.width,wave.height);snd.style.display=del.style.display=m?'':'none';if(!m||!m.pk||!tot)return;
     const x0=(m.off||0)/tot*wave.width,w=m.dur/tot*wave.width,n=m.pk.length,mid=wave.height/2;c.fillStyle='rgba(140,200,255,.55)';
     for(let i=0;i<n;i++){const x=x0+i/n*w;if(x>wave.width)break;const hh=Math.max(1,m.pk[i]/99*mid*.95);c.fillRect(x,mid-hh,Math.max(1,w/n-.5),hh*2);}};
   const loadAud=async()=>{if(aud){aud.pause();aud=null;}if(aurl){URL.revokeObjectURL(aurl);aurl=null;}const m=B.audio;paintWave();if(!m)return;
