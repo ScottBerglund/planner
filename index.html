@@ -1189,14 +1189,16 @@ input.sklname{background:var(--sheet,#fff);border:1px solid var(--line,#ddd);cur
 .skbd6g{display:grid;grid-template-columns:repeat(3,1fr);gap:9% 4%}
 .skbdcell{display:block;aspect-ratio:var(--ar);background:#fff;overflow:hidden;border:1.2px solid #1a1a1a;border-radius:5px}
 .skbdcell canvas{display:block;width:100%;height:100%}
-/* the Storyboards folder: the cover board's page on top of a couple of others, tipped back a little */
-.skbdfold3d{position:relative;display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;perspective:1100px}
-.skbdpile{position:relative;width:96%;transform:rotateX(16deg) rotateY(-9deg) rotateZ(-1deg);transform-style:preserve-3d;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
-.skbk:hover .skbdpile{transform:rotateX(10deg) rotateY(-6deg) rotateZ(-.5deg) translateY(-4px)}
-.skbdpile .skbd6{position:relative;z-index:2;box-shadow:0 1px 0 rgba(0,0,0,.05),0 22px 30px -12px rgba(0,0,0,.28)}
-.skbdpile .skbd6t{font-size:clamp(1rem,2.4vw,1.7rem)}
-.skbdunder{position:absolute;left:1.5%;right:-.5%;top:0;bottom:0;background:#fafafa;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.skbdunder.u1{transform:translateY(8px);z-index:1}.skbdunder.u2{transform:translateY(16px);left:2.5%;right:-1%;z-index:0;background:#f3f3f3}
+/* the Storyboards folder: the cover board's page on a small pile, built in the sketchbooks' 3D stage (same camera, same parallax) */
+.skbdcam{display:flex!important;align-items:center;justify-content:center;transform-style:preserve-3d}
+.skbdpile{position:relative;width:404px;transform-style:preserve-3d}
+.skbdpile .skbd6{position:relative;transform:translateZ(14px);box-shadow:0 0 0 1px rgba(0,0,0,.04);border-radius:5px;padding:24px 20px 22px}
+.skbdpile .skbd6t{font-size:34px;margin-bottom:16px}
+.skbdpile .skbd6g{gap:16px 12px}
+.skbdpile .skbdcell{border-width:2px;border-radius:7px}
+.skbdunder{position:absolute;inset:0;border-radius:5px;background:#f6f6f6;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
+.skbdunder.u1{transform:translate3d(3px,4px,8px)}.skbdunder.u2{transform:translate3d(6px,8px,2px);background:#ececec}
+.skbdtsh{position:absolute;inset:-6px -2px -14px 4px;border-radius:14px;background:rgba(0,0,0,.16);filter:blur(12px);transform:translate3d(8px,12px,0)}
 .skbdpile .skbookempty{display:block;padding:18% 0;text-align:center}
 .skbdcell canvas,.skpimg canvas{display:block;width:100%;height:100%}
 .skbdhead{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin:.4rem 0 1rem}.skbdtitle{font:inherit;font-size:1.6rem;font-weight:900;border:0;background:transparent;color:inherit;min-width:6ch;max-width:100%;padding:0 .2rem;border-radius:6px}.skbdtitle:focus{outline:1px solid var(--rule,#ccc)}.skbdf{display:flex;align-items:center;gap:.3rem;font-size:.85rem}.skbdf .skszin{width:4rem}.skbdexl{font-weight:700;font-size:.85rem;padding:0 .4rem}
@@ -3002,7 +3004,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120132020',newer=false,want='',last=Date.now();
+  var MINE='20261120132244',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8338,8 +8340,11 @@ function skBoardCard(B){skBoardNorm(B);const isCov=skBoardCoverId()===B.id;
 const skBoardCoverId=()=>{const L=skBoards(),c=L.find(b=>b.cover);return c?c.id:(L.length?L[L.length-1].id:null);};
 /* the folder: the cover board as the top page of a small stack, titled STORYBOARDS */
 function skBoardFolderArt(){const L=skBoards(),cid=skBoardCoverId(),B=L.find(b=>b.id===cid);if(B)skBoardNorm(B);
-  return h('span',{class:'skbdfold3d'},h('span',{class:'skbdpile'},h('span',{class:'skbdunder u2'}),h('span',{class:'skbdunder u1'}),
-    B?skBoardSheet6(B,140,'Storyboards'):h('span',{class:'skbd6'},h('span',{class:'skbd6t'},'Storyboards'),h('span',{class:'skbookempty'},'Empty'))));}
+  /* same stage, camera and parallax as the sketchbooks (skBook3D's view), so the pile sits on the same table */
+  const pile=h('span',{class:'skbdpile'},h('span',{class:'skbdtsh'}),h('span',{class:'skbdunder u2'}),h('span',{class:'skbdunder u1'}),
+    B?skBoardSheet6(B,140,'Storyboards'):h('span',{class:'skbd6'},h('span',{class:'skbd6t'},'Storyboards'),h('span',{class:'skbookempty'},'Empty')));
+  return skBookFit(h('span',{class:'b3stage b3turn skbdstage',style:'width:440px;height:440px;perspective:960px;perspective-origin:50% 85%'},
+    h('span',{class:'b3book skbdcam',style:'width:440px;height:440px;left:0;top:0;transform:rotateX(38deg) rotateZ(var(--skz,-10deg))'},pile)));}
 /* duplicate a storyboard: new copies of every panel drawing (and their guide images), so the copy can change without touching the original */
 async function skBoardDup(B){if(S.skBoardDup)return;S.skBoardDup=B.id;render();
   try{const map=new Map(),stamp=new Date().toISOString();
