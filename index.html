@@ -1506,6 +1506,7 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skbd6.notitle .skbd6in{height:100%;box-sizing:border-box;padding:5cqw 5cqw 0}
 .skbd6.notitle .skbd6g{height:100%;grid-template-rows:auto 1fr auto 1fr;justify-items:center;row-gap:0}.skbd6.notitle .skbdcell:nth-child(n+4){grid-row:3}
 .skbd6.notitle .skbdcell{width:min(100%,calc((100cqh - 5cqw - 8cqw) / 2 * var(--arn,1.78)));box-sizing:border-box}
+.skfcell.sel{box-shadow:0 0 0 2px #7aa7ff}.skfcell.sel.on{box-shadow:0 0 0 2px var(--accent,#3b6fd8),0 0 0 4px #7aa7ff}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3030,7 +3031,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120144849',newer=false,want='',last=Date.now();
+  var MINE='20261120150150',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6963,17 +6964,19 @@ const SK_APP=()=>window.AEP?'AE Vector Sketch':"Scott's Planner";
 const skHold=(d,f)=>Math.max(1,Math.min(12,Math.round((d&&d.fh&&d.fh[f])||1)));
 const skHasFrames=d=>!!(d&&d.frames&&d.frames.length);
 const skFirstF=d=>d.frames&&d.frames[0];
-function skAllStrokes(){const d=SKW.doc;if(!skHasFrames(d))return d.strokes;for(const st of d.strokes)st.f=d.fcur;const out=d.strokes.slice();if(SKW.fr)for(const [fid,arr] of SKW.fr)if(fid!==d.fcur)for(const st of arr){if(!st.f)st.f=fid;out.push(st);}return out;}
+/* a layer set to "Same on every frame" (l.all) keeps one set of lines, tagged st.f='*', shown on every frame */
+const skAllL=d=>new Set(((d&&d.layers)||[]).filter(l=>l.all).map(l=>l.id));
+function skAllStrokes(){const d=SKW.doc;if(!skHasFrames(d))return d.strokes;{const A=skAllL(d);for(const st of d.strokes)st.f=A.has(st.l)?'*':d.fcur;}const out=d.strokes.slice();if(SKW.fr)for(const [fid,arr] of SKW.fr)if(fid!==d.fcur)for(const st of arr){if(!st.f)st.f=fid;out.push(st);}return out;}
 function skFullDoc(doc){return Object.assign({},doc,{strokes:skAllStrokes()});}
 function skSplitFrames(){const d=SKW.doc;SKW.fr=new Map();if(!skHasFrames(d))return;if(!d.frames.includes(d.fcur))d.fcur=d.frames[0];const f0=d.frames[0];
-  for(const fid of d.frames)SKW.fr.set(fid,[]);for(const st of d.strokes){const f=d.frames.includes(st.f)?st.f:f0;st.f=f;SKW.fr.get(f).push(st);}d.strokes=SKW.fr.get(d.fcur);SKW.fr.delete(d.fcur);}
+  const A=skAllL(d),sh=[];for(const fid of d.frames)SKW.fr.set(fid,[]);for(const st of d.strokes){if(A.has(st.l)){st.f='*';sh.push(st);continue;}const f=d.frames.includes(st.f)?st.f:f0;st.f=f;SKW.fr.get(f).push(st);}d.strokes=SKW.fr.get(d.fcur).concat(sh);SKW.fr.delete(d.fcur);}
 function skFramesOn(){const d=SKW.doc;if(skHasFrames(d))return;const f='f'+skNewId();d.frames=[f];d.fcur=f;d.fps=d.fps||12;for(const st of d.strokes)st.f=f;SKW.fr=new Map();skSave();render();}
 function skGoFrame(fid,quiet){const d=SKW.doc;if(!skHasFrames(d)||fid===d.fcur||!d.frames.includes(fid))return;skPenFinish();SKW.ped=null;if(SKW.simp)skSimpEnd(true);SKW.fr=SKW.fr||new Map();SKW.ub=SKW.ub||new Map();
-  for(const st of d.strokes)st.f=d.fcur;SKW.fr.set(d.fcur,d.strokes);SKW.ub.set(d.fcur,{undo:SKW.undo,redo:SKW.redo});
-  d.strokes=SKW.fr.get(fid)||[];SKW.fr.delete(fid);const u=SKW.ub.get(fid)||{undo:[],redo:[]};SKW.undo=u.undo;SKW.redo=u.redo;d.fcur=fid;SKW.sel=[];SKW.iso=null;SKW.lastStroke=null;
+  const A=skAllL(d),sh=d.strokes.filter(st=>A.has(st.l)),own=d.strokes.filter(st=>!A.has(st.l));for(const st of sh)st.f='*';for(const st of own)st.f=d.fcur;SKW.fr.set(d.fcur,own);SKW.ub.set(d.fcur,{undo:SKW.undo,redo:SKW.redo});
+  d.strokes=(SKW.fr.get(fid)||[]).concat(sh);SKW.fr.delete(fid);const u=SKW.ub.get(fid)||{undo:[],redo:[]};SKW.undo=u.undo;SKW.redo=u.redo;d.fcur=fid;SKW.sel=[];SKW.iso=null;SKW.lastStroke=null;
   if(quiet){SKW.paintNow&&SKW.paintNow();const el=document.querySelector('#app .skfn');if(el)el.textContent=(d.frames.indexOf(fid)+1)+' / '+d.frames.length;skFStripSync();}else{skSave();render();}}
 function skStepFrame(k){const d=SKW.doc;if(!skHasFrames(d))return;if(SKPLAY)skStop();const i=d.frames.indexOf(d.fcur),j=(i+k+d.frames.length)%d.frames.length;skGoFrame(d.frames[j]);}
-function skAddFrame(copy,before){const d=SKW.doc;if(SKPLAY)skStop();if(!skHasFrames(d))skFramesOn();SKW.fr=SKW.fr||new Map();const f='f'+skNewId(),i=d.frames.indexOf(d.fcur)-(before?1:0);const src=copy?d.strokes:[];
+function skAddFrame(copy,before){const d=SKW.doc;if(SKPLAY)skStop();if(!skHasFrames(d))skFramesOn();SKW.fr=SKW.fr||new Map();const f='f'+skNewId(),i=d.frames.indexOf(d.fcur)-(before?1:0);const A0=skAllL(d),src=copy?d.strokes.filter(st=>!A0.has(st.l)):[];
   const cs=src.map(st=>Object.assign(skCopyStroke(st),{f}));d.frames.splice(i+1,0,f);SKW.fr.set(f,cs);skGoFrame(f);flash((copy?'Copied to a new frame':'New blank frame')+(before?' before':''));}
 /* move the current frame one place earlier (-1) or later (+1) */
 function skMoveFrame(k){const d=SKW.doc;if(!skHasFrames(d))return;if(SKPLAY)skStop();const i=d.frames.indexOf(d.fcur),j=i+k;if(j<0||j>=d.frames.length)return;const fr=d.frames.slice();[fr[i],fr[j]]=[fr[j],fr[i]];d.frames=fr;skSave();render();}
@@ -7007,8 +7010,50 @@ addEventListener('click',e=>{if(Date.now()-SKPLAYEND<500){e.preventDefault();e.s
 /* what playback shows: the storyboard panel's crop if this drawing is in one, otherwise the artboard */
 function skPlayRect(d){const B=S.skFromBoard&&skBoardGet(S.skFromBoard);if(B&&(B.panels||[]).some(p=>p.sk===SKW.id))return skBoardCrop(d,B.pw,B.ph);if(d.inf)return null;return {x:d.ox||0,y:d.oy||0,w:d.w,h:d.h};}
 /* the frame strip: shown once a sketch has frames */
+/* ---------- frames: copy and paste, several at once ----------
+   Select frames in the strip (Shift = range, Ctrl = add/remove). Copy takes whole frames, or with "This layer only" just the current layer.
+   Whole frames paste as new frames after this one (or at the end); a layer pastes as new frames or into this and the next frames, replacing that layer there.
+   Every frame edit here is one undo step (Ctrl+Z on the frame you were on). */
+let SKFCLIP=null;
+const skFSel=()=>{const d=SKW.doc,s=(SKW.fsel||[]).filter(f=>d.frames.includes(f));return s.length?d.frames.filter(f=>s.includes(f)):[d.fcur];};
+function skFramesSnap(){const d=SKW.doc,A=skAllL(d),m=new Map();for(const f of d.frames)m.set(f,(f===d.fcur?d.strokes.filter(st=>!A.has(st.l)):((SKW.fr&&SKW.fr.get(f))||[])).slice());
+  return {frames:d.frames.slice(),fh:Object.assign({},d.fh||{}),fcur:d.fcur,m,sh:d.strokes.filter(st=>A.has(st.l)),all:d.layers.map(l=>[l.id,!!l.all])};}
+function skFramesRestore(o){const d=SKW.doc;d.frames=o.frames.slice();d.fh=Object.assign({},o.fh);for(const [id,a] of o.all){const l=d.layers.find(x=>x.id===id);if(l){if(a)l.all=true;else delete l.all;}}
+  SKW.fr=new Map();for(const [f,arr] of o.m)if(f!==o.fcur)SKW.fr.set(f,arr.slice());d.fcur=o.fcur;d.strokes=(o.m.get(o.fcur)||[]).slice().concat(o.sh);for(const st of o.sh)st.f='*';
+  SKW.sel=[];SKW.fsel=null;}
+function skFramesAct(fn,msg){const d=SKW.doc;if(SKPLAY)skStop();const before=skFramesSnap();fn(d);const after=skFramesSnap();SKW.undo.push({type:'frames',before,after,selB:[],selA:[]});SKW.redo.length=0;skSave();render();if(msg)flash(msg);}
+function skFramesCopy(){const d=SKW.doc;if(!skHasFrames(d))return;const ids=skFSel(),A=skAllL(d),one=!!S.skFLayer,lid=d.cur,lname=(d.layers.find(l=>l.id===lid)||{}).name||'layer';
+  const strokesOf=f=>(f===d.fcur?d.strokes.filter(st=>!A.has(st.l)):((SKW.fr&&SKW.fr.get(f))||[])).filter(st=>!one||st.l===lid).map(st=>skCopyStroke(st));
+  SKFCLIP={one,lid,lname,frames:ids.map(f=>({strokes:strokesOf(f),hold:skHold(d,f)})),t:Date.now()};
+  flash('Copied '+ids.length+(ids.length===1?' frame':' frames')+(one?' (just “'+lname+'”)':'')+' · Ctrl+V pastes after this frame');render();}
+/* how: 'after' | 'end' | 'into' (a single layer into this and the next frames) */
+function skFramesPaste(how){const c=SKFCLIP,d0=SKW.doc;if(!c||!c.frames.length){flash('Copy some frames first (select them in the strip, then Ctrl+C).');return;}
+  if(c.one&&!d0.layers.some(l=>l.id===c.lid)){flash('The copied layer is gone from this drawing.');return;}
+  skFramesAct(d=>{const n=c.frames.length,mk=fr=>fr.strokes.map(st=>Object.assign(skCopyStroke(st),{id:skNewId()}));
+    if(how==='into'&&c.one){const i0=d.frames.indexOf(d.fcur);for(let k=0;k<n;k++){let f=d.frames[i0+k];if(!f){f='f'+skNewId();d.frames.push(f);SKW.fr.set(f,[]);}
+        const add=mk(c.frames[k]).map(st=>Object.assign(st,{f,l:c.lid}));
+        if(f===d.fcur){const del=new Set(d.strokes.filter(st=>st.l===c.lid));d.strokes=d.strokes.filter(st=>!del.has(st)).concat(add);}
+        else SKW.fr.set(f,(SKW.fr.get(f)||[]).filter(st=>st.l!==c.lid).concat(add));}
+      return;}
+    const at=how==='end'?d.frames.length:d.frames.indexOf(d.fcur)+1,ids=[];
+    c.frames.forEach(fr=>{const f='f'+skNewId();ids.push(f);SKW.fr.set(f,mk(fr).map(st=>Object.assign(st,{f})));if(fr.hold>1){d.fh=Object.assign({},d.fh||{});d.fh[f]=fr.hold;}});
+    const L=d.frames.slice();L.splice(at,0,...ids);d.frames=L;SKW.fsel=ids;},
+    how==='into'?'Pasted “'+c.lname+'” into '+c.frames.length+(c.frames.length===1?' frame':' frames'):'Pasted '+c.frames.length+(c.frames.length===1?' frame':' frames')+(how==='end'?' at the end':' after this one'));}
+function skFramesDelSel(){const d=SKW.doc,ids=skFSel();if(ids.length<2)return skDelFrame();if(ids.length>=d.frames.length){flash('A drawing keeps at least one frame.');return;}
+  if(S.confirm!=='skfdels')return armConfirm('skfdels');S.confirm=null;
+  skFramesAct(d=>{const gone=new Set(ids);if(gone.has(d.fcur)){const keep=d.frames.find(f=>!gone.has(f));skGoFrame(keep,true);}
+    d.frames=d.frames.filter(f=>!gone.has(f));for(const f of gone){SKW.fr.delete(f);if(d.fh)delete d.fh[f];}d.fdel=(d.fdel||[]).concat(ids).slice(-200);SKW.fsel=null;},'Deleted '+ids.length+' frames');}
+function skFramesMoveSel(ids,toIdx){skFramesAct(d=>{const set=new Set(ids),rest=d.frames.filter(f=>!set.has(f)),before=d.frames.slice(0,toIdx).filter(f=>!set.has(f)).length;rest.splice(before,0,...ids);d.frames=rest;});}
+/* a layer the same on every frame: this frame's drawing on it becomes the one shared drawing; turning it off gives every frame its own copy */
+function skLayerAllFrames(lid){const d=SKW.doc,l=d.layers.find(x=>x.id===lid);if(!l||!skHasFrames(d))return;
+  if(!l.all){const others=d.frames.some(f=>f!==d.fcur&&((SKW.fr&&SKW.fr.get(f))||[]).some(st=>st.l===lid));
+    if(others&&S.confirm!=='skall:'+lid)return armConfirm('skall:'+lid);S.confirm=null;
+    skFramesAct(d=>{const gone=[];for(const f of d.frames){if(f===d.fcur)continue;const arr=SKW.fr.get(f)||[];for(const st of arr)if(st.l===lid)gone.push(st.id);SKW.fr.set(f,arr.filter(st=>st.l!==lid));}
+      d.del=(d.del||[]).concat(gone).slice(-3000);l.all=true;for(const st of d.strokes)if(st.l===lid)st.f='*';},'“'+l.name+'” is now the same on every frame');}
+  else skFramesAct(d=>{delete l.all;const sh=d.strokes.filter(st=>st.l===lid);for(const st of sh)st.f=d.fcur;
+      for(const f of d.frames){if(f===d.fcur)continue;SKW.fr.set(f,(SKW.fr.get(f)||[]).concat(sh.map(st=>Object.assign(skCopyStroke(st),{id:skNewId(),f}))));}},'Every frame now has its own copy of “'+l.name+'”');}
 /* ---------- frame strip: a thumbnail of every frame (a held frame is wider), drag across it to scrub, click to jump, hold and drag to move a frame ---------- */
-function skFStripThumb(d,fid,H){const strokes=fid===d.fcur?d.strokes:((SKW.fr&&SKW.fr.get(fid))||[]),pw=d.inf?1920:(d.w||1920),ph=d.inf?1080:(d.h||1080);
+function skFStripThumb(d,fid,H){const A=skAllL(d),strokes=fid===d.fcur?d.strokes:((SKW.fr&&SKW.fr.get(fid))||[]).concat(d.strokes.filter(st=>A.has(st.l))),pw=d.inf?1920:(d.w||1920),ph=d.inf?1080:(d.h||1080);
   const ver=fid===d.fcur?'c'+SKW.undo.length+'.'+SKW.redo.length+'.'+strokes.length:'o'+strokes.length;
   const fake=Object.assign({},d,{frames:null,strokes,created:String(d.created||d.name||'')+'|fs|'+fid+'|'+ver,updated:''});
   return skPanelCv(fake,{pw,ph},Math.round(H*pw/ph));}
@@ -7016,10 +7061,17 @@ function skFStrip(){const d=SKW.doc,H=46,pw=d.inf?1920:(d.w||1920),ph=d.inf?1080
   const cells=d.frames.map((fid,i)=>{const hold=skHold(d,fid);
     return h('div',{class:'skfcell'+(fid===d.fcur?' on':''),'data-fid':fid,style:`width:${bw+(hold-1)*bw*.5}px`,title:'Frame '+(i+1)+(hold>1?' · hold '+hold+'×':'')},
       h('span',{class:'skfcv'},skFStripThumb(d,fid,H)),h('b',null,String(i+1)),hold>1?h('i',null,hold+'×'):null);});
+  const fsel=new Set(SKW.fsel||[]);cells.forEach(c=>{if(fsel.has(c.dataset.fid))c.classList.add('sel');});
   const el=h('div',{class:'skfstrip',role:'listbox','aria-label':'Frames'},cells);
   const cellAt=x=>{let best=null,bd=1e9;for(const c of el.querySelectorAll('.skfcell')){const r=c.getBoundingClientRect();const dd=x<r.left?r.left-x:x>r.right?x-r.right:0;if(dd<bd){bd=dd;best=c;}}return best;};
   let st=null;
-  el.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest('.skfcell');if(!c)return;e.preventDefault();el.setPointerCapture(e.pointerId);if(SKPLAY)skStop();
+  el.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest('.skfcell');if(!c)return;e.preventDefault();if(SKPLAY)skStop();
+    /* Shift: select a run of frames; Ctrl: add or remove one */
+    if(e.shiftKey||e.ctrlKey||e.metaKey){const D=SKW.doc,f=c.dataset.fid;let L=(SKW.fsel&&SKW.fsel.length)?SKW.fsel.slice():[D.fcur];
+      if(e.shiftKey){const a=D.frames.indexOf(SKW.fanchor&&D.frames.includes(SKW.fanchor)?SKW.fanchor:D.fcur),b=D.frames.indexOf(f);L=D.frames.slice(Math.min(a,b),Math.max(a,b)+1);}
+      else{L=L.includes(f)?L.filter(x=>x!==f):L.concat([f]);SKW.fanchor=f;}
+      SKW.fsel=L;render();return;}
+    el.setPointerCapture(e.pointerId);
     st={x:e.clientX,c,mode:null,hold:setTimeout(()=>{if(st&&!st.mode){st.mode='move';c.classList.add('lift');}},320)};});
   el.addEventListener('pointermove',e=>{if(!st||!el.hasPointerCapture(e.pointerId))return;const t=cellAt(e.clientX);
     if(!st.mode&&Math.abs(e.clientX-st.x)>5){st.mode='scrub';clearTimeout(st.hold);}
@@ -7028,10 +7080,11 @@ function skFStrip(){const d=SKW.doc,H=46,pw=d.inf?1920:(d.w||1920),ph=d.inf?1080
     /* near the ends of a long strip, keep it scrolling */
     const r=el.getBoundingClientRect();if(e.clientX<r.left+30)el.scrollLeft-=12;else if(e.clientX>r.right-30)el.scrollLeft+=12;});
   const end=e=>{if(!st)return;const s0=st;st=null;clearTimeout(s0.hold);
-    if(s0.mode==='move'){const t=cellAt(e.clientX),from=SKW.doc.frames.indexOf(s0.c.dataset.fid),to=t?SKW.doc.frames.indexOf(t.dataset.fid):from;
-      if(to>=0&&from>=0&&to!==from){const fr=SKW.doc.frames.slice();const [m]=fr.splice(from,1);fr.splice(to,0,m);SKW.doc.frames=fr;skSave();}render();return;}
+    if(s0.mode==='move'){const D=SKW.doc,t=cellAt(e.clientX),f0=s0.c.dataset.fid,grp=(SKW.fsel&&SKW.fsel.includes(f0)&&SKW.fsel.length>1)?D.frames.filter(f=>SKW.fsel.includes(f)):[f0];
+      const to=t?D.frames.indexOf(t.dataset.fid):-1,first=D.frames.indexOf(grp[0]);
+      if(to>=0&&!grp.includes(t.dataset.fid))skFramesMoveSel(grp,to>first?to+1:to);else render();return;}
     if(s0.mode==='scrub'){skSave();render();return;}
-    if(s0.c.dataset.fid!==SKW.doc.fcur)skGoFrame(s0.c.dataset.fid);};
+    SKW.fanchor=s0.c.dataset.fid;if(SKW.fsel){SKW.fsel=null;if(s0.c.dataset.fid===SKW.doc.fcur)render();}if(s0.c.dataset.fid!==SKW.doc.fcur)skGoFrame(s0.c.dataset.fid);};
   el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   el.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){el.scrollLeft+=e.deltaY;e.preventDefault();}},{passive:false});
   requestAnimationFrame(()=>skFStripSync(true));return el;}
@@ -7045,8 +7098,14 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
     ib('fprev','Previous frame (, or Page Up)',()=>skStepFrame(-1)),h('span',{class:'skfn',title:'Frame'},(i+1)+' / '+n),ib('fnext','Next frame (. or Page Down)',()=>skStepFrame(1)),
     ib(pl?'stop':'play',pl?'Stop (tap Space)':'Play (tap Space)',skPlay,{disabled:n<2}),
     h('span',{class:'skfsep'}),
-    skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('dup','Copy this frame to a new frame',true),ib('tween','In-betweens: blend this frame’s Pen paths into the next frame',()=>{S.skTween=S.skTween?null:{n:3,ease:'even'};render();SKW.drawLive&&SKW.drawLive();},{pressed:!!S.skTween}),
-    ib('clear',S.confirm==='skfdel'?'Tap again to delete this frame':'Delete this frame',skDelFrame,{disabled:n<2,cls:S.confirm==='skfdel'?'skarm':''}),
+    skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('dup','Copy this frame to a new frame',true),
+    ib('copyf',(SKW.fsel&&SKW.fsel.length>1?'Copy the '+SKW.fsel.length+' selected frames':'Copy this frame (Shift or Ctrl+click in the strip to pick several)')+(S.skFLayer?', this layer only':'')+' · Ctrl+C',skFramesCopy),
+    skPopBtn('fpaste','Paste frames'+(SKFCLIP?' ('+SKFCLIP.frames.length+')':''),skIcoL('pastef'),{disabled:!SKFCLIP,popCls:'list skfpaste',items:()=>{const c=SKFCLIP;if(!c)return [];const n=c.frames.length,go=how=>()=>{S.skPop=null;skFramesPaste(how);};
+      return [h('div',{class:'skgh'},'Paste '+n+(n===1?' frame':' frames')+(c.one?' · “'+c.lname+'” only':'')),
+        h('button',{class:'skrow',onclick:go('after')},skIcoL('plus'),'As new frames after this one'),h('button',{class:'skrow',onclick:go('end')},skIcoL('plus'),'As new frames at the end'),
+        c.one?h('button',{class:'skrow',title:'Replaces “'+c.lname+'” in those frames; their other layers stay',onclick:go('into')},skIcoL('onelayer'),'Into this and the next '+(n>1?n-1+' ':'')+(n===2?'frame':n>2?'frames':'frames (this one only)')):null];}}),
+    h('button',{class:'sktool skib','aria-pressed':String(!!S.skFLayer),title:S.skFLayer?'Copying just the current layer (tap for whole frames)':'Copy whole frames (tap to copy just the current layer)',onclick:()=>{S.skFLayer=!S.skFLayer;saveUI();render();}},skIcoL('onelayer')),ib('tween','In-betweens: blend this frame’s Pen paths into the next frame',()=>{S.skTween=S.skTween?null:{n:3,ease:'even'};render();SKW.drawLive&&SKW.drawLive();},{pressed:!!S.skTween}),
+    (SKW.fsel&&SKW.fsel.length>1)?ib('clear',S.confirm==='skfdels'?'Tap again to delete the '+SKW.fsel.length+' selected frames':'Delete the '+SKW.fsel.length+' selected frames',skFramesDelSel,{cls:S.confirm==='skfdels'?'skarm':''}):ib('clear',S.confirm==='skfdel'?'Tap again to delete this frame':'Delete this frame',skDelFrame,{disabled:n<2,cls:S.confirm==='skfdel'?'skarm':''}),
     ib('fmovel','Move this frame earlier',()=>skMoveFrame(-1),{disabled:i<=0}),ib('fmover','Move this frame later',()=>skMoveFrame(1),{disabled:i>=n-1}),
     h('span',{class:'skfsep'}),
     h('button',{class:'sktool skib skonion','aria-pressed':String(!!S.skOnionOn),title:S.skOnionOn?'Onion skin on (tap to turn off)':'Onion skin off (tap to turn on)',onclick:()=>{S.skOnionOn=!S.skOnionOn;saveUI();render();}},skIcoL('onion')),
@@ -7075,7 +7134,7 @@ function skUndoKeep(){clearTimeout(SKUKEEP);if(!SKW)return;try{const d=SKW.doc,i
       case 'del':return {type:'del',items:a.items.map(it=>({i:it.i,st:ref(it.st)}))};case 'clear':return {type:'clear',all:a.all.map(ref)};
       case 'snap':{const sn=x=>({layers:x.layers,cur:x.cur,strokes:x.strokes.map(ref)});return {type:'snap',before:sn(a.before),after:sn(a.after)};}
       case 'edit':return {type:'edit',items:a.items.map(it=>({st:ref(it.st),b:it.b,a:it.a}))};case 'multi':return {type:'multi',ops:a.ops.map(ser)};}return null;};
-    const o={sig:skUndoSig(d),undo:SKW.undo.slice(-60).map(ser),redo:SKW.redo.slice(-60).map(ser)};o.pool=pool;
+    const o={sig:skUndoSig(d),undo:SKW.undo.slice(-60).map(ser).filter(Boolean),redo:SKW.redo.slice(-60).map(ser).filter(Boolean)};o.pool=pool;
     if(!o.undo.length&&!o.redo.length){localStorage.removeItem('sk-undo-'+SKW.id);return;}
     localStorage.setItem('sk-undo-'+SKW.id,JSON.stringify(o));}catch(e){}}
 function skUndoRestore(){try{const o=JSON.parse(localStorage.getItem('sk-undo-'+SKW.id)||'null');if(!o||o.sig!==skUndoSig(SKW.doc))return;const d=SKW.doc,pool=o.pool||[];
@@ -7627,6 +7686,7 @@ addEventListener('keyup',e=>{if(e.code==='Space'&&S.skSpace){S.skSpace=false;doc
   if(!SKSPUSED&&Date.now()-SKSPT<350&&SKW&&skHasFrames(SKW.doc)&&SKW.doc.frames.length>1){e.preventDefault();skPlay();}}},true);
 /* undo / redo for the open sketch (Ctrl+Z, Ctrl+Shift+Z) */
 function skApply(a,undo){const d=SKW.doc;
+  if(a.type==='frames'){skFramesRestore(undo?a.before:a.after);return;}
   if(a.type==='multi'){for(const o of (undo?a.ops.slice().reverse():a.ops))skApply(o,undo);return;}
   if(a.type==='add'){if(undo){const i=d.strokes.lastIndexOf(a.st);if(i>=0)d.strokes.splice(i,1);}else d.strokes.push(a.st);}
   else if(a.type==='adds'){if(undo){const x=new Set(a.sts);d.strokes=d.strokes.filter(st=>!x.has(st));}else d.strokes.push(...a.sts);}
@@ -7916,7 +7976,8 @@ function skDeselect(){if(!SKW)return;SKW.sel=[];render();}
 function skDelSel(list){const sel=new Set(list||skSel());if(!sel.size)return;const d=SKW.doc,items=[];for(let i=d.strokes.length-1;i>=0;i--)if(sel.has(d.strokes[i])){items.push({i,st:d.strokes[i]});d.strokes.splice(i,1);}
   SKW.undo.push({type:'del',items});SKW.redo.length=0;SKW.sel=[];skSave();render();}
 let SKCLIP=null;
-function skCopySel(cut){const sel=skSel();if(!sel.length)return;SKCLIP=sel.map(skCopyStroke);if(cut)skDelSel();else render();flash(sel.length+(sel.length===1?' item ':' items ')+(cut?'cut':'copied'));}
+let SKCLIPT=0;
+function skCopySel(cut){SKCLIPT=Date.now();const sel=skSel();if(!sel.length)return;SKCLIP=sel.map(skCopyStroke);if(cut)skDelSel();else render();flash(sel.length+(sel.length===1?' item ':' items ')+(cut?'cut':'copied'));}
 /* a Paste button (phones and tablets have no Ctrl+V): shown while something is copied and nothing is selected */
 function skPasteView(){if(!SKW||!SKCLIP||!SKCLIP.length||skSel().length||SKW.pen)return null;return h('div',{class:'skpastebar'},
   h('button',{class:'skpb',title:'Paste in the same spot (Ctrl+Shift+V)',onclick:()=>{skPaste(true);render();}},skIcoL('paste'),' Paste'),h('button',{class:'sklb',title:'Paste in the middle of the screen (Ctrl+V)','aria-label':'Paste in the middle of the screen',onclick:()=>{skPaste(false);render();}},skIcoL('pastemid')),
@@ -8142,7 +8203,7 @@ addEventListener('keydown',e=>{if(!skActive()||(e.target.closest&&e.target.close
   if(e.ctrlKey||e.metaKey){let done=true;
     if(lk==='a')e.shiftKey?skDeselect():skSelAll();
     else if(lk==='d')skDeselect();
-    else if(lk==='c'&&!e.shiftKey)skCopySel(false);else if(lk==='x')skCopySel(true);else if(lk==='v')skPaste(e.shiftKey);
+    else if(lk==='c'&&!e.shiftKey){if(SKW&&SKW.fsel&&SKW.fsel.length)skFramesCopy();else skCopySel(false);}else if(lk==='x')skCopySel(true);else if(lk==='v'){if(SKFCLIP&&SKFCLIP.t>SKCLIPT&&SKW&&skHasFrames(SKW.doc)){if(SKFCLIP.one){S.skPop='fpaste';render();}else skFramesPaste('after');}else skPaste(e.shiftKey);}
     else if(lk==='j'&&e.altKey)skCloseSel();
     else if(lk==='j')skDupSel();
     else if(lk==='g'){e.shiftKey?skUngroupSel():skGroupSel();}
@@ -8365,7 +8426,7 @@ const skFrameIds=d=>skHasFrames(d)&&d.frames.length>1?d.frames:null;
 /* the order a drawing's frames play in, honouring its playback mode: loop 1 2 3 1 2 3, ping-pong 1 2 3 2 1 2 3 */
 const skFrameSeq=d=>{const fr=skFrameIds(d);if(!fr)return null;return d.pmode==='pong'&&fr.length>2?fr.concat(fr.slice(1,-1).reverse()):fr;};
 const skPoster=d=>skHasFrames(d)?(d.frames.includes(d.poster)?d.poster:d.frames.includes(d.fcur)?d.fcur:d.frames[0]):null;
-function skFrameDoc(d,fid){if(!skHasFrames(d))return d;const f0=d.frames[0];fid=fid||skPoster(d);return Object.assign({},d,{strokes:(d.strokes||[]).filter(st=>(d.frames.includes(st.f)?st.f:f0)===fid)});}
+function skFrameDoc(d,fid){if(!skHasFrames(d))return d;const f0=d.frames[0],A=skAllL(d);fid=fid||skPoster(d);return Object.assign({},d,{strokes:(d.strokes||[]).filter(st=>st.f==='*'||A.has(st.l)||(d.frames.includes(st.f)?st.f:f0)===fid)});}
 function skPanelPaint(ctx,d,c,s){ctx.save();ctx.setTransform(s,0,0,s,-c.x*s,-c.y*s);ctx.beginPath();ctx.rect(c.x,c.y,c.w,c.h);ctx.clip();skPaintDoc(ctx,skVisDoc(d),1);ctx.restore();}
 /* storyboard panel pictures are drawn once per version of the drawing and reused on every re-render (drawing them is slow for big sketches) */
 const SKPCV=new Map();
@@ -9175,6 +9236,7 @@ function skLayersPanel(floating){const d=SKW.doc,L=d.layers;
       on?h('input',{class:'sklname','data-keep':'1',value:l.name,maxlength:'40','aria-label':'Layer name',onchange:e=>{const v=e.target.value.trim()||l.name;if(v!==l.name)skLayerAct(d=>{d.layers.find(x=>x.id===l.id).name=v;});},onkeydown:e=>{if(e.key==='Enter')e.target.blur();}})
         :h('button',{class:'sklname',title:'Draw on this layer · Shift or Ctrl+click to select several',onclick:e=>{if(e.shiftKey||e.ctrlKey||e.metaKey||S.skLPick)return;d.cur=l.id;SKW.lsel=null;SKW.lanchor=l.id;S.confirm=null;skSave();render();}},l.name),
       h('button',{class:'sklb'+(l.locked?'':' off'),title:l.locked?'Unlock this layer':'Lock this layer','aria-label':(l.locked?'Unlock ':'Lock ')+l.name,'aria-pressed':String(!!l.locked),onclick:()=>{const v=!l.locked;for(const id of grp){const x=d.layers.find(y=>y.id===id);if(x)x.locked=v;}skSave();render();}},skIcoL(l.locked?'lock':'unlock')),
+      skHasFrames(d)?h('button',{class:'sklb'+(l.all?'':' off')+(S.confirm==='skall:'+l.id?' skarm':''),title:l.all?'Same on every frame (tap to give each frame its own copy)':S.confirm==='skall:'+l.id?'Tap again: this frame’s drawing on the layer replaces the other frames’':'Make this layer the same on every frame (a background, say)','aria-label':'Same on every frame: '+l.name,'aria-pressed':String(!!l.all),onclick:()=>skLayerAllFrames(l.id)},skIcoL('allframes')):null,
       skTargetBtn(d.strokes.filter(st=>skLid(d,st)===l.id&&!st.lk&&!st.hid),'“'+l.name+'”',l),
       h('button',{class:'sklb',title:'Move up','aria-label':'Move '+l.name+' up',disabled:i===L.length-1,onclick:()=>skLayerMove(l.id,1)},skIcoL('up')),
       h('button',{class:'sklb',title:'Move down','aria-label':'Move '+l.name+' down',disabled:i===0,onclick:()=>skLayerMove(l.id,-1)},skIcoL('down')),
@@ -9546,7 +9608,7 @@ addEventListener('pointerdown',e=>{if(!S.skPop||!skActive())return;if(e.target.c
 addEventListener('keydown',e=>{if(e.key==='Escape'&&S.skPop&&skActive()){S.skPop=null;render();}});
 /* icon buttons for the sketch toolbar (label shows as a tooltip and to screen readers) */
 function ib(icon,label,fn,o){o=o||{};const a={class:'sktool skib'+(o.cls?' '+o.cls:''),title:label,'aria-label':label,onclick:fn};if(o.disabled)a.disabled=true;if(o.pressed!=null)a['aria-pressed']=String(!!o.pressed);if(o.expanded!=null)a['aria-expanded']=String(o.expanded);return h('button',a,skIcoL(icon));}
-const SKIL={fstrip:'<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M8.5 6v12M15.5 6v12M2.5 9h1.5M2.5 15h1.5M20 9h1.5M20 15h1.5"/>',eyedrop:'<path d="M14.5 4.5l5 5M17 2.8a2.3 2.3 0 0 1 3.2 3.2L17.6 8.6l-2.2-2.2z"/><path d="M15.4 6.4 5.6 16.2 5 19l2.8-.6 9.8-9.8"/>',popout:'<rect x="3" y="9" width="12" height="12" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/>',mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
+const SKIL={allframes:'<rect x="3" y="6" width="12" height="12" rx="1.5"/><path d="M18 8v10.5a1.5 1.5 0 0 1-1.5 1.5H8M21 10v9.5a2.5 2.5 0 0 1-2.5 2.5H10"/>',copyf:'<rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',pastef:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M12 9v7M8.5 12.5h7"/>',onelayer:'<path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M5 13l7 3.5 7-3.5" opacity=".35"/>',fstrip:'<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M8.5 6v12M15.5 6v12M2.5 9h1.5M2.5 15h1.5M20 9h1.5M20 15h1.5"/>',eyedrop:'<path d="M14.5 4.5l5 5M17 2.8a2.3 2.3 0 0 1 3.2 3.2L17.6 8.6l-2.2-2.2z"/><path d="M15.4 6.4 5.6 16.2 5 19l2.8-.6 9.8-9.8"/>',popout:'<rect x="3" y="9" width="12" height="12" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/>',mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
   fit:'<circle cx="10.5" cy="10.5" r="7"/><path d="M16 16l5 5"/><path d="M6.8 11.6c1.1-2.6 2.2-2.6 3.2-.6s2.2 2 3.3-.7" stroke-width="1.7"/>',
   pressure:'<path d="M3 17c3-1 4-5 7-5s3 5 6 5 3-3 5-4" stroke-width="1.4"/><path d="M3 21c3-1.5 4-7 7-7s3 7 6 7 3-4 5-5" stroke-width="3"/><path d="M14.5 3.5l3 3-6 6H8.5v-3z" fill="currentColor" stroke="none"/>',
   undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',redo:'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
