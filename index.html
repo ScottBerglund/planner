@@ -1416,6 +1416,26 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .sklay.skcur{box-shadow:inset 3px 0 0 var(--ink)}
 .skeldrop{position:fixed;height:2px;background:#1E88E5;border-radius:2px;display:none;pointer-events:none;z-index:100002}
 .sklay.skel .skgrip{width:12px}
+/* panel time chip + storyboard player */
+.sbdur{position:absolute;right:0;top:.45em;border:0;border-radius:999px;padding:.1em .55em;background:rgba(0,0,0,.08);color:#1a1a1a;font-weight:700;font-family:system-ui,sans-serif;line-height:1.4;cursor:pointer;z-index:2}.sbdur:hover{background:rgba(0,0,0,.16)}
+.sbdur.own{background:#3b6fd8;color:#fff}
+.sbdurin{position:absolute;right:0;top:.3em;width:58px;z-index:3;font-size:12px;padding:2px 4px}
+.sbdurrow{display:flex;align-items:center;gap:8px;padding:6px 10px}.sbdurrow input{width:64px}
+.sbplayer{position:fixed;inset:0;z-index:10050;background:#0b0b0c;color:#eee;display:flex;flex-direction:column;user-select:none}
+.sbpstage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;padding:16px}
+.sbpscr{width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sbpscr canvas{max-width:100%;max-height:100%;width:auto!important;height:auto!important;object-fit:contain;box-shadow:0 4px 30px rgba(0,0,0,.6);background:#fff}
+.sbpsub{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);max-width:80%;background:rgba(0,0,0,.72);color:#fff;padding:6px 14px;border-radius:6px;font:500 clamp(14px,2vw,22px)/1.35 system-ui,sans-serif;text-align:center;white-space:pre-wrap;pointer-events:none}
+.sbpbottom{padding:8px 16px calc(10px + env(safe-area-inset-bottom));background:#151517}
+.sbpbar{position:relative;display:flex;gap:2px;height:14px;cursor:pointer;touch-action:none;margin-bottom:8px}
+.sbpseg{background:#333;border-radius:2px}
+.sbpfill{position:absolute;left:0;top:0;bottom:0;background:rgba(90,140,255,.35);pointer-events:none;border-radius:2px}
+.sbphead{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1px;background:#6d9bff;border-radius:2px;pointer-events:none}
+.sbpctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sbpb{background:#26262a;color:#eee;border:0;border-radius:6px;min-width:38px;height:34px;padding:0 10px;font-size:15px;cursor:pointer}
+.sbpb:hover{background:#34343a}.sbpt{font-size:13px;opacity:.6}.sbpt.on{opacity:1;background:#2c3e66}
+.sbptime{font:500 13px system-ui,sans-serif;opacity:.8;margin-left:6px;white-space:pre;font-variant-numeric:tabular-nums}
+.sbpgrow{flex:1}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2940,7 +2960,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261119131817',newer=false,want='',last=Date.now();
+  var MINE='20261119194132',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8236,7 +8256,7 @@ const skBoardGet=id=>skBoards().find(b=>b.id===id)||null;
 function skBoardsSave(){S.skBoards=skBoards().slice();saveUI();try{write(()=>col('settings').doc('skboards').set({boards:S.skBoards,updated:new Date().toISOString()}));}catch(e){}}
 const skBoardPanels=B=>(B.panels||[]).filter(p=>p&&p.sk&&S.sketches&&S.sketches.has(p.sk));
 function skBoardToggle(B,sk){skBoardNorm(B);const i=B.panels.findIndex(p=>p.sk===sk);if(i>=0)B.panels[i].sk=null;else{let j=B.panels.findIndex(p=>!p.sk);if(j<0){B.pages++;skBoardNorm(B);j=B.panels.findIndex(p=>!p.sk);}B.panels[j].sk=sk;}skBoardsSave();render();}
-const skPanelDur=(B,p)=>{const m=/(\d+(?:\.\d+)?)\s*s(?:ec(?:onds?)?)?\b/i.exec(p.note||'');return Math.max(.2,m?+m[1]:(B.dur||2));};
+const skPanelDur=(B,p)=>{if(p&&+p.dur>0)return Math.max(.2,+p.dur);const m=/(\d+(?:\.\d+)?)\s*s(?:ec(?:onds?)?)?\b/i.exec(p.note||'');return Math.max(.2,m?+m[1]:(B.dur||2));};
 /* the part of a drawing a panel shows: the whole canvas scaled to fill the panel, centred, the rest cropped */
 function skBoardCrop(d,pw,ph){const b=d.inf?(skBBox(d,40)||{x:0,y:0,w:pw,h:ph}):{x:d.ox||0,y:d.oy||0,w:d.w,h:d.h};const k=Math.max(pw/b.w,ph/b.h),cw=pw/k,ch=ph/k;return {x:b.x+(b.w-cw)/2,y:b.y+(b.h-ch)/2,w:cw,h:ch,k};}
 const skFrameIds=d=>skHasFrames(d)&&d.frames.length>1?d.frames:null;
@@ -8321,7 +8341,7 @@ function skBoardView(){const B=skBoardGet(S.skBoardOpen);if(!B){S.skBoardOpen=nu
 
 /* ---------- storyboard sheet: pages of fixed panel slots, viewed like a drawing (zoom, pan) ----------
    B.rows × B.cols slots per page, B.pages pages; B.panels has one entry per slot: {sk:null|id, note}. B.header shows the name, page and date on each page. */
-function skBoardNorm(B){B.fps=B.fps||12;B.rows=B.rows||2;B.cols=B.cols||3;const per=B.rows*B.cols,L=(B.panels||[]).map(p=>p&&typeof p==='object'?{sk:p.sk||null,note:p.note||''}:{sk:null,note:''});
+function skBoardNorm(B){B.fps=B.fps||12;B.rows=B.rows||2;B.cols=B.cols||3;const per=B.rows*B.cols,L=(B.panels||[]).map(p=>p&&typeof p==='object'?Object.assign({sk:p.sk||null,note:p.note||''},+p.dur>0?{dur:+p.dur}:{}):{sk:null,note:''});
   let last=-1;L.forEach((p,i)=>{if(p.sk||p.note)last=i;});B.pages=Math.max(1,B.pages||0,Math.ceil((last+1)/per));while(L.length<B.pages*per)L.push({sk:null,note:''});L.length=B.pages*per;B.panels=L;return B;}
 function skBoardLay(B){const pw=B.pw,ph=B.ph,g=Math.round(Math.max(pw,ph)*.05),th=Math.round(ph*.22),hh=B.header?Math.round(ph*.3):0,per=B.rows*B.cols;
   const W=2*g+B.cols*pw+(B.cols-1)*g,H=2*g+hh+B.rows*(ph+th)+(B.rows-1)*g,slot=j=>{const c=j%B.cols,rw=Math.floor(j/B.cols);return {x:g+c*(pw+g),y:g+hh+rw*(ph+th+g),w:pw,h:ph,ty:g+hh+rw*(ph+th+g)+ph,th};};
@@ -8366,7 +8386,8 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
       const img=h('div',{class:'sbimg'+(p.sk?'':' empty'),style:`left:${rc.x}px;top:${rc.y}px;width:${rc.w}px;height:${rc.h}px;border-width:${Math.max(2,B.pw/480)}px;border-radius:${Math.min(rc.w,rc.h)*.025}px`,'data-i':String(i)},
         ready?skBoardPanelCv(p.sk,d,B):p.sk?h('span',{class:'sbmiss',style:`font-size:${Ly.fs*1.2}px`},d||!S.skMain?'Loading…':'Missing drawing'):h('span',{class:'sbplus',style:`font-size:${Ly.ph*.18}px`},'+'));
       kids.push(img,h('div',{class:'sbnote','data-n':String(i),style:`left:${rc.x}px;top:${rc.ty}px;width:${rc.w}px;height:${rc.th}px;font-size:${Ly.fs}px;padding-top:${Ly.fs*.55}px`},
-        h('b',{style:`font-size:${Ly.fs*1.15}px`},String(i+1)),h('span',null,p.note||(p.sk&&d?'':'')),d&&!p.note?h('i',null,d.name||''):null));}
+        h('b',{style:`font-size:${Ly.fs*1.15}px`},String(i+1)),h('span',null,p.note||(p.sk&&d?'':'')),d&&!p.note?h('i',null,d.name||''):null,
+        p.sk?(S.skDurEdit===B.id+':'+i?skPanelDurEdit(B,i,Ly.fs):h('button',{class:'sbdur'+(+p.dur>0?' own':''),style:`font-size:${Ly.fs*.95}px`,title:'Time on screen for this panel (tap to change)',onpointerdown:e=>e.stopPropagation(),onclick:e=>{e.stopPropagation();S.skDurEdit=B.id+':'+i;render();}},(Math.round(skPanelDur(B,p)*10)/10)+'s')):null));}
     pages.push(h('div',{class:'sbpage',style:`width:${Ly.W}px;height:${Ly.H}px;top:${pg*(Ly.H+Ly.gap)}px`},kids));}
   const sheet=h('div',{class:'sbsheet',style:`width:${Ly.W}px;height:${B.pages*Ly.H+(B.pages-1)*Ly.gap}px`},pages);
   const stage=h('div',{class:'sbstage'},sheet);
@@ -8384,7 +8405,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
   const edgeLoop=()=>{cancelAnimationFrame(edge);edge=0;if(!stage.isConnected){drag=null;return;}if(!drag||!drag.on||!drag.moved||Math.hypot(drag.cx-drag.x,drag.cy-drag.y)<48)return;const r=stage.getBoundingClientRect(),m=Math.min(36,r.width*.08,r.height*.08),sp=8;let dx=0,dy=0;
     if(drag.cx<r.left+m)dx=sp;else if(drag.cx>r.right-m)dx=-sp;if(drag.cy<r.top+m)dy=sp;else if(drag.cy>r.bottom-m)dy=-sp;
     if(dx||dy){SKBV.x+=dx;SKBV.y+=dy;skBoardApply();dropMark(drag.cx,drag.cy);}edge=requestAnimationFrame(edgeLoop);};
-  stage.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.target.closest('.sbmenu'))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  stage.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.target.closest('.sbmenu,.sbdur,.sbdurin'))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pts.size===2){clearTimeout(hold);if(drag&&drag.gh)drag.gh.remove();stage.querySelectorAll('.lifted').forEach(x=>x.classList.remove('lifted'));drag=null;pan=null;const [a,b]=[...pts.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:SKBV.z,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};return;}
     const ni=e.target.closest('.sbnote'),ii=e.target.closest('.sbimg');if(S.skBoardMenu){S.skBoardMenu=null;document.querySelectorAll('#app .sbmenu').forEach(x=>x.remove());}
     if(e.button===2)return;
@@ -8415,7 +8436,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
   stage.addEventListener('pointerup',end);stage.addEventListener('pointercancel',end);
   /* fingers: tap opens (or fills) a panel, a quick drag pans, hold until the panel lifts then drag it, lift-and-release opens its menu; two fingers pinch to zoom and pan */
   let tp=null;const mid=(a,b)=>({x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)});
-  stage.addEventListener('touchstart',ev=>{if(ev.target.closest('.sbmenu'))return;ev.preventDefault();if(S.skBoardMenu){S.skBoardMenu=null;document.querySelectorAll('#app .sbmenu').forEach(x=>x.remove());}
+  stage.addEventListener('touchstart',ev=>{if(ev.target.closest('.sbmenu,.sbdur,.sbdurin'))return;ev.preventDefault();if(S.skBoardMenu){S.skBoardMenu=null;document.querySelectorAll('#app .sbmenu').forEach(x=>x.remove());}
     const T=ev.touches;
     if(T.length>=2){clearTimeout(hold);if(drag){if(drag.gh)drag.gh.remove();stage.querySelectorAll('.lifted,.drop').forEach(x=>x.classList.remove('lifted','drop'));drag=null;}pan=null;tp=null;
       const m=mid(T[0],T[1]);pinch={d:m.d||1,z:SKBV.z,x:m.x,y:m.y,vx:SKBV.x,vy:SKBV.y};return;}
@@ -8429,7 +8450,7 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
     const t=T[0];if(!t)return;if(tp&&Math.hypot(t.clientX-tp.x,t.clientY-tp.y)>8)tp.moved=true;
     if(pan){SKBV.x=pan.vx+t.clientX-pan.x;SKBV.y=pan.vy+t.clientY-pan.y;skBoardApply();return;}
     if(drag)dragTo(t.clientX,t.clientY);},{passive:false});
-  const tfin=ev=>{ev.preventDefault();const T=ev.touches;
+  const tfin=ev=>{if(ev.target.closest&&ev.target.closest('.sbdur,.sbdurin')&&!pinch&&!drag&&!pan)return;ev.preventDefault();const T=ev.touches;
     if(pinch){if(T.length===1){pinch=null;pan={x:T[0].clientX,y:T[0].clientY,vx:SKBV.x,vy:SKBV.y};}else if(!T.length)pinch=null;return;}
     if(T.length)return;const c=ev.changedTouches[0],x=c?c.clientX:0,y=c?c.clientY:0,tap=tp&&!tp.moved;
     if(pan){pan=null;if(tap&&tp.ni!=null){S.skBoardNote=tp.ni;render();}tp=null;return;}
@@ -8451,19 +8472,62 @@ function skBoardEditor(){const B=skBoardGet(S.skBoardOpen);if(!B)return null;skB
       window.aeRun?['aerun','Build / update the animatic in After Effects']:['ae','After Effects · animatic (script)'],['file',window.AEP?'Storyboard file (to share or move)':'Storyboard file · for Planner ↔ After Effects']].map(([f,l])=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;render();skBoardExport(B,f);}},l))});
   const bar=h('div',{class:'skbar sbbar'},h('div',{class:'skgrp'},h('button',{class:'tlink skback',title:'Back to all sketches',onclick:()=>{S.skBoardOpen=null;S.skFromBoard=null;S.skPop=null;SKBV=null;saveUI();render();}},tri('l')),
       h('input',{class:'skname sbname',value:B.name,maxlength:'40','aria-label':'Storyboard name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();},onchange:e=>{B.name=e.target.value.trim()||B.name;skBoardsSave();render();}})),
+    h('div',{class:'skgrp'},ib('play','Play the storyboard (each panel for its own time)',()=>skBoardPlayer(B))),
     h('div',{class:'skgrp'},ib('zoomout','Zoom out (Ctrl+−)',()=>skBoardZoom(1/1.25)),h('button',{class:'tlink sbzl',title:'Fit (Ctrl+0)',onclick:skBoardFit},'100%'),ib('zoomin','Zoom in (Ctrl+=)',()=>skBoardZoom(1.25))),
     h('div',{class:'skgrp skacts'},set,h('span',{class:'skexpk'},exp),window.AEPCLOUDUI?AEPCLOUDUI({kind:'board',B}):null,skMaxBtn()));
   const menu=S.skBoardMenu?skBoardMenuView(B):null,pick=S.skBoardPick!=null?skBoardPickView(B):null,note=S.skBoardNote!=null?skBoardNoteView(B):null;
   requestAnimationFrame(()=>{if(!SKBV||SKBV.id!==B.id){SKBV={id:B.id,x:0,y:0,z:1};skBoardFit();}else skBoardApply();});
   return h('div',{class:'skeditor skfs sbed'},bar,stage,menu,pick,note);}
 function skBoardMenuAt(B,i,x,y){S.skBoardMenu={i,x,y};render();}
+/* the time chip on a panel turns into a small number box */
+function skPanelDurEdit(B,i,fs){const p0=B.panels[i]||{},id='sbdurin'+i,inp=h('input',{id,type:'number',class:'sbdurin','data-keep':'1',style:`font-size:${fs*.95}px;width:${fs*4.2}px`,min:'0.2',max:'60',step:'0.1',value:String(Math.round(skPanelDur(B,p0)*10)/10),'aria-label':'Seconds on screen'});
+  const done=ok=>{if(S.skDurEdit!==B.id+':'+i)return;S.skDurEdit=null;SKDURSEL=null;if(ok){const p=B.panels[i];if(p){const v=Math.max(.2,Math.min(60,+inp.value||skPanelDur(B,p)));p.dur=Math.round(v*10)/10;skBoardsSave();}}render();};
+  inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')done(true);else if(e.key==='Escape')done(false);});inp.addEventListener('blur',()=>setTimeout(()=>{if(!inp.isConnected||document.activeElement===inp)return;done(true);},0));inp.addEventListener('pointerdown',e=>e.stopPropagation());
+  const k=B.id+':'+i;inp.addEventListener('input',()=>{SKDURSEL=k;});if(SKDURSEL!==k){requestAnimationFrame(()=>{const el=document.getElementById(id);if(el){el.focus();el.select();}});}return inp;}
+let SKDURSEL=null;
+/* ---------- storyboard player: every filled panel in order, each for its own time; animated panels play their frames; notes as subtitles ---------- */
+let SKBPL=null;
+function skBoardPlayer(B){skBoardNorm(B);const list=[],num=[];B.panels.forEach((p,i)=>{if(p.sk&&S.sketches&&S.sketches.has(p.sk)){list.push(p);num.push(i+1);}});if(!list.length){flash('Add drawings to the panels first.');return;}
+  if(SKBPL)SKBPL.close();const fps=B.fps||12,durs=list.map(p=>skPanelDur(B,p)),starts=[];let tot=0;for(const d of durs){starts.push(tot);tot+=d;}
+  let loop=true,subs=S.skBPSubs!==false;try{loop=localStorage.getItem('sbLoop')!=='0';}catch(e){}
+  const ov=h('div',{class:'sbplayer',role:'dialog','aria-label':'Storyboard player'}),scr=h('div',{class:'sbpscr'}),sub=h('div',{class:'sbpsub'}),bar=h('div',{class:'sbpbar'}),head=h('div',{class:'sbphead'}),fill=h('div',{class:'sbpfill'});
+  list.forEach((p,i)=>{const seg=h('div',{class:'sbpseg',style:`flex:${durs[i]}`,title:'Panel '+num[i]+' · '+durs[i]+'s'});bar.appendChild(seg);});bar.appendChild(fill);bar.appendChild(head);
+  const time=h('span',{class:'sbptime'}),fmt=t=>{const m=Math.floor(t/60),x=(t%60).toFixed(1);return m+':'+(t%60<10?'0':'')+x;};
+  const pbtn=h('button',{class:'sbpb',title:'Play / pause (Space)','aria-label':'Play or pause'});
+  const tb=(lab,title,fn,on)=>{const b=h('button',{class:'sbpb sbpt'+(on?' on':''),title,'aria-pressed':String(!!on)},lab);b.onclick=()=>{fn(b);};return b;};
+  const lb=tb('Loop','Play it again from the start',b=>{loop=!loop;b.classList.toggle('on',loop);try{localStorage.setItem('sbLoop',loop?'1':'0');}catch(e){}},loop);
+  const sbb=tb('Notes','Show each panel’s notes as subtitles',b=>{subs=!subs;S.skBPSubs=subs;b.classList.toggle('on',subs);draw(true);},subs);
+  const prev=h('button',{class:'sbpb',title:'Previous panel (←)','aria-label':'Previous panel'},'⏮'),next=h('button',{class:'sbpb',title:'Next panel (→)','aria-label':'Next panel'},'⏭'),close=h('button',{class:'sbpb sbpx',title:'Close (Esc)','aria-label':'Close the player'},'✕');
+  const ctl=h('div',{class:'sbpctl'},prev,pbtn,next,time,h('span',{class:'sbpgrow'}),sbb,lb,close);
+  ov.append(h('div',{class:'sbpstage'},scr,sub),h('div',{class:'sbpbottom'},bar,ctl));document.body.appendChild(ov);
+  let t=0,playing=true,raf=0,last=0,shown='';const CV=new Map();
+  const at=t=>{let i=0;while(i<list.length-1&&t>=starts[i+1])i++;return i;};
+  const draw=force=>{const i=at(t),p=list[i],d=S.sketches.get(p.sk);if(!d)return;const fr=skFrameIds(d);let fid=null;
+    if(fr){const local=t-starts[i];let k=0,acc=0;const holds=fr.map(f=>skHold(d,f)/fps),cyc=holds.reduce((a,b)=>a+b,0)||1,u=local%cyc;for(;k<fr.length;k++){acc+=holds[k];if(u<acc)break;}fid=fr[Math.min(k,fr.length-1)];}
+    const key=i+'|'+(fid||'')+'|'+scr.clientWidth+'x'+scr.clientHeight;
+    if(force||key!==shown){shown=key;const W=Math.max(200,Math.min(scr.clientWidth,scr.clientHeight*B.pw/B.ph));const ck=p.sk+'|'+(fid||'')+'|'+Math.round(W/40);let cv=CV.get(ck);if(!cv){cv=skPanelCv(d,B,Math.round(W/40)*40,fid);cv.classList.add('sbpcv');CV.set(ck,cv);if(CV.size>200)CV.delete(CV.keys().next().value);}scr.replaceChildren(cv);
+      sub.textContent=subs?(p.note||''):'';sub.style.display=subs&&p.note?'':'none';}
+    const f=tot?t/tot:0;fill.style.width=(f*100)+'%';head.style.left=(f*100)+'%';time.textContent=fmt(t)+' / '+fmt(tot)+'   ·   Panel '+num[i];
+    pbtn.textContent=playing?'❚❚':'▶';};
+  const tick=ts=>{if(!playing)return;if(last)t+=(ts-last)/1000;last=ts;if(t>=tot){if(loop)t=t%tot;else{t=tot-1e-3;playing=false;draw();return;}}draw();raf=requestAnimationFrame(tick);};
+  const play=on=>{playing=on;cancelAnimationFrame(raf);last=0;if(playing){if(t>=tot-1e-3)t=0;raf=requestAnimationFrame(tick);}draw();};
+  const seek=x=>{t=Math.max(0,Math.min(tot-1e-3,x));draw();};
+  pbtn.onclick=()=>play(!playing);prev.onclick=()=>{const i=at(t);seek(t-starts[i]>.4?starts[i]:starts[Math.max(0,i-1)]);};next.onclick=()=>{const i=at(t);if(i<list.length-1)seek(starts[i+1]);};
+  const scrub=e=>{const r=bar.getBoundingClientRect();seek((e.clientX-r.left)/r.width*tot);};
+  bar.addEventListener('pointerdown',e=>{bar.setPointerCapture(e.pointerId);const was=playing;play(false);scrub(e);const mv=ev=>scrub(ev),up=()=>{bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up);if(was)play(true);};bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);});
+  scr.addEventListener('click',()=>play(!playing));
+  const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();doClose();}else if(e.key===' '){e.preventDefault();e.stopPropagation();play(!playing);}else if(e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();next.onclick();}else if(e.key==='ArrowLeft'){e.preventDefault();e.stopPropagation();prev.onclick();}};
+  const rz=()=>draw(true);addEventListener('keydown',key,true);addEventListener('resize',rz);
+  const doClose=()=>{cancelAnimationFrame(raf);removeEventListener('keydown',key,true);removeEventListener('resize',rz);ov.remove();SKBPL=null;};close.onclick=doClose;
+  SKBPL={close:doClose};requestAnimationFrame(()=>play(true));}
 function skBoardMenuView(B){const m=S.skBoardMenu,p=B.panels[m.i];if(!p){S.skBoardMenu=null;return null;}const go=fn=>()=>{S.skBoardMenu=null;fn();render();};
   const row=(icon,label,fn)=>h('button',{class:'skrow',role:'menuitem',onclick:go(fn)},skIcoL(icon),label);
   const el=h('div',{class:'skpop list sbmenu',role:'menu',style:`left:${Math.min(m.x,innerWidth-260)}px;top:${Math.min(m.y,innerHeight-260)}px`},h('div',{class:'skctxh'},'Panel '+(m.i+1)),
     p.sk?[row('image','Open the drawing',()=>{S.skFromBoard=B.id;skOpen(p.sk);}),row('image','Replace with another drawing…',()=>{S.skBoardPick=m.i;}),row('x','Remove from this panel',()=>{p.sk=null;skBoardsSave();}),
         window.aeRun?row('export','Update this panel in After Effects',()=>skBoardAE(B,p.sk)):null]
       :[row('plus','New drawing ('+B.pw+'×'+B.ph+')',()=>{const id=skNew('custom',B.pw,B.ph);if(id){p.sk=id;S.skFromBoard=B.id;skBoardsSave();}}),row('image','Choose an existing drawing…',()=>{S.skBoardPick=m.i;})],
-    row('note','Edit notes',()=>{S.skBoardNote=m.i;}));
+    row('note','Edit notes',()=>{S.skBoardNote=m.i;}),
+    p.sk?h('label',{class:'sklop sbdurrow'},'Time on screen',h('input',{type:'number',class:'skszin',min:'0.2',max:'60',step:'0.1',value:String(Math.round(skPanelDur(B,p)*10)/10),onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();},onchange:e=>{const q=B.panels[m.i];if(!q)return;const v=Math.max(.2,Math.min(60,+e.target.value||2));q.dur=Math.round(v*10)/10;skBoardsSave();render();}}),'sec'):null);
   setTimeout(()=>{const f=ev=>{if(!ev.target.closest('.sbmenu')){S.skBoardMenu=null;const x=document.querySelector('#app .sbmenu');x&&x.remove();removeEventListener('pointerdown',f,true);}};addEventListener('pointerdown',f,true);},0);
   return el;}
 function skBoardPickView(B){const i=S.skBoardPick,used=new Set(B.panels.map(p=>p.sk).filter(Boolean)),all=[...(S.sketches||new Map()).entries()].filter(([id,d])=>!d.sb&&!used.has(id)).sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
@@ -8871,6 +8935,7 @@ const SKI={pen:'<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0
   hand:'<path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10V4a1.5 1.5 0 0 1 3 0v6V5.5a1.5 1.5 0 0 1 3 0V11v-2a1.5 1.5 0 0 1 3 0v5.5A7.5 7.5 0 0 1 12.5 22h-1a7 7 0 0 1-5.6-2.8L2.8 15a1.6 1.6 0 0 1 2.4-2.1L8 15z"/>',
   clip:'<rect x="3" y="3" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="14" cy="14" r="7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2"/><path d="M14 7a7 7 0 0 0-7 7h8V7z" opacity=".55"/>',
   pf_crop:'<rect x="3" y="3" width="12" height="12" fill="currentColor" fill-opacity=".35"/><rect x="9" y="9" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="9" y="9" width="6" height="6" fill="currentColor"/>',
+  play:'<path d="M7 4.5v15l12-7.5z"/>',
   maxi:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   grad:'<rect x="3.5" y="5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="6.5" width="4" height="11" opacity=".85"/><rect x="9" y="6.5" width="4" height="11" opacity=".55"/><rect x="13" y="6.5" width="4" height="11" opacity=".28"/>',
   sfill:'<path d="M5 15c-2-4 1-9 6-10s9 2 8 6-5 3-6 6-4 5-8-2z"/><path d="M14 21l2.5-2.5 1.6 1.6-2.5 2.5z" opacity=".55"/>',
