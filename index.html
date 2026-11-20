@@ -1497,8 +1497,8 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 /* sketchbook cover labels: the same all-caps Red Hat as the names; a long name wraps and the label grows upward */
 .skbklab{font-family:var(--f-display,"Red Hat Display",system-ui,sans-serif)!important;font-weight:900!important;font-stretch:118%;text-transform:uppercase;letter-spacing:-.005em;line-height:1.05;white-space:normal!important;text-overflow:clip!important;overflow:visible!important;height:auto!important;top:auto!important;overflow-wrap:anywhere}
 /* collapsible sections in menus */
-.sksech2{display:flex!important;align-items:center;gap:6px;width:100%;white-space:nowrap;border:0;background:none;cursor:pointer;text-align:left;font:inherit;padding:8px 10px 6px!important}
-.sksech2:hover{color:var(--ink)}.sksecc{display:inline-block;width:10px;font-size:.7rem}
+.sksech2{display:flex!important;align-items:center;gap:5px;width:100%;white-space:nowrap;border:0;background:none;cursor:pointer;text-align:left;font-family:inherit;color:inherit;font-size:.72rem;font-weight:700;letter-spacing:.04em;line-height:1.3;padding:8px 6px 5px}
+.sksech2:hover{opacity:.85}.sksecc{display:inline-block;width:8px;font-size:.62rem}
 .sksecb[hidden]{display:none!important}.sksecb{display:flex;flex-direction:column}
 
 /* storyboard cards are 16:9 pages: top and side margins match; the spare height is split evenly between the gap between the rows and the bottom margin */
@@ -3030,7 +3030,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120143407',newer=false,want='',last=Date.now();
+  var MINE='20261120144849',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
