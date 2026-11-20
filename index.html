@@ -1501,11 +1501,11 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .sksech2:hover{color:var(--ink)}.sksecc{display:inline-block;width:10px;font-size:.7rem}
 .sksecb[hidden]{display:none!important}.sksecb{display:flex;flex-direction:column}
 
-/* storyboard cards are 16:9 pages: same edge margins, the spare height goes between the two rows */
+/* storyboard cards are 16:9 pages: top and side margins match; the spare height is split evenly between the gap between the rows and the bottom margin */
 .skbd6.notitle{aspect-ratio:16/9;container-type:size}
-.skbd6.notitle .skbd6in{height:100%;box-sizing:border-box;padding:5cqw}
-.skbd6.notitle .skbd6g{height:100%;grid-template-rows:auto auto;align-content:space-between;justify-items:center;row-gap:0}
-.skbd6.notitle .skbdcell{width:min(100%,calc((100cqh - 10cqw - 4cqw) / 2 * var(--arn,1.78)));box-sizing:border-box}
+.skbd6.notitle .skbd6in{height:100%;box-sizing:border-box;padding:5cqw 5cqw 0}
+.skbd6.notitle .skbd6g{height:100%;grid-template-rows:auto 1fr auto 1fr;justify-items:center;row-gap:0}.skbd6.notitle .skbdcell:nth-child(n+4){grid-row:3}
+.skbd6.notitle .skbdcell{width:min(100%,calc((100cqh - 5cqw - 8cqw) / 2 * var(--arn,1.78)));box-sizing:border-box}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3030,7 +3030,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120143056',newer=false,want='',last=Date.now();
+  var MINE='20261120143407',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
