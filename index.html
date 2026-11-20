@@ -1447,6 +1447,11 @@ button.skpb:not(.sktool){border:1.5px solid transparent;border-radius:8px;font:i
 .sbaudname{padding:2px 12px 6px;font-size:12px;opacity:.7;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sbpdel svg{width:18px;height:18px;vertical-align:middle}.sbpdel.arm{background:#7a2323}
 body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
+/* stacked floating panels */
+.skstackhint{position:fixed;z-index:10001;height:4px;margin-top:-1px;border-radius:2px;background:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.25);pointer-events:none;display:none}
+.skstacked:not(.skstackhead) .sklfh{cursor:grab}
+.skstacked.skstackhead .sklfh{cursor:move}
+.skstacked{box-sizing:border-box!important;min-width:0!important;max-width:none!important}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -2971,7 +2976,7 @@ window.GC_CLIENT_ID = "864362034167-m27mjnfu17tvb5lc5i1oqqg16fdtmqmf.apps.google
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120095201',newer=false,want='',last=Date.now();
+  var MINE='20261120101015',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8809,20 +8814,62 @@ function skFlattenLayer(id){const d=SKW.doc,lib=skPolyLib(),L=d.layers.find(l=>l
 /* floating panels: drag any edge or corner to resize (left/top edges move that side); each panel keeps its size and place.
    The panel's contents scroll inside it, so the edges stay put. */
 function skSizer(el,key,pos){const sz=(S.skPanelSz||{})[key];const hd=el.firstChild,scr=h('div',{class:'skscr'});while(hd&&hd.nextSibling)scr.appendChild(hd.nextSibling);el.appendChild(scr);el.classList.add('skszbl');
-  if(sz){el.style.width=sz.w+'px';el.style.height=sz.h+'px';el.style.maxHeight='none';el.classList.add('sksized');}
+  if(sz){if(sz.w)el.style.width=sz.w+'px';if(sz.h){el.style.height=sz.h+'px';el.style.maxHeight='none';}el.classList.add('sksized');}
+  el.dataset.skp=key;el._skpos=pos;el.addEventListener('pointerdown',e=>{const t=e.target;if(e.button>0||!t.closest||!t.closest('.sklfh')||t.closest('button,input,select'))return;e.preventDefault();e.stopPropagation();skStackDrag(e,el,key);},true);skStackSoon();
   for(const d of ['n','s','e','w','ne','nw','se','sw']){const g=h('div',{class:'skrz skrz-'+d,'aria-hidden':'true'});
     g.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();g.setPointerCapture(e.pointerId);const r=el.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,k=parseFloat(getComputedStyle(el).getPropertyValue('--skui'))||1;
       const mv=ev=>{let dx=ev.clientX-sx,dy=ev.clientY-sy,x=r.left,y=r.top,w=r.width,hh=r.height;
         if(d.includes('e'))w=Math.min(innerWidth-r.left-4,r.width+dx);if(d.includes('s'))hh=Math.min(innerHeight-r.top-4,r.height+dy);
         if(d.includes('w')){dx=Math.max(4-r.left,Math.min(dx,r.width-150));x=r.left+dx;w=r.width-dx;}if(d.includes('n')){dy=Math.max(4-r.top,Math.min(dy,r.height-80));y=r.top+dy;hh=r.height-dy;}
         w=Math.max(150,w);hh=Math.max(80,hh);el.style.left=x+'px';el.style.top=y+'px';el.style.width=w/k+'px';el.style.height=hh/k+'px';el.style.maxHeight='none';el.classList.add('sksized');
-        S.skPanelSz=Object.assign({},S.skPanelSz||{},{[key]:{w:Math.round(w/k),h:Math.round(hh/k)}});if(pos)pos(Math.round(x),Math.round(y));};
+        S.skPanelSz=Object.assign({},S.skPanelSz||{},{[key]:{w:Math.round(w/k),h:Math.round(hh/k)}});
+        const st=skStackOf(key);if(st){/* in a stack: width (and the left edge) is shared; the top edge only moves the stack from its first panel */
+          if(d.includes('e')||d.includes('w'))st.w=Math.round(w/k);if(d.includes('w'))st.x=Math.round(x);if(d.includes('n')&&skStackHead(st)===key)st.y=Math.round(y);skStackLayout();}
+        else if(pos)pos(Math.round(x),Math.round(y));};
       const up=()=>{g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);saveUI();};
       g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);});
     /* double-click an edge: back to the panel's natural size */
-    g.addEventListener('dblclick',()=>{const o=Object.assign({},S.skPanelSz||{});delete o[key];S.skPanelSz=o;saveUI();render();});
+    g.addEventListener('dblclick',()=>{const o=Object.assign({},S.skPanelSz||{});delete o[key];S.skPanelSz=o;const st=skStackOf(key);if(st&&(d.includes('e')||d.includes('w')))delete st.w;saveUI();render();});
     el.appendChild(g);}
   return el;}
+/* ---------- stacking floating panels ----------
+   Drag a panel's title bar to just under another panel: it joins that panel's stack (a blue line shows where).
+   S.skStacks = [{k:[panel keys, top to bottom], x, y, w}]. Dragging the top panel moves the whole stack; dragging any other panel pulls it out.
+   Widening any panel widens the stack. A hidden panel keeps its place and comes back into the stack when it's shown again. */
+const skStacks=()=>S.skStacks||(S.skStacks=[]);
+const skStackOf=k=>skStacks().find(st=>st.k.includes(k))||null;
+const skPanelEl=k=>document.querySelector('[data-skp="'+String(k).replace(/["\\]/g,'\\$&')+'"]');
+const skStackHead=st=>st.k.find(k=>skPanelEl(k))||null;
+let SKSTQ=false;
+function skStackSoon(){if(SKSTQ)return;SKSTQ=true;queueMicrotask(()=>{SKSTQ=false;skStackLayout();requestAnimationFrame(skStackLayout);});}
+function skStackLayout(){for(const st of skStacks()){const els=st.k.map(skPanelEl).filter(Boolean);if(!els.length)continue;
+    const k=parseFloat(getComputedStyle(els[0]).getPropertyValue('--skui'))||1;if(st.w)els.forEach(el=>{el.style.width=st.w+'px';});
+    const W=els[0].getBoundingClientRect().width;let x=Math.max(4,Math.min(innerWidth-W-4,st.x)),y=Math.max(4,Math.min(innerHeight-40,st.y));
+    els.forEach((el,i)=>{el.style.left=x+'px';el.style.top=y+'px';el.style.right='auto';el.style.bottom='auto';el.classList.add('skstacked');el.classList.toggle('skstackhead',i===0);y+=el.getBoundingClientRect().height+4;});}
+  document.querySelectorAll('.skstacked').forEach(el=>{if(!skStackOf(el.dataset.skp))el.classList.remove('skstacked','skstackhead');});}
+function skStackClean(){S.skStacks=skStacks().filter(st=>st.k.length>1);}
+function skStackDrag(e,el,key){const st0=skStackOf(key),whole=!!(st0&&skStackHead(st0)===key);
+  if(st0&&!whole){st0.k=st0.k.filter(k=>k!==key);if(st0.k.length<2){const rest=st0.k[0],re=rest&&skPanelEl(rest);if(re&&re._skpos)re._skpos(st0.x,st0.y);}skStackClean();el.classList.remove('skstacked','skstackhead');skStackLayout();}
+  const moving=whole?st0.k.map(skPanelEl).filter(Boolean):[el],mkeys=whole?st0.k.slice():[key];
+  const r0=el.getBoundingClientRect(),starts=moving.map(m=>{const r=m.getBoundingClientRect();return [r.left,r.top];}),sx=e.clientX,sy=e.clientY,hd=e.target.closest('.sklfh');
+  try{hd.setPointerCapture(e.pointerId);}catch(_){}
+  const hint=h('div',{class:'skstackhint'});document.body.appendChild(hint);let tgt=null;
+  const others=()=>[...document.querySelectorAll('[data-skp]')].filter(o=>!moving.includes(o));
+  const mv=ev=>{let dx=ev.clientX-sx,dy=ev.clientY-sy;dx=Math.max(4-r0.left,Math.min(innerWidth-r0.width-4-r0.left,dx));dy=Math.max(4-r0.top,Math.min(innerHeight-40-r0.top,dy));
+    moving.forEach((m,i)=>{m.style.left=(starts[i][0]+dx)+'px';m.style.top=(starts[i][1]+dy)+'px';});
+    const L=r0.left+dx,T=r0.top+dy;tgt=null;let best=34;
+    for(const o of others()){const r=o.getBoundingClientRect();if(L>r.right-40||L+r0.width<r.left+40)continue;const dd=Math.abs(T-r.bottom);if(dd<best){best=dd;tgt={o,r};}}
+    if(tgt){hint.style.cssText=`display:block;left:${tgt.r.left}px;top:${tgt.r.bottom+1}px;width:${tgt.r.width}px`;}else hint.style.display='none';};
+  const up=()=>{hd.removeEventListener('pointermove',mv);hd.removeEventListener('pointerup',up);hd.removeEventListener('pointercancel',up);hint.remove();
+    const nr=el.getBoundingClientRect();
+    if(tgt){const tk=tgt.o.dataset.skp,k=parseFloat(getComputedStyle(tgt.o).getPropertyValue('--skui'))||1;let ts=skStackOf(tk);
+      if(!ts){ts={k:[tk],x:Math.round(tgt.r.left),y:Math.round(tgt.r.top),w:Math.round(tgt.r.width/k)};skStacks().push(ts);}else if(!ts.w)ts.w=Math.round(tgt.r.width/k);
+      if(whole)S.skStacks=skStacks().filter(x=>x!==st0);
+      ts.k=ts.k.filter(k=>!mkeys.includes(k));ts.k.splice(ts.k.indexOf(tk)+1,0,...mkeys);skStackClean();}
+    else if(whole){st0.x=Math.round(nr.left);st0.y=Math.round(nr.top);}
+    else if(el._skpos)el._skpos(Math.round(nr.left),Math.round(nr.top));
+    saveUI();render();};
+  hd.addEventListener('pointermove',mv);hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);}
 function skLayersFloatView(){if(!SKW||!S.skLFloat||S.skLHide)return null;const pos=S.skLPos||{x:Math.max(8,innerWidth-300),y:80};
   const el=h('div',{class:'skpop list layers sklfloat',style:`left:${pos.x}px;top:${pos.y}px`},
     h('div',{class:'sklfh',title:'Drag to move',onpointerdown:skLFDrag},h('span',null,'Layers'),
@@ -9897,10 +9944,10 @@ async function skImportText(txt){let o;try{o=JSON.parse(txt);}catch(e){o=null;}
   flash(bmsg+(parts.length?'Drawings: '+parts.join(', ')+'.':'No drawings in that file.'));render();}
 
 /* ---------- the host page (the planner, or the After Effects panel) calls these to load and save the drawing settings and to follow the database ---------- */
-function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
+function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skStacks=Array.isArray(store.skStacks)?store.skStacks.filter(st=>st&&Array.isArray(st.k)&&st.k.length>1&&typeof st.x==='number'):[];S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
 /* remember the colour you had before the last change, for X */
 function skPrefsTrack(){if(S.skColor!==S._skColCur){if(S._skColCur!==undefined&&S._skColCur)S.skColorPrev=S._skColCur;S._skColCur=S.skColor;const c=String(S.skColor||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))S.skRecent=[c].concat((S.skRecent||[]).filter(x=>x!==c)).slice(0,8);}}
-function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skPFFloat:S.skPFFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
+function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skPFFloat:S.skPFFloat||null,skStacks:S.skStacks||[],skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
 function skListen(db){
   db.collection('sketches').onSnapshot(s=>{S.skMain=new Map(s.docs.map(d=>[d.id,d.data()]));skSyncFromDb();},()=>{});
   db.collection('skparts').onSnapshot(s=>{S.skParts=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.skMain)skSyncFromDb();},()=>{});
