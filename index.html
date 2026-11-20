@@ -1507,6 +1507,15 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skbd6.notitle .skbd6g{height:100%;grid-template-rows:auto 1fr auto 1fr;justify-items:center;row-gap:0}.skbd6.notitle .skbdcell:nth-child(n+4){grid-row:3}
 .skbd6.notitle .skbdcell{width:min(100%,calc((100cqh - 5cqw - 8cqw) / 2 * var(--arn,1.78)));box-sizing:border-box}
 .skfcell.sel{box-shadow:0 0 0 2px #7aa7ff}.skfcell.sel.on{box-shadow:0 0 0 2px var(--accent,#3b6fd8),0 0 0 4px #7aa7ff}
+.skfselb{font:700 .78rem/1 system-ui,sans-serif;padding:0 8px;width:auto!important;min-width:0}.skfselb[aria-pressed="true"]{background:var(--ink);color:var(--sheet,#fff);border-radius:8px}
+/* a drawing's sound panel (above the frame strip) */
+.skfsnd{position:fixed;left:16px;bottom:16px;z-index:94;width:min(640px,calc((100vw - 110px) / var(--skui,1)));padding:6px 8px 8px;border-radius:12px;background:color-mix(in srgb,var(--sheet,#fff) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 2px 10px rgba(0,0,0,.12);transform:scale(var(--skui,1));transform-origin:0 100%;color:var(--ink)}
+.skfsndbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px}.skfsndbar .tlink{font-size:.8rem}.skfsndbar .tlink[disabled]{opacity:.35}
+.skfsndinfo{flex:1;min-width:8rem;font-size:.75rem;opacity:.65;padding:0 4px}
+.skfsndcv{display:block;width:100%;height:64px;border-radius:6px;background:color-mix(in srgb,var(--ink) 5%,transparent);touch-action:none;cursor:pointer}
+.skrecb i{display:inline-block;width:14px;height:14px;border-radius:50%;background:#e04848}.skrecb.on i{border-radius:3px;animation:sbrec 1s infinite}
+.skhasaud{position:relative}.skhasaud::after{content:'';position:absolute;right:4px;top:4px;width:6px;height:6px;border-radius:50%;background:#3b6fd8}
+.skcount{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;font:800 min(30vh,220px)/1 system-ui,sans-serif;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3035,7 +3044,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120161222',newer=false,want='',last=Date.now();
+  var MINE='20261120164354',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -6993,10 +7002,10 @@ let SKPLAY=0;
 /* if something in the drawing editor breaks, say so on screen (with the reason) instead of silently doing nothing */
 let SKERRT=0;function skErrShow(m){if(!SKW||Date.now()-SKERRT<4000)return;SKERRT=Date.now();try{flash('Something went wrong: '+String(m||'unknown error').slice(0,140));}catch(e){}}
 addEventListener('error',e=>skErrShow(e&&(e.message||(e.error&&e.error.message))));addEventListener('unhandledrejection',e=>skErrShow(e&&e.reason&&(e.reason.message||e.reason)));
-function skPlay(){const d=SKW.doc;if(!skHasFrames(d)||d.frames.length<2)return;if(SKPLAY){skStop();return;}SKW.playing=true;const fps=d.fps||12;
+function skPlay(){const d=SKW.doc;if(!skHasFrames(d)||d.frames.length<2&&!(d.aud||SKW.rec))return;if(SKPLAY){skStop();return;}if(SKW.rec||skAudLen(d.aud)>0)return skPlaySnd();SKW.playing=true;const fps=d.fps||12;
   SKW.pdir=1;SKW.hl=skHold(d,d.fcur);SKPLAY=setInterval(()=>{if(!SKW||!skHasFrames(SKW.doc)){skStop();return;}if(--SKW.hl>0)return;const dd=SKW.doc,n=dd.frames.length,i=dd.frames.indexOf(dd.fcur);let j=i+1;
     if(dd.pmode==='pong'&&n>1){j=i+(SKW.pdir||1);if(j>=n){SKW.pdir=-1;j=n-2;}else if(j<0){SKW.pdir=1;j=1;}}else j=j%n;const nf=dd.frames[Math.max(0,j)];SKW.hl=skHold(dd,nf);skGoFrame(nf,true);},1000/fps);render();}
-function skStop(){clearInterval(SKPLAY);SKPLAY=0;if(SKW){SKW.playing=false;skSave();}render();}
+function skStop(){clearInterval(SKPLAY);SKPLAY=0;if(SKW){SKW.playing=false;if(SKW.snode){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}if(SKW.rec){skAudRecEnd();return;}skSave();}render();}
 /* while playing, every bar hides; a tap anywhere (or the pause button, Space or Esc) stops and brings them back */
 function skPlayVeil(){const P=S.skPlayPos;let st=null,moved=false;
   const btn=h('button',{class:'skplaybtn',title:'Pause (Space). Drag to move','aria-label':'Pause',style:P?'left:'+(P.x*100)+'%;top:'+(P.y*100)+'%;bottom:auto':null},skIcoL('stop'));
@@ -7014,6 +7023,100 @@ addEventListener('click',e=>{if(Date.now()-SKPLAYEND<500){e.preventDefault();e.s
 /* what playback shows: the storyboard panel's crop if this drawing is in one, otherwise the artboard */
 function skPlayRect(d){const B=S.skFromBoard&&skBoardGet(S.skFromBoard);if(B&&(B.panels||[]).some(p=>p.sk===SKW.id))return skBoardCrop(d,B.pw,B.ph);if(d.inf)return null;return {x:d.ox||0,y:d.oy||0,w:d.w,h:d.h};}
 /* the frame strip: shown once a sketch has frames */
+/* ---------- a drawing's sound ----------
+   d.aud = {id,n,size,mime,name,dur,pk, segs:[[start,end],…] (the kept parts of the recording, played one after another), off (seconds after frame 1 where it starts)}.
+   The recording itself is never changed (pieces in the SKA store); trims, cuts and moves only edit segs/off, so every edit can be undone.
+   In a storyboard, the panel lasts as long as its drawing's sound unless you've typed a time for the panel. */
+const skAudLen=m=>m&&Array.isArray(m.segs)?m.segs.reduce((t,[a,b])=>t+Math.max(0,b-a),0):0;
+const skAudEnd=m=>m?(m.off||0)+skAudLen(m):0;
+const SKABUF=new Map();
+async function skAudSrcBuf(m){if(!m)return null;if(SKABUF.has(m.id))return SKABUF.get(m.id);const blob=await SKA.get(m);if(!blob)return null;const b=await skAudioDecode(blob.slice(0));SKABUF.set(m.id,b);return b;}
+async function skAudEdited(m){const src=await skAudSrcBuf(m);if(!src)return null;const key=m.id+'|'+JSON.stringify(m.segs);if(SKABUF.has(key))return SKABUF.get(key);
+  const sr=src.sampleRate,ch=src.numberOfChannels,parts=m.segs.map(([a,b])=>[Math.max(0,Math.round(a*sr)),Math.min(src.length,Math.round(b*sr))]).filter(([a,b])=>b>a),len=Math.max(1,parts.reduce((t,[a,b])=>t+b-a,0));
+  const out=skACtx().createBuffer(ch,len,sr);for(let c=0;c<ch;c++){const o=out.getChannelData(c),x=src.getChannelData(c);let w=0;for(const [a,b] of parts){o.set(x.subarray(a,b),w);w+=b-a;}}
+  SKABUF.set(key,out);if(SKABUF.size>60)SKABUF.delete(SKABUF.keys().next().value);return out;}
+/* start a sound so that `t` seconds into the timeline is now (the sound itself starts at `off`) */
+function skAudPlay(buf,off,t){if(!buf)return null;const ctx=skACtx();if(ctx.state==='suspended')ctx.resume();const rel=t-(off||0);if(rel>=buf.duration)return null;
+  const n=ctx.createBufferSource();n.buffer=buf;n.connect(ctx.destination);if(rel>=0)n.start(0,rel);else n.start(ctx.currentTime-rel);return n;}
+/* the drawing's timeline: the frame sequence (ping-pong unrolled) with holds, and how long one pass takes */
+function skFrTimeline(d){const seq=skFrameSeq(d)||d.frames||[],fps=d.fps||12,st=[];let t=0;for(const f of seq){st.push(t);t+=skHold(d,f)/fps;}return {seq,st,T:t||1/fps};}
+/* play the frames with the sound: one cycle lasts as long as the longer of the two; the frames loop under a longer sound */
+function skPlaySnd(){const d=SKW.doc;SKW.playing=true;const tl=skFrTimeline(d),C=()=>Math.max(tl.T,SKW.rec?1e9:skAudEnd(SKW.doc.aud));let t0=performance.now(),buf=null,cur=-1;
+  const startSnd=t=>{if(SKW.snode){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}if(!SKW.rec&&buf)SKW.snode=skAudPlay(buf,SKW.doc.aud.off,t);};
+  if(!SKW.rec&&d.aud)skAudEdited(d.aud).then(b=>{buf=b;if(SKPLAY)startSnd((performance.now()-t0)/1000);}).catch(()=>{});
+  const step=()=>{if(!SKW||!skHasFrames(SKW.doc)){skStop();return;}let t=(performance.now()-t0)/1000;if(t>=C()){t0=performance.now();t=0;startSnd(0);}
+    const tt=t%tl.T;let i=0;while(i<tl.st.length-1&&tt>=tl.st[i+1])i++;if(i!==cur){cur=i;const f=tl.seq[i];if(f&&f!==SKW.doc.fcur)skGoFrame(f,true);}
+    if(S.skFSnd)skFSndPaint(t);};
+  if(tl.seq[0]&&tl.seq[0]!==d.fcur)skGoFrame(tl.seq[0],true);SKPLAY=setInterval(step,15);render();}
+/* recording: 3-2-1, then the frames play from frame 1 while the mic records; Stop (or Space / a tap) ends it */
+async function skAudRec(){const d=SKW.doc;if(SKW.rec)return;if(!navigator.mediaDevices||!window.MediaRecorder){flash('Recording isn’t available here.');return;}
+  if(d.aud&&S.confirm!=='skaudrec')return armConfirm('skaudrec');S.confirm=null;if(SKPLAY)skStop();
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});}catch(e){flash('The microphone isn’t available (check the browser’s mic permission).');return;}
+  const mt=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4','audio/webm'].find(x=>{try{return MediaRecorder.isTypeSupported(x);}catch(e){return false;}});
+  let mr;try{mr=new MediaRecorder(stream,mt?{mimeType:mt,audioBitsPerSecond:48000}:{audioBitsPerSecond:48000});}catch(e){stream.getTracks().forEach(x=>x.stop());flash('Recording isn’t available here.');return;}
+  const big=h('div',{class:'skcount'});document.body.appendChild(big);for(const n of [3,2,1]){big.textContent=n;await new Promise(r=>setTimeout(r,650));}big.remove();
+  const r={mr,stream,chunks:[]};SKW.rec=r;mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data);};mr.start(250);skPlaySnd();flash('Recording… Stop (or Space, or a tap) ends it');}
+async function skAudRecEnd(){const r=SKW.rec;SKW.rec=null;if(!r)return;const done=new Promise(res=>{r.mr.onstop=res;});try{r.mr.stop();}catch(e){}await done;r.stream.getTracks().forEach(x=>x.stop());render();
+  const blob=new Blob(r.chunks,{type:r.mr.mimeType||'audio/webm'});if(blob.size<2000){flash('Nothing was recorded.');return;}
+  await skAudSetDrawing(blob,'Recording '+new Date().toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));}
+async function skAudSetDrawing(blob,name){const W=SKW,d=W&&W.doc;if(!d)return;flash('Saving the sound…');let buf;try{buf=await skAudioDecode(blob.slice(0));}catch(e){flash('Couldn’t read that audio file.');return;}
+  if(/wav|aiff/i.test(blob.type)||/\.(wav|aiff?)$/i.test(name||''))blob=await skAudioWav(blob,22050);if(blob.size>25e6){flash('That file is too big (25 MB max).');return;}
+  let m;try{m=await SKA.put(blob);}catch(e){flash('Couldn’t save the sound.');return;}
+  const dur=Math.round(buf.duration*1000)/1000,nw=Object.assign(m,{name,dur,pk:skPeaks(buf,600),segs:[[0,dur]],off:0});SKABUF.set(nw.id,buf);
+  if(SKW!==W)return;skAudEdit(()=>nw);flash('Sound saved · '+dur.toFixed(1)+'s');}
+function skAudPick(){const inp=document.createElement('input');inp.type='file';inp.accept='audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm,.aif,.aiff';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)skAudSetDrawing(f,f.name.replace(/\.[^.]+$/,''));};inp.click();}
+/* every sound edit is one undo step; fn gets a copy to change (or returns a whole new value; null removes the sound) */
+function skAudEdit(fn){const d=SKW.doc,a=d.aud?JSON.parse(JSON.stringify(d.aud)):null;let b=a?JSON.parse(JSON.stringify(a)):null;const r=fn(b);if(r!==undefined)b=r;
+  if(JSON.stringify(a)===JSON.stringify(b))return;if(b)d.aud=b;else delete d.aud;SKW.undo.push({type:'aud',a,b,selB:[],selA:[]});SKW.redo.length=0;skSave();render();}
+/* the sound panel: the frames as a ruler, the sound's parts as blocks with their waveform. Drag a block to move the sound, drag its outer edges to trim,
+   tap to put the cut line there (and pick that part); Split cuts at the line, Delete part takes the picked part out (the rest closes up) */
+let SKFS=null;
+function skFSndView(){const d=SKW.doc,m=d.aud,tl=skFrTimeline(d),cv=h('canvas',{class:'skfsndcv'}),rec=!!SKW.rec;
+  const len=skAudLen(m),info=m?(len.toFixed(1)+'s sound'+(m.segs.length>1?' in '+m.segs.length+' parts':'')+' · frames '+tl.T.toFixed(1)+'s'):'No sound yet · frames '+tl.T.toFixed(1)+'s';
+  const sel=SKW.aseg!=null&&m&&m.segs[SKW.aseg]?SKW.aseg:null;
+  const el=h('div',{class:'skfsnd'},h('div',{class:'skfsndbar'},
+      h('button',{class:'sktool skib skrecb'+(rec?' on':''),title:rec?'Stop recording':(m?(S.confirm==='skaudrec'?'Tap again to record over the current sound':'Record again (replaces the sound)'):'Record: frames play from frame 1 while you talk'),'aria-label':rec?'Stop recording':'Record',onclick:()=>{if(SKW.rec)skStop();else skAudRec();}},h('i')),
+      ib('import',m?'Replace with an audio file…':'Bring in an audio file…',skAudPick),
+      ib('play',SKW.playing?'Stop':'Play with the sound (Space)',skPlay,{disabled:!m&&d.frames.length<2}),
+      h('span',{class:'skfsndinfo'},info),
+      m?h('button',{class:'tlink',title:'Cut the sound at the red line',disabled:!(SKW.acur>0),onclick:()=>skAudSplit()},'Split'):null,
+      m?h('button',{class:'tlink',title:'Take the picked part out (the rest closes up)',disabled:sel==null||m.segs.length<2,onclick:()=>skAudEdit(x=>{x.segs.splice(sel,1);SKW.aseg=null;})},'Delete part'):null,
+      m?h('button',{class:'tlink',title:'Undo every trim and cut',disabled:m.segs.length===1&&m.segs[0][0]===0&&Math.abs(m.segs[0][1]-m.dur)<.001&&!m.off,onclick:()=>skAudEdit(x=>{x.segs=[[0,x.dur]];x.off=0;SKW.aseg=null;SKW.acur=0;})},'Reset'):null,
+      m?ib('clear',S.confirm==='skauddel'?'Tap again to remove the sound':'Remove the sound',()=>{if(S.confirm!=='skauddel')return armConfirm('skauddel');S.confirm=null;skAudEdit(()=>null);},{cls:S.confirm==='skauddel'?'skarm':''}):null),
+    cv);
+  SKFS={el,cv,tl};
+  const X=()=>{const r=cv.getBoundingClientRect(),S1=Math.max(tl.T,skAudEnd(SKW.doc.aud),1)*1.06;return {r,S1,k:r.width/S1};};
+  let drag=null;
+  cv.addEventListener('pointerdown',e=>{const M=SKW.doc.aud;e.preventDefault();cv.setPointerCapture(e.pointerId);const {r,k}=X(),x=e.clientX-r.left,t=x/k;
+    if(!M){SKW.acur=t;skFSndPaint();return;}
+    const L=skAudLen(M),s0=M.off||0,s1=s0+L,near=v=>Math.abs(x-v*k)<10;let mode=near(s0)?'a':near(s1)?'b':(t>=s0&&t<=s1)?'move':'cur';
+    drag={mode,x0:e.clientX,m0:JSON.parse(JSON.stringify(M)),moved:false,t};});
+  cv.addEventListener('pointermove',e=>{if(!drag||!cv.hasPointerCapture(e.pointerId))return;const {k}=X(),dt=(e.clientX-drag.x0)/k;if(Math.abs(e.clientX-drag.x0)>3)drag.moved=true;if(!drag.moved)return;
+    const M=SKW.doc.aud,m0=drag.m0,first=m0.segs[0],last=m0.segs[m0.segs.length-1];
+    if(drag.mode==='move'){M.off=Math.max(0,(m0.off||0)+dt);}
+    else if(drag.mode==='a'){const na=Math.max(0,Math.min(first[1]-.05,first[0]+dt));M.segs[0][0]=na;M.off=Math.max(0,(m0.off||0)+(na-first[0]));}
+    else if(drag.mode==='b'){M.segs[M.segs.length-1][1]=Math.max(last[0]+.05,Math.min(m0.dur,last[1]+dt));}
+    skFSndPaint();});
+  const up=e=>{if(!drag)return;const g=drag;drag=null;const M=SKW.doc.aud;
+    if(!g.moved){SKW.acur=g.t;if(M){let a=M.off||0;SKW.aseg=null;M.segs.forEach(([p,q],i)=>{if(g.t>=a&&g.t<a+(q-p))SKW.aseg=i;a+=q-p;});}render();return;}
+    const now=JSON.parse(JSON.stringify(M));Object.assign(M,g.m0);M.segs=g.m0.segs;skAudEdit(()=>now);};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  requestAnimationFrame(()=>skFSndPaint());if(m&&!SKABUF.has(m.id))skAudSrcBuf(m).catch(()=>{});return el;}
+function skAudSplit(){const d=SKW.doc,m=d.aud,t=SKW.acur;if(!m||!(t>0))return;let a=m.off||0;
+  skAudEdit(x=>{let acc=a;for(let i=0;i<x.segs.length;i++){const [p,q]=x.segs[i],L=q-p;if(t>acc+.02&&t<acc+L-.02){const cut=p+(t-acc);x.segs.splice(i,1,[p,cut],[cut,q]);SKW.aseg=i+1;return;}acc+=L;}});}
+function skFSndPaint(tPlay){if(!SKFS||!SKFS.cv.isConnected||!SKW)return;const {cv,tl}=SKFS,d=SKW.doc,m=d.aud,dpr=Math.min(2,devicePixelRatio||1),r=cv.getBoundingClientRect();if(!r.width)return;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);const W=r.width,H=r.height,S1=Math.max(tl.T,skAudEnd(m),1)*1.06,k=W/S1;
+  const ink=getComputedStyle(cv).color||'#222';c.clearRect(0,0,W,H);
+  /* the frames as a ruler (repeating under a longer sound) */
+  for(let rep=0;rep*tl.T<S1;rep++)tl.st.forEach((s,i)=>{const x=(rep*tl.T+s)*k;c.fillStyle=rep?'rgba(127,127,127,.18)':'rgba(127,127,127,.35)';c.fillRect(x,0,1,i===0?H:9);});
+  /* the current frame */
+  const fi=tl.seq.indexOf(d.fcur);if(fi>=0){c.fillStyle='rgba(59,111,216,.18)';const x0=tl.st[fi]*k,x1=(tl.st[fi+1]!=null?tl.st[fi+1]:tl.T)*k;c.fillRect(x0,0,Math.max(2,x1-x0),H);}
+  if(m){let a=m.off||0;const pk=m.pk||[],n=pk.length;m.segs.forEach(([p,q],i)=>{const x0=a*k,w=(q-p)*k;c.fillStyle=SKW.aseg===i?'rgba(59,111,216,.28)':'rgba(127,127,127,.16)';c.fillRect(x0,10,w,H-14);
+      c.fillStyle=SKW.aseg===i?'#3b6fd8':'rgba(60,140,220,.8)';const mid=10+(H-14)/2;for(let px=0;px<w;px+=2){const st=p+(px/w)*(q-p),j=Math.min(n-1,Math.floor(st/m.dur*n)),hh=Math.max(1,(pk[j]||0)/99*(H-18)/2);c.fillRect(x0+px,mid-hh,1.4,hh*2);}
+      if(i>0){c.fillStyle=ink;c.fillRect(x0-1,10,2,H-14);}a+=q-p;});
+    const s0=(m.off||0)*k,s1=skAudEnd(m)*k;c.fillStyle=ink;c.fillRect(s0-2,8,4,H-10);c.fillRect(s1-2,8,4,H-10);}
+  if(SKW.acur>0){c.fillStyle='#e04848';c.fillRect(SKW.acur*k-1,0,2,H);}
+  if(tPlay!=null){c.fillStyle=SKW.rec?'#e04848':'#3b6fd8';c.fillRect((tPlay%S1)*k-1,0,2,H);}}
 /* ---------- frames: copy and paste, several at once ----------
    Select frames in the strip (Shift = range, Ctrl = add/remove). Copy takes whole frames, or with "This layer only" just the current layer.
    Whole frames paste as new frames after this one (or at the end); a layer pastes as new frames or into this and the next frames, replacing that layer there.
@@ -7043,7 +7146,7 @@ function skFramesPaste(how){const c=SKFCLIP,d0=SKW.doc;if(!c||!c.frames.length){
     c.frames.forEach(fr=>{const f='f'+skNewId();ids.push(f);SKW.fr.set(f,mk(fr).map(st=>Object.assign(st,{f})));if(fr.hold>1){d.fh=Object.assign({},d.fh||{});d.fh[f]=fr.hold;}});
     const L=d.frames.slice();L.splice(at,0,...ids);d.frames=L;SKW.fsel=ids;},
     how==='into'?'Pasted “'+c.lname+'” into '+c.frames.length+(c.frames.length===1?' frame':' frames'):'Pasted '+c.frames.length+(c.frames.length===1?' frame':' frames')+(how==='end'?' at the end':' after this one'));}
-function skFramesDelSel(){const d=SKW.doc,ids=skFSel();if(ids.length<2)return skDelFrame();if(ids.length>=d.frames.length){flash('A drawing keeps at least one frame.');return;}
+function skFramesDelSel(){const d=SKW.doc,ids=skFSel();if(ids.length<2){if(ids[0]&&ids[0]!==d.fcur)skGoFrame(ids[0],true);SKW.fsel=null;return skDelFrame();}if(ids.length>=d.frames.length){flash('A drawing keeps at least one frame.');return;}
   if(S.confirm!=='skfdels')return armConfirm('skfdels');S.confirm=null;
   skFramesAct(d=>{const gone=new Set(ids);if(gone.has(d.fcur)){const keep=d.frames.find(f=>!gone.has(f));skGoFrame(keep,true);}
     d.frames=d.frames.filter(f=>!gone.has(f));for(const f of gone){SKW.fr.delete(f);if(d.fh)delete d.fh[f];}d.fdel=(d.fdel||[]).concat(ids).slice(-200);SKW.fsel=null;},'Deleted '+ids.length+' frames');}
@@ -7070,7 +7173,8 @@ function skFStrip(){const d=SKW.doc,H=46,pw=d.inf?1920:(d.w||1920),ph=d.inf?1080
   const cellAt=x=>{let best=null,bd=1e9;for(const c of el.querySelectorAll('.skfcell')){const r=c.getBoundingClientRect();const dd=x<r.left?r.left-x:x>r.right?x-r.right:0;if(dd<bd){bd=dd;best=c;}}return best;};
   let st=null;
   el.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest('.skfcell');if(!c)return;e.preventDefault();if(SKPLAY)skStop();
-    /* Shift: select a run of frames; Ctrl: add or remove one */
+    /* Shift: select a run of frames; Ctrl (or the Select button on touch): add or remove one */
+    if(S.skFSelMode&&!e.shiftKey){const f=c.dataset.fid;let L=(SKW.fsel||[]).slice();L=L.includes(f)?L.filter(x=>x!==f):L.concat([f]);SKW.fsel=L;SKW.fanchor=f;render();return;}
     if(e.shiftKey||e.ctrlKey||e.metaKey){const D=SKW.doc,f=c.dataset.fid;let L=(SKW.fsel&&SKW.fsel.length)?SKW.fsel.slice():[D.fcur];
       if(e.shiftKey){const a=D.frames.indexOf(SKW.fanchor&&D.frames.includes(SKW.fanchor)?SKW.fanchor:D.fcur),b=D.frames.indexOf(f);L=D.frames.slice(Math.min(a,b),Math.max(a,b)+1);}
       else{L=L.includes(f)?L.filter(x=>x!==f):L.concat([f]);SKW.fanchor=f;}
@@ -7098,18 +7202,20 @@ function skFStripSync(jump){const el=document.querySelector('#app .skfstrip');if
 function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.doc,n=d.frames.length,i=d.frames.indexOf(d.fcur),pl=!!SKW.playing,on=S.skOnion||0;
   if(S.skFrMini)return h('div',{class:'skframes skcoll'},h('button',{class:'sktool skminib',title:'Show the frames panel','aria-label':'Show the frames panel',onclick:()=>{S.skFrMini=false;saveUI();render();}},skIcoL('frames'),h('span',null,(i+1)+' / '+n)),
     ib(pl?'stop':'play',pl?'Stop (tap Space)':'Play (tap Space)',skPlay,{disabled:n<2}));
-  return [S.skFStrip!==false?skFStrip():null,h('div',{class:'skframes'},
+  return [S.skFSnd?skFSndView():null,S.skFStrip!==false?skFStrip():null,h('div',{class:'skframes'},
     ib('fprev','Previous frame (, or Page Up)',()=>skStepFrame(-1)),h('span',{class:'skfn',title:'Frame'},(i+1)+' / '+n),ib('fnext','Next frame (. or Page Down)',()=>skStepFrame(1)),
     ib(pl?'stop':'play',pl?'Stop (tap Space)':'Play (tap Space)',skPlay,{disabled:n<2}),
     h('span',{class:'skfsep'}),
     skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('dup','Copy this frame to a new frame',true),
+    h('button',{class:'sktool skib skfselb','aria-pressed':String(!!S.skFSelMode),title:S.skFSelMode?'Done selecting':'Select frames: tap thumbnails to pick several',onclick:()=>{S.skFSelMode=!S.skFSelMode;if(!S.skFSelMode&&SKW.fsel&&SKW.fsel.length<2)SKW.fsel=null;render();}},S.skFSelMode?'Done':'Select'),
+    S.skFSelMode?h('button',{class:'sktool skib skfselb',title:'Select every frame',onclick:()=>{SKW.fsel=d.frames.slice();render();}},'All'):null,
     ib('copyf',(SKW.fsel&&SKW.fsel.length>1?'Copy the '+SKW.fsel.length+' selected frames':'Copy this frame (Shift or Ctrl+click in the strip to pick several)')+(S.skFLayer?', this layer only':'')+' · Ctrl+C',skFramesCopy),
     skPopBtn('fpaste','Paste frames'+(SKFCLIP?' ('+SKFCLIP.frames.length+')':''),skIcoL('pastef'),{disabled:!SKFCLIP,popCls:'list skfpaste',items:()=>{const c=SKFCLIP;if(!c)return [];const n=c.frames.length,go=how=>()=>{S.skPop=null;skFramesPaste(how);};
       return [h('div',{class:'skgh'},'Paste '+n+(n===1?' frame':' frames')+(c.one?' · “'+c.lname+'” only':'')),
         h('button',{class:'skrow',onclick:go('after')},skIcoL('plus'),'As new frames after this one'),h('button',{class:'skrow',onclick:go('end')},skIcoL('plus'),'As new frames at the end'),
         c.one?h('button',{class:'skrow',title:'Replaces “'+c.lname+'” in those frames; their other layers stay',onclick:go('into')},skIcoL('onelayer'),'Into this and the next '+(n>1?n-1+' ':'')+(n===2?'frame':n>2?'frames':'frames (this one only)')):null];}}),
     h('button',{class:'sktool skib','aria-pressed':String(!!S.skFLayer),title:S.skFLayer?'Copying just the current layer (tap for whole frames)':'Copy whole frames (tap to copy just the current layer)',onclick:()=>{S.skFLayer=!S.skFLayer;saveUI();render();}},skIcoL('onelayer')),ib('tween','In-betweens: blend this frame’s Pen paths into the next frame',()=>{S.skTween=S.skTween?null:{n:3,ease:'even'};render();SKW.drawLive&&SKW.drawLive();},{pressed:!!S.skTween}),
-    (SKW.fsel&&SKW.fsel.length>1)?ib('clear',S.confirm==='skfdels'?'Tap again to delete the '+SKW.fsel.length+' selected frames':'Delete the '+SKW.fsel.length+' selected frames',skFramesDelSel,{cls:S.confirm==='skfdels'?'skarm':''}):ib('clear',S.confirm==='skfdel'?'Tap again to delete this frame':'Delete this frame',skDelFrame,{disabled:n<2,cls:S.confirm==='skfdel'?'skarm':''}),
+    (SKW.fsel&&SKW.fsel.length>1)||(S.skFSelMode&&SKW.fsel&&SKW.fsel.length)?ib('clear',S.confirm==='skfdels'?'Tap again to delete the '+SKW.fsel.length+' selected frames':'Delete the '+SKW.fsel.length+' selected frames',skFramesDelSel,{cls:S.confirm==='skfdels'?'skarm':''}):ib('clear',S.confirm==='skfdel'?'Tap again to delete this frame':'Delete this frame',skDelFrame,{disabled:n<2,cls:S.confirm==='skfdel'?'skarm':''}),
     ib('fmovel','Move this frame earlier',()=>skMoveFrame(-1),{disabled:i<=0}),ib('fmover','Move this frame later',()=>skMoveFrame(1),{disabled:i>=n-1}),
     h('span',{class:'skfsep'}),
     h('button',{class:'sktool skib skonion','aria-pressed':String(!!S.skOnionOn),title:S.skOnionOn?'Onion skin on (tap to turn off)':'Onion skin off (tap to turn on)',onclick:()=>{S.skOnionOn=!S.skOnionOn;saveUI();render();}},skIcoL('onion')),
@@ -7120,6 +7226,7 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
     h('select',{class:'skfps',title:'Playback: loop (1 2 3 1 2 3) or ping-pong (1 2 3 2 1)','aria-label':'Playback mode',onchange:e=>{d.pmode=e.target.value==='pong'?'pong':null;skSave();if(SKPLAY){skStop();skPlay();}}},
       h('option',{value:'loop',selected:d.pmode!=='pong'?'':null},'Loop'),h('option',{value:'pong',selected:d.pmode==='pong'?'':null},'Ping-pong')),
     h('select',{class:'skfps',title:'Frames per second','aria-label':'Frames per second',onchange:e=>{d.fps=+e.target.value;skSave();if(SKPLAY){skStop();skPlay();}}},[6,8,12,15,24].map(v=>h('option',{value:String(v),selected:(d.fps||12)===v?'':null},v+' fps'))),
+    h('button',{class:'sktool skib'+(d.aud?' skhasaud':''),'aria-pressed':String(!!S.skFSnd),title:S.skFSnd?'Hide the sound panel':'Sound: record or bring in a track for this animation'+(d.aud?' (has sound)':''),onclick:()=>{S.skFSnd=!S.skFSnd;saveUI();render();}},skIcoL('mic')),
     h('button',{class:'sktool skib','aria-pressed':String(S.skFStrip!==false),title:S.skFStrip!==false?'Hide the frame strip':'Show the frame strip (thumbnails to scrub through)',onclick:()=>{S.skFStrip=S.skFStrip===false;saveUI();render();}},skIcoL('fstrip')),
     ib('collapse','Hide the frames panel',()=>{S.skFrMini=true;saveUI();render();}))];}
 function skOpen(id){skColTargetSet('stroke');const d=S.sketches&&S.sketches.get(id);if(!d)return;if(S.skFromBoard&&!(skBoardGet(S.skFromBoard)||{panels:[]}).panels.some(p=>p.sk===id))S.skFromBoard=null;if(d._partial){flash(Date.now()-(window.SKLOAD0||Date.now())>10000?'Part of this drawing is missing from this copy, so it can’t open safely. Bring it back with Restore a backup (◐ menu).':'Still loading this sketch. Try again in a moment.');return;}SKW={id,doc:skLayersInit(skClone(d)),undo:[],redo:[],fitNext:true};skPrefsApply(SKW.doc.prefs);SKW.known=new Set(SKW.doc.strokes.map(st=>st.id));skSplitFrames();SKW.knownL=new Set(SKW.doc.layers.map(l=>l.id));skUndoRestore();/* always open fitted and centred */S.skFS=false;render();window.scrollTo(0,0);}
@@ -7691,6 +7798,7 @@ addEventListener('keyup',e=>{if(e.code==='Space'&&S.skSpace){S.skSpace=false;doc
 /* undo / redo for the open sketch (Ctrl+Z, Ctrl+Shift+Z) */
 function skApply(a,undo){const d=SKW.doc;
   if(a.type==='frames'){skFramesRestore(undo?a.before:a.after);return;}
+  if(a.type==='aud'){const v=undo?a.a:a.b;if(v)d.aud=v;else delete d.aud;return;}
   if(a.type==='multi'){for(const o of (undo?a.ops.slice().reverse():a.ops))skApply(o,undo);return;}
   if(a.type==='add'){if(undo){const i=d.strokes.lastIndexOf(a.st);if(i>=0)d.strokes.splice(i,1);}else d.strokes.push(a.st);}
   else if(a.type==='adds'){if(undo){const x=new Set(a.sts);d.strokes=d.strokes.filter(st=>!x.has(st));}else d.strokes.push(...a.sts);}
@@ -8423,7 +8531,7 @@ const skBoardGet=id=>skBoards().find(b=>b.id===id)||null;
 function skBoardsSave(){S.skBoards=skBoards().slice();saveUI();try{write(()=>col('settings').doc('skboards').set({boards:S.skBoards,updated:new Date().toISOString()}));}catch(e){}}
 const skBoardPanels=B=>(B.panels||[]).filter(p=>p&&p.sk&&S.sketches&&S.sketches.has(p.sk));
 function skBoardToggle(B,sk){skBoardNorm(B);const i=B.panels.findIndex(p=>p.sk===sk);if(i>=0)B.panels[i].sk=null;else{let j=B.panels.findIndex(p=>!p.sk);if(j<0){B.pages++;skBoardNorm(B);j=B.panels.findIndex(p=>!p.sk);}B.panels[j].sk=sk;}skBoardsSave();render();}
-const skPanelDur=(B,p)=>{if(p&&+p.dur>0)return Math.max(.2,+p.dur);const m=/(\d+(?:\.\d+)?)\s*s(?:ec(?:onds?)?)?\b/i.exec(p.note||'');return Math.max(.2,m?+m[1]:(B.dur||2));};
+const skPanelDur=(B,p)=>{if(p&&+p.dur>0)return Math.max(.2,+p.dur);{const d=p&&p.sk&&S.sketches&&S.sketches.get(p.sk);if(d&&skAudLen(d.aud)>0)return Math.max(.2,Math.round(skAudEnd(d.aud)*100)/100);}const m=/(\d+(?:\.\d+)?)\s*s(?:ec(?:onds?)?)?\b/i.exec(p.note||'');return Math.max(.2,m?+m[1]:(B.dur||2));};
 /* the part of a drawing a panel shows: the whole canvas scaled to fill the panel, centred, the rest cropped */
 function skBoardCrop(d,pw,ph){const b=d.inf?(skBBox(d,40)||{x:0,y:0,w:pw,h:ph}):{x:d.ox||0,y:d.oy||0,w:d.w,h:d.h};const k=Math.max(pw/b.w,ph/b.h),cw=pw/k,ch=ph/k;return {x:b.x+(b.w-cw)/2,y:b.y+(b.h-ch)/2,w:cw,h:ch,k};}
 const skFrameIds=d=>skHasFrames(d)&&d.frames.length>1?d.frames:null;
@@ -8724,7 +8832,8 @@ const skPeaks=(buf,n)=>{const ch=buf.getChannelData(0),step=Math.max(1,Math.floo
   for(let i=0;i<n;i++){let p=0;const a=i*step,b=Math.min(ch.length,a+step);for(let j=a;j<b;j+=4){const v=Math.abs(ch[j]);if(v>p)p=v;}o.push(p);if(p>mx)mx=p;}
   return o.map(v=>Math.round(v/(mx||1)*99));};
 /* mono, 16-bit WAV at a scratch-quality rate (After Effects can't read recorded WebM/Opus) */
-async function skAudioWav(blob,rate){rate=rate||24000;const buf=await skAudioDecode(blob),len=Math.max(1,Math.ceil(buf.duration*rate)),oc=new OfflineAudioContext(1,len,rate),src=oc.createBufferSource();
+async function skAudioWav(blob,rate){return skBufWav(await skAudioDecode(blob),rate);}
+async function skBufWav(buf,rate){rate=rate||24000;const len=Math.max(1,Math.ceil(buf.duration*rate)),oc=new OfflineAudioContext(1,len,rate),src=oc.createBufferSource();
   src.buffer=buf;src.connect(oc.destination);src.start();const r=await oc.startRendering(),pc=r.getChannelData(0),out=new DataView(new ArrayBuffer(44+pc.length*2));
   const ws=(o,s)=>{for(let i=0;i<s.length;i++)out.setUint8(o+i,s.charCodeAt(i));};
   ws(0,'RIFF');out.setUint32(4,36+pc.length*2,true);ws(8,'WAVEfmt ');out.setUint32(16,16,true);out.setUint16(20,1,true);out.setUint16(22,1,true);out.setUint32(24,rate,true);out.setUint32(28,rate*2,true);out.setUint16(32,2,true);out.setUint16(34,16,true);ws(36,'data');out.setUint32(40,pc.length*2,true);
@@ -8770,7 +8879,14 @@ function skBoardPlayer(B,opt){skBoardNorm(B);opt=opt||{};const list=[],num=[];B.
   const loadAud=async()=>{if(aud){aud.pause();aud=null;}if(aurl){URL.revokeObjectURL(aurl);aurl=null;}const m=B.audio;paintWave();if(!m)return;
     let blob=null;try{blob=await SKA.get(m);}catch(e){}if(closed)return;if(!blob){flash('Couldn’t load the scratch track.');return;}
     aurl=URL.createObjectURL(blob);aud=new Audio(aurl);aud.preload='auto';if(playing)syncAud();};
-  const syncAud=()=>{if(!aud)return;const m=B.audio,a=t-(m&&m.off||0);
+  /* each panel's own drawing sound plays during that panel (mixed with the board's scratch track) */
+  const PS={i:-1,node:null,seek:-1};let SEEK=0;
+  list.forEach(p=>{const dd=S.sketches.get(p.sk);if(dd&&skAudLen(dd.aud)>0)skAudEdited(dd.aud).catch(()=>{});});
+  const stopPS=()=>{if(PS.node){try{PS.node.stop();}catch(e){}PS.node=null;}PS.i=-1;};
+  const syncPanelSnd=()=>{const i=at(t),p=list[i],dd=p&&S.sketches.get(p.sk),m=dd&&skAudLen(dd.aud)>0?dd.aud:null;
+    if(!playing||!sound||R||!m){stopPS();return;}if(PS.i===i&&PS.seek===SEEK)return;stopPS();
+    const buf=SKABUF.get(m.id+'|'+JSON.stringify(m.segs));if(!buf){skAudEdited(m).catch(()=>{});return;}PS.node=skAudPlay(buf,m.off,t-starts[i]);PS.i=i;PS.seek=SEEK;};
+  const syncAud=()=>{syncPanelSnd();if(!aud)return;const m=B.audio,a=t-(m&&m.off||0);
     if(!playing||!sound||R||!m||a<0||a>=m.dur){if(!aud.paused)aud.pause();return;}
     if(aud.paused){try{aud.currentTime=a;}catch(e){}aud.play().catch(()=>{});}else if(Math.abs(aud.currentTime-a)>.15){try{aud.currentTime=a;}catch(e){}}};
   const at=t=>{let i=0;while(i<list.length-1&&t>=starts[i+1])i++;return i;};
@@ -8782,10 +8898,10 @@ function skBoardPlayer(B,opt){skBoardNorm(B);opt=opt||{};const list=[],num=[];B.
     const f=tot?t/tot:0;fill.style.width=(f*100)+'%';head.style.left=(f*100)+'%';time.textContent=(R?'● REC   ':'')+skFmtT(t)+' / '+skFmtT(tot)+'   ·   Panel '+num[i];time.classList.toggle('rec',!!R);
     pbtn.textContent=playing?'❚❚':'▶';};
   const tick=ts=>{if(!playing)return;if(last)t+=(ts-last)/1000;last=ts;
-    if(t>=tot){if(R){t=tot-1e-3;stopRec(true);return;}if(loop){t=t%tot;if(aud)aud.pause();}else{t=tot-1e-3;playing=false;syncAud();draw();return;}}
+    if(t>=tot){if(R){t=tot-1e-3;stopRec(true);return;}if(loop){t=t%tot;SEEK++;if(aud)aud.pause();}else{t=tot-1e-3;playing=false;syncAud();draw();return;}}
     syncAud();draw();raf=requestAnimationFrame(tick);};
-  const play=on=>{if(R&&!on){stopRec(true);return;}playing=on;cancelAnimationFrame(raf);last=0;if(playing){if(t>=tot-1e-3)t=0;raf=requestAnimationFrame(tick);}syncAud();draw();};
-  const seek=x=>{if(R)return;t=Math.max(0,Math.min(tot-1e-3,x));if(aud)aud.pause();syncAud();draw();};
+  const play=on=>{if(R&&!on){stopRec(true);return;}playing=on;SEEK++;cancelAnimationFrame(raf);last=0;if(playing){if(t>=tot-1e-3)t=0;raf=requestAnimationFrame(tick);}syncAud();draw();};
+  const seek=x=>{if(R)return;t=Math.max(0,Math.min(tot-1e-3,x));SEEK++;if(aud)aud.pause();syncAud();draw();};
   pbtn.onclick=()=>play(!playing);prev.onclick=()=>{const i=at(t);seek(t-starts[i]>.4?starts[i]:starts[Math.max(0,i-1)]);};next.onclick=()=>{const i=at(t);if(i<list.length-1)seek(starts[i+1]);};
   const scrub=e=>{const r=bar.getBoundingClientRect();seek((e.clientX-r.left)/r.width*tot);};
   bar.addEventListener('pointerdown',e=>{if(R)return;bar.setPointerCapture(e.pointerId);const was=playing;play(false);scrub(e);const mv=ev=>scrub(ev),up=()=>{bar.removeEventListener('pointermove',mv);bar.removeEventListener('pointerup',up);if(was)play(true);};bar.addEventListener('pointermove',mv);bar.addEventListener('pointerup',up);});
@@ -8810,7 +8926,7 @@ function skBoardPlayer(B,opt){skBoardNorm(B);opt=opt||{};const list=[],num=[];B.
     else if(e.key==='ArrowRight'){e.preventDefault();e.stopPropagation();next.onclick();}else if(e.key==='ArrowLeft'){e.preventDefault();e.stopPropagation();prev.onclick();}
     else if((e.key==='r'||e.key==='R')&&!e.ctrlKey&&!e.metaKey){e.preventDefault();e.stopPropagation();rec.onclick();}};
   const rz=()=>{draw(true);paintWave();};addEventListener('keydown',key,true);addEventListener('resize',rz);
-  const doClose=()=>{if(R){stopRec(true);}closed=true;cancelAnimationFrame(raf);if(aud)aud.pause();if(aurl)setTimeout(()=>URL.revokeObjectURL(aurl),1000);removeEventListener('keydown',key,true);removeEventListener('resize',rz);ov.remove();SKBPL=null;};close.onclick=doClose;
+  const doClose=()=>{if(R){stopRec(true);}stopPS();closed=true;cancelAnimationFrame(raf);if(aud)aud.pause();if(aurl)setTimeout(()=>URL.revokeObjectURL(aurl),1000);removeEventListener('keydown',key,true);removeEventListener('resize',rz);ov.remove();SKBPL=null;};close.onclick=doClose;
   SKBPL={close:doClose};draw(true);requestAnimationFrame(()=>{paintWave();loadAud();if(opt.record)startRec();else play(true);});}
 function skBoardMenuView(B){const m=S.skBoardMenu,p=B.panels[m.i];if(!p){S.skBoardMenu=null;return null;}const go=fn=>()=>{S.skBoardMenu=null;fn();render();};
   const row=(icon,label,fn)=>h('button',{class:'skrow',role:'menuitem',onclick:go(fn)},skIcoL(icon),label);
@@ -8886,11 +9002,13 @@ function skBoardSheet(B,P,sc){const L=skSBLayout(B.pw,B.ph,P.length,B.cols||3),f
 async function skBoardExport(B,f){const P=skBoardPanels(B).filter(p=>{const d=S.sketches.get(p.sk);return d&&!d._partial;});if(!P.length){flash('This storyboard has no panels yet.');return;}
   const base=(B.name||'Storyboard').replace(/[\\/:*?"<>|]+/g,'').trim()||'Storyboard';S.skBusy=true;flash('Exporting…');await new Promise(r=>setTimeout(r,30));
   try{let data,fn;
-    if(f==='aerun'){let au=null;if(B.audio){au=undefined;try{const w=await skAudioWav(await SKA.get(B.audio));const pth=window.AEPSTORE&&AEPSTORE.writeBin?AEPSTORE.writeBin('audio/'+B.id+'.wav',new Uint8Array(await w.arrayBuffer())):null;if(pth)au={path:pth,off:B.audio.off||0};}catch(e){}if(au===undefined)flash('Couldn’t pass the scratch track to After Effects; building without it.');}
-      const r=await window.aeRun(skBoardAEScript(B,null,au));flash(r&&/error|stopped/i.test(r)?'After Effects said: '+r:'Animatic built in After Effects');return;}
+    if(f==='aerun'){const pau={};for(const p of skBoardPanels(B)){const dd=S.sketches.get(p.sk);if(!dd)continue;if(skAudLen(dd.aud)>0){try{const w=await skBufWav(await skAudEdited(dd.aud));const pth=window.AEPSTORE&&AEPSTORE.writeBin?AEPSTORE.writeBin('audio/'+p.sk+'.wav',new Uint8Array(await w.arrayBuffer())):null;if(pth)pau[p.sk]={path:pth,off:dd.aud.off||0};}catch(e){}}else pau[p.sk]=null;}
+      let au=null;if(B.audio){au=undefined;try{const w=await skAudioWav(await SKA.get(B.audio));const pth=window.AEPSTORE&&AEPSTORE.writeBin?AEPSTORE.writeBin('audio/'+B.id+'.wav',new Uint8Array(await w.arrayBuffer())):null;if(pth)au={path:pth,off:B.audio.off||0};}catch(e){}if(au===undefined)flash('Couldn’t pass the scratch track to After Effects; building without it.');}
+      const r=await window.aeRun(skBoardAEScript(B,null,au,pau));flash(r&&/error|stopped/i.test(r)?'After Effects said: '+r:'Animatic built in After Effects');return;}
     if(f==='file'){data=await skHandoffFile(skBoardPanels(B).map(p=>p.sk),B);fn=base+'.storyboard.json';}
     else if(f==='ae'){const js=base+' (AE animatic).jsx',wf=base+' scratch track.wav';let wav=null;if(B.audio){try{wav=new Uint8Array(await (await skAudioWav(await SKA.get(B.audio))).arrayBuffer());}catch(e){}}
-      data=skZip([{name:js,data:skBoardAEScript(B,null,wav?{file:wf,off:B.audio.off||0}:null)}].concat(wav?[{name:wf,data:wav}]:[]).concat([{name:'How to use.txt',data:'In After Effects choose File > Scripts > Run Script File... and pick "'+js+'".\nYou get one comp per panel (in a folder) and an animatic comp with the panels in order.\nRunning a newer version of this script again updates the same comps instead of making new ones.'+(wav?'\nKeep the scratch track .wav next to the script: it goes into the animatic as an audio layer.':'')+'\n'}]));fn=base+' (AE animatic).zip';}
+      const pau={},pfiles=[];for(const p of skBoardPanels(B)){const dd=S.sketches.get(p.sk);if(!dd)continue;if(skAudLen(dd.aud)>0){try{const nm=base+' panel '+String(B.panels.indexOf(p)+1).padStart(2,'0')+' sound.wav',w=await skBufWav(await skAudEdited(dd.aud));pfiles.push({name:nm,data:new Uint8Array(await w.arrayBuffer())});pau[p.sk]={file:nm,off:dd.aud.off||0};}catch(e){}}else pau[p.sk]=null;}
+      data=skZip([{name:js,data:skBoardAEScript(B,null,wav?{file:wf,off:B.audio.off||0}:null,pau)}].concat(wav?[{name:wf,data:wav}]:[],pfiles).concat([{name:'How to use.txt',data:'In After Effects choose File > Scripts > Run Script File... and pick "'+js+'".\nYou get one comp per panel (in a folder) and an animatic comp with the panels in order.\nRunning a newer version of this script again updates the same comps instead of making new ones.'+(wav?'\nKeep the scratch track .wav next to the script: it goes into the animatic as an audio layer.':'')+'\n'}]));fn=base+' (AE animatic).zip';}
     else if(f==='png'||f==='pdf'){skBoardNorm(B);const Ly=skBoardLay(B),sc=f==='png'?Math.min(1,8000/Ly.W):Math.min(1,3300/Ly.W),files=[],pages=[];
       for(let pg=0;pg<B.pages;pg++){const cv=document.createElement('canvas');cv.width=Math.round(Ly.W*sc);cv.height=Math.round(Ly.H*sc);skBoardPagePaint(cv.getContext('2d'),B,pg,sc);
         if(f==='png'){const b=await new Promise(r=>cv.toBlob(r,'image/png'));files.push({name:base+' – page '+(pg+1)+'.png',data:new Uint8Array(await b.arrayBuffer())});}
@@ -8912,12 +9030,12 @@ const L0=(B,P)=>skSBLayout(B.pw,B.ph,P.length,B.cols||3).w;
 async function skBoardAE(B,sk){const r=await window.aeRun(skBoardAEScript(B,sk));flash(r&&/error|stopped/i.test(r)?'After Effects said: '+r:sk?'Panel updated in After Effects':'Animatic built in After Effects');}
 /* After Effects: one comp per panel (tagged in its comment so it can be found and updated later) and an animatic comp with the panels in order.
    Updating replaces only the art; the notes text layer is refreshed, anything else you added in AE stays. Animated panels loop. */
-function skBoardAEScript(B,only,au){const rgb=c=>skHex(c).map(v=>Math.round(v*1000)/1000),P=skBoardPanels(B);
+function skBoardAEScript(B,only,au,pau){const rgb=c=>skHex(c).map(v=>Math.round(v*1000)/1000),P=skBoardPanels(B);
   const layOf=d=>skByLayer(d).filter(x=>x.strokes.length).map(({l,strokes})=>({n:l.name||'Layer',bm:l.bm||'normal',op:Math.round((l.op==null?1:l.op)*100),
     items:[].concat(...strokes.map((st,i)=>{if(skIsFill(st))return {k:'f',n:'Fill '+(i+1),c:rgb(st.c),a:100,rule:2,p:skAEPaths(skFillD(st))};
       if(skHasPFill(st)||(skVecOk(st)&&st.vp)){const d=skPathD(st,skPClosed(st)),o=[];if(skHasPFill(st))o.push({k:'f',n:'Path fill '+(i+1),c:rgb(st.pf),a:100,rule:1,p:skAEPaths(d)});if(skStrokeOn(st))o.push(skTapered(st)?{k:'f',n:'Path '+(i+1),c:rgb(st.c),a:100,rule:1,p:skAEPaths(skOutlineD(st))}:{k:'s',n:'Path '+(i+1),c:rgb(st.c),w:Math.round(skAvgW(st)*100)/100,a:100,p:skAEPaths(d)});return o;}
       return {k:'s',n:(st.t==='hl'?'Highlighter ':st.t==='marker'?'Marker ':'Pen ')+(i+1),c:rgb(st.c),w:Math.round(skAvgW(st)*100)/100,a:st.t==='hl'?SK_HL_ALPHA*100:100,p:skAEPaths(skCurveD(st))};}))}));
-  const panels=P.map((p,i)=>{const full=S.sketches.get(p.sk),sl=B.panels.indexOf(p)+1,o={sid:p.sk,n:'Panel '+String(sl).padStart(2,'0'),num:sl,draw:full.name||'Sketch',note:String(p.note||''),dur:Math.max(1,Math.round(skPanelDur(B,p)*(B.fps||12)))/(B.fps||12)};
+  const panels=P.map((p,i)=>{const full=S.sketches.get(p.sk),sl=B.panels.indexOf(p)+1,o={sid:p.sk,n:'Panel '+String(sl).padStart(2,'0'),num:sl,draw:full.name||'Sketch',note:String(p.note||''),dur:Math.max(1,Math.round(skPanelDur(B,p)*(B.fps||12)))/(B.fps||12)};if(pau&&pau[p.sk]!==undefined)o.au=pau[p.sk];
     if(only&&p.sk!==only){o.skip=true;return o;}const d=skVisDoc(full),c=skBoardCrop(d,B.pw,B.ph);o.k=Math.round(c.k*100000)/100000;o.off=[Math.round(-c.x*c.k*100)/100,Math.round(-c.y*c.k*100)/100];
     const fr=skFrameIds(d);if(fr){o.fps=B.fps||12;o.pong=full.pmode==='pong';o.frames=fr.map(fid=>layOf(skFrameDoc(d,fid)));o.fl=fr.map(f=>skHold(full,f));o.fs=o.fl.reduce((a,v,i)=>(a.push(i?a[i-1]+o.fl[i-1]:0),a),[]);}else o.layers=layOf(skFrameDoc(d));return o;});
   const D={id:B.id,name:(B.name||'Storyboard').slice(0,50),pw:Math.round(B.pw),ph:Math.round(B.ph),fps:B.fps||12,panels};if(au!==undefined)D.au=au;/* undefined: leave any track alone; null: take it out; {path|file,off}: put it in *//* the storyboard's master frame rate: every comp (panel, frames, animatic) uses it, whatever each drawing's own rate is */
@@ -8946,6 +9064,10 @@ for(i=0;i<D.panels.length;i++){var P=D.panels[i],cm="skpanel:"+D.id+":"+P.sid,c=
   if(P.skip){comps.push(c);if(c){c.name=P.n;c.frameRate=D.fps;c.duration=P.dur;}continue;}
   if(!c){c=proj.items.addComp(P.n,D.pw,D.ph,1,P.dur,D.fps);c.comment=cm;c.bgColor=[1,1,1];var paper=c.layers.addSolid([1,1,1],"Paper",D.pw,D.ph,1);paper.comment="sk-paper";paper.locked=true;}
   c.parentFolder=folder;c.name=P.n;c.frameRate=D.fps;c.duration=P.dur;clearArt(c);
+  if(P.au!==undefined){for(k=c.numLayers;k>=1;k--){if(c.layer(k).comment==="sk-audio"){c.layer(k).locked=false;c.layer(k).remove();}}
+    if(P.au){var pf=P.au.path?new File(P.au.path):new File(File($.fileName).parent.fsName+"/"+P.au.file);
+      if(pf.exists){var pi=find("skpaudio:"+D.id+":"+P.sid);if(pi){try{pi.replace(pf);}catch(e){pi=null;}}if(!pi){pi=proj.importFile(new ImportOptions(pf));pi.comment="skpaudio:"+D.id+":"+P.sid;}
+        pi.parentFolder=folder;pi.name=P.n+" – sound";var PL=c.layers.add(pi);PL.comment="sk-audio";PL.name="Sound";PL.startTime=P.au.off||0;}}}
   if(P.frames){var acm="skart:"+D.id+":"+P.sid,a=find(acm),FD=1/P.fps,len=(P.fl?P.fs[P.fs.length-1]+P.fl[P.fl.length-1]:P.frames.length)*FD;
     if(!a){a=proj.items.addComp(P.n+" · frames",D.pw,D.ph,1,len,P.fps);a.comment=acm;}a.parentFolder=folder;a.name=P.n+" · frames";a.frameRate=P.fps;a.duration=len;
     for(k=a.numLayers;k>=1;k--){a.layer(k).locked=false;a.layer(k).remove();}
@@ -9652,7 +9774,7 @@ const skIcoL=k=>{const s=document.createElementNS('http://www.w3.org/2000/svg','
 const SKSCRSEL=['#app .skbar.vert>.skrowin','#app .skbar.dock>.skrowin','#app .skframes','#app .sksel .skrowin','#app .skbdnav'],SKSCR={};
 addEventListener('scroll',e=>{const t=e.target;if(!t||!t.matches)return;for(const q of SKSCRSEL)if(t.matches(q)){SKSCR[q]=t.scrollLeft;break;}},true);
 function skScrollKeep(){for(const q of SKSCRSEL){const el=document.querySelector(q);if(el&&SKSCR[q]&&Math.abs(el.scrollLeft-SKSCR[q])>1)el.scrollLeft=SKSCR[q];}}
-function skStackBottom(){skScrollKeep();const els=['.skframes','.skfstrip','.sksel','.skbdnav','.skpastebar'].map(q=>document.querySelector('#app '+q)).filter(Boolean),placed=[];
+function skStackBottom(){skScrollKeep();const els=['.skframes','.skfstrip','.skfsnd','.sksel','.skbdnav','.skpastebar'].map(q=>document.querySelector('#app '+q)).filter(Boolean),placed=[];
   for(const el of els){el.style.bottom='';let r=el.getBoundingClientRect();
     for(let guard=0;guard<4;guard++){const hit=placed.find(p=>r.left<p.right-2&&r.right>p.left+2&&r.top<p.bottom-2&&r.bottom>p.top+2);if(!hit)break;el.style.bottom=(innerHeight-hit.top+8)+'px';r=el.getBoundingClientRect();}
     placed.push(r);}}
