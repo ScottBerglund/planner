@@ -1535,6 +1535,13 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skszfl{display:flex;gap:12px;padding:0 6px 6px}.skszfl .tlink{display:inline-flex;align-items:center;gap:5px;font-size:.8rem}.skszfl svg{width:16px;height:16px}
 .skeyecol{display:flex;align-items:center;justify-content:center;background:var(--sheet,#fff)!important;box-shadow:0 0 0 1.5px var(--rule)}.skeyecol svg{width:16px;height:16px}
 .skeyeb svg{width:18px;height:18px}
+/* collapsible sections inside grid menus (colour) */
+.sksecgrid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:7px;justify-items:center}
+.sksecgrid>.skgrow,.sksecgrid>.skgrad,.sksecgrid>.skpalwrap,.sksecgrid>.skrow{grid-column:1/-1;justify-self:stretch}
+.sksecb .skgrad>.skgh:first-child{display:none}
+.skpalwrap{display:flex;flex-direction:column}
+/* docked toolbar: settings + export pinned at the right edge */
+.skbar.dock>.skpin{flex:none;position:relative;padding-left:6px;margin-left:2px;box-shadow:-10px 0 10px -8px rgba(0,0,0,.18);background:var(--paper)}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3063,7 +3070,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121105644',newer=false,want='',last=Date.now();
+  var MINE='20261121110442',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8814,12 +8821,12 @@ function skPanelDurEdit(B,i,fs){const p0=B.panels[i]||{},id='sbdurin'+i,inp=h('i
 let SKDURSEL=null;
 /* ⋯ Storyboard settings → Look: spacing, frame thickness and colours for the whole board */
 /* turn a menu list into collapsible sections: each .skgh header starts one (folded until opened; remembered); an <hr class=sksecend> ends the sections */
-function skSecs(key,list){const fold=S.skSecFold||(S.skSecFold={}),out=[];let body=null;
+function skSecs(key,list,grid){const fold=S.skSecFold||(S.skSecFold={}),out=[];let body=null;
   for(const el of list.flat(Infinity)){if(el==null||el===false)continue;
     if(el.classList&&el.classList.contains('sksecend')){body=null;continue;}
-    if(el.classList&&el.classList.contains('skgh')){const id=key+':'+el.textContent.replace(/·.*$/,'').trim(),open=fold[id]===true;
-      out.push(h('button',{class:'skgh sksech2','aria-expanded':String(open),onclick:e=>{e.stopPropagation();fold[id]=!open;saveUI();render();}},h('span',{class:'sksecc'},open?'▾':'▸'),el.textContent));
-      body=h('div',{class:'sksecb',hidden:open?null:''});out.push(body);continue;}
+    if(el.classList&&el.classList.contains('skgh')){const id=key+':'+el.textContent.replace(/[·(].*$/,'').trim(),open=fold[id]===true;
+      out.push(h('button',{class:'skgh sksech2'+(grid?' skgrow':''),'aria-expanded':String(open),onclick:e=>{e.stopPropagation();fold[id]=!open;saveUI();render();}},h('span',{class:'sksecc'},open?'▾':'▸'),el.textContent));
+      body=h('div',{class:'sksecb'+(grid?' skgrow sksecgrid':''),hidden:open?null:''});out.push(body);continue;}
     if(body)body.appendChild(el);else out.push(el);}
   return out;}
 function skBoardLookRows(B){const L=skBdLook(B),set=(k,v)=>{B.look=Object.assign({},B.look||{},{[k]:v});SKBCV.clear();skBoardsSave();render();};
@@ -9648,8 +9655,12 @@ function skColorItems(){const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' w
                 h('div',{class:'skpenc skgrow'},h('label',{class:'skpent'},h('input',{type:'checkbox',checked:sOn||!fOn,disabled:!fOn,onchange:e=>skPenStrokeSet(e.target.checked)}),'Stroke'),
                   h('label',{class:'skpent'},h('input',{type:'checkbox',checked:fOn,onchange:e=>skPenFillSet(e.target.checked)}),'Fill (closed paths)'))];})():[];
           const eye=h('button',{class:'skcol skeyecol',title:'Eyedropper: pick a colour from anywhere on the screen (or the canvas)','aria-label':'Eyedropper',onclick:e=>{e.stopPropagation();skEyeDrop();}},skIcoL('eyedrop'));
-          return pc.concat([skGradPanel()],SK_COLORS.map(sw)).concat(recent.length?[h('div',{class:'skgh skgrow'},'Recent')]:[],recent.map(sw),[pick,eye],S.skWheel?[skWheelPanel()]:[],S.skPalFloat?[h('button',{class:'skrow skgrow',onclick:()=>{S.skPalShow=!S.skPalShow;S.skPop=null;saveUI();render();}},skIcoL('palette'),(S.skPalShow?'Hide':'Show')+' Palettes panel  (Shift+P)')]:[skPalettesView(false)],S.skColFloat?[]:[h('button',{class:'skrow skgrow',onclick:()=>{S.skPop=null;S.skColFloat={x:Math.max(8,innerWidth-380),y:90};S.skColHide=false;saveUI();render();}},skIcoL('float'),'Float the colour panel')]);}
-function skSizeItems(){const t=skTool(),dt=skDrawTool(),doc=SKW.doc;return [skSizePad(),h('div',{class:'skszfl'},S.skPenFloat?null:h('button',{class:'tlink',title:'Float these pen settings in their own panel',onclick:()=>{S.skPop=null;S.skPenFloat={x:Math.max(8,innerWidth-640),y:90};S.skPenHide=false;saveUI();render();}},skIcoL('float'),'Float'),
+          return skSecs('col',pc.concat(SK_COLORS.map(sw),[pick,eye],S.skWheel?[skWheelPanel()]:[],recent.length?[h('div',{class:'skgh'},'Recent'),...recent.map(sw)]:[],[h('div',{class:'skgh'},'Gradient'),skGradPanel()],[h('div',{class:'skgh'},'Palettes'),S.skPalFloat?h('button',{class:'skrow skgrow',onclick:()=>{S.skPalShow=!S.skPalShow;S.skPop=null;saveUI();render();}},skIcoL('palette'),(S.skPalShow?'Hide':'Show')+' Palettes panel  (Shift+P)'):h('div',{class:'skgrow skpalwrap'},skPalettesView(false))],[h('hr',{class:'sksecend'})],S.skColFloat?[]:[h('button',{class:'skrow skgrow',onclick:()=>{S.skPop=null;S.skColFloat={x:Math.max(8,innerWidth-380),y:90};S.skColHide=false;saveUI();render();}},skIcoL('float'),'Float the colour panel')]),true);}
+function skSizeItems(){const raw=skSizeItems0(),pad=raw[0],fl=raw[1],flat=raw.slice(2).flat(Infinity).filter(Boolean),isC=(e,c)=>e&&e.classList&&e.classList.contains(c);
+  const k=flat.findIndex(e=>isC(e,'skszrow')),tpr=k>0?flat.slice(0,k):[],rest=k>=0?flat.slice(k):flat,pi=rest.findIndex(e=>isC(e,'skmh')),sizeP=pi<0?rest:rest.slice(0,pi),penP=pi<0?[]:rest.slice(pi);
+  for(const e of tpr.concat(penP))if(isC(e,'skmh')){e.classList.remove('skmh');e.classList.add('skgh');}
+  return [pad,fl].concat(skSecs('pen',[h('div',{class:'skgh'},'Size & smoothing'),...sizeP,...tpr,...penP]));}
+function skSizeItems0(){const t=skTool(),dt=skDrawTool(),doc=SKW.doc;return [skSizePad(),h('div',{class:'skszfl'},S.skPenFloat?null:h('button',{class:'tlink',title:'Float these pen settings in their own panel',onclick:()=>{S.skPop=null;S.skPenFloat={x:Math.max(8,innerWidth-640),y:90};S.skPenHide=false;saveUI();render();}},skIcoL('float'),'Float'),
     h('button',{class:'tlink',title:'Keep just the size pad on screen in its own small panel','aria-pressed':String(!!S.skSizeFloat),onclick:()=>{S.skPop=null;S.skSizeFloat=S.skSizeFloat?null:{x:Math.max(8,innerWidth-260),y:Math.max(90,innerHeight-260)};saveUI();render();}},skIcoL('popout'),S.skSizeFloat?'Close size panel':'Size panel'))].concat((()=>{const w=skBaseW(dt);
         const tpr=skPenCtx()?(()=>{const L=skPenSel(),st=L[0],a=st?((st.tp&&st.tp[0])||0):(+S.skTaperS||0),b=st?((st.tp&&st.tp[1])||0):(+S.skTaperE||0),ink=st?!!st.ink:!!S.skInk;
             const sl=(lab,v,set)=>{const out=h('span',null,Math.round(v*100)+'%');return h('label',{class:'sklop'},lab,h('input',{type:'range',min:'0',max:'50',step:'1',value:String(Math.round(v*100)),'aria-label':lab,oninput:e=>{out.textContent=e.target.value+'%';},onchange:e=>set(+e.target.value/100)}),out);};
@@ -9703,11 +9714,9 @@ function skToolbar(){try{skSelColorSync();}catch(e){}const fl=!!S.skFloat,t=skTo
       ib('zoomout','Zoom out',()=>SKW.zoomBy&&SKW.zoomBy(1/1.25)),ib('zoomin','Zoom in',()=>SKW.zoomBy&&SKW.zoomBy(1.25)),ib('fit',doc.inf?'Fit: show everything':'Fit the page',()=>{SKW.fit&&SKW.fit();S.skPop=null;render();})]}),
     h('div',{class:'skgrp skacts'},
       window.AEPCLOUDUI?AEPCLOUDUI({kind:'sketch',id:SKW.id}):null,
-      skPopBtn('more','More settings',skIcoL('more'),{popCls:'list',items:()=>[
+      skPopBtn('more','More settings',skIcoL('more'),{popCls:'list',items:()=>skSecs('dm',[
+        h('div',{class:'skgh'},'Drawing'),
         h('button',{class:'skrow',onclick:()=>{S.skPop=null;S.skNameEdit='open';render();}},skIcoL('canvas'),'Rename'),
-        h('button',{class:'skrow',onclick:skPick(()=>{S.skKeys=true;})},skIcoL('keys'),'Keyboard shortcuts'),
-        h('div',{class:'skuisz'},h('span',null,'Interface size'),h('div',{class:'skuiszb'},SK_UI.map(([v,l])=>h('button',{class:'skpb'+(skUI()===v?' on':''),'aria-pressed':String(skUI()===v),title:l,onclick:()=>skUISet(v)},l[0]==='E'?'XL':l[0])))),
-        skBoardRows(),
         skHasFrames(doc)?null:h('button',{class:'skrow',title:'Turn this sketch into frames for rough animation',onclick:()=>{S.skPop=null;skFramesOn();flash('Frames on: add frames from the strip at the bottom left');}},skIcoL('frames'),'Animation frames'),
         h('button',{class:'skrow','aria-expanded':String(!!S.skSizeEdit),onclick:()=>{S.skSizeEdit=!S.skSizeEdit;render();}},skIcoL('canvas'),doc.inf?'Canvas size: Infinite':'Canvas size: '+doc.w+' × '+doc.h),
         S.skSizeEdit?(doc.inf?[doc.page?h('button',{class:'skrow',onclick:()=>skMakeFixed(doc.page.w,doc.page.h,true)},skIcoL('canvas'),'Back to '+doc.page.w+' × '+doc.page.h):null,
@@ -9717,15 +9726,22 @@ function skToolbar(){try{skSelColorSync();}catch(e){}const fl=!!S.skFloat,t=skTo
         doc.inf?null:h('button',{class:'skrow','aria-pressed':String(S.skBox!==false),onclick:()=>{S.skBox=S.skBox===false;saveUI();render();}},skIcoL('canvas'),'Canvas outline '+(S.skBox!==false?'on':'off')),
         h('button',{class:'skrow',onclick:()=>{doc.bg=doc.bg==='grid'?'dots':doc.bg==='dots'?'blank':'grid';S.skBg=doc.bg;saveUI();skSave();render();}},skIcoL('bg_'+(doc.bg||'blank')),'Background: '+(doc.bg==='grid'?'grid':doc.bg==='dots'?'dots':'blank')),
         skBgColorRow(doc),
+        skBoardRows(),
+        h('div',{class:'skgh'},'Interface'),
+        h('div',{class:'skuisz'},h('span',null,'Interface size'),h('div',{class:'skuiszb'},SK_UI.map(([v,l])=>h('button',{class:'skpb'+(skUI()===v?' on':''),'aria-pressed':String(skUI()===v),title:l,onclick:()=>skUISet(v)},l[0]==='E'?'XL':l[0])))),
         h('button',{class:'skrow',onclick:skPick(()=>{S.skFloat=!fl;})},skIcoL(fl?'dock':'float'),fl?'Dock the toolbar':'Float the toolbar'),
         fl?h('button',{class:'skrow',onclick:skPick(()=>{S.skVert=!vert;})},skIcoL(vert?'horiz':'vert'),vert?'Make the toolbar horizontal':'Make the toolbar vertical'):null,
-        h('button',{class:'skrow skclear'+(S.confirm==='skclr'?' skarm':''),disabled:!doc.strokes.length,onclick:skClear},skIcoL('clear'),S.confirm==='skclr'?'Tap again to clear everything':'Clear everything')]}),
+        h('button',{class:'skrow',onclick:skPick(()=>{S.skKeys=true;})},skIcoL('keys'),'Keyboard shortcuts'),
+        h('hr',{class:'sksecend'}),
+        h('button',{class:'skrow skclear'+(S.confirm==='skclr'?' skarm':''),disabled:!doc.strokes.length,onclick:skClear},skIcoL('clear'),S.confirm==='skclr'?'Tap again to clear everything':'Clear everything')])}),
       skPopBtn('export',S.skBusy?'Exporting…':'Export',skIcoL('export'),{cls:'skexpk',disabled:!doc.strokes.length||!!S.skBusy,popCls:'list',items:()=>
         (window.AEP?[['comp','strokes','Send to comp · strokes'],['comp','replay','Send to comp · strokes + replay'],['comp','outline','Send to comp · outlined shapes'],['newcomp','strokes','New comp · strokes'],['newcomp','replay','New comp · strokes + replay'],['newcomp','outline','New comp · outlined shapes']]:[]).concat([['ae','strokes','After Effects · strokes'],['ae','replay','After Effects · strokes + replay'],['ae','outline','After Effects · outlined shapes'],['pdf','strokes','PDF · editable strokes'],['pdf','outline','PDF · outlined shapes'],['svg','strokes','SVG · editable strokes'],['svg','outline','SVG · outlined shapes'],['png',null,'PNG image'],['file',null,window.AEP?'Drawing file (to share or move)':'Drawing file · for Planner ↔ After Effects']]).concat(skSBMenu())
           .map(([f,m,l])=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;render();skExport(f,m);}},l))}),
       fl?ib('collapse','Hide the toolbar',()=>{S.skMini=true;S.skPop=null;saveUI();render();}):null,skMaxBtn())));}
 /* the docked toolbar is one row that scrolls sideways when it doesn't fit (its menus open outside the scrolling part) */
-function skBarRow(el){if(!el.classList.contains('dock')&&!el.classList.contains('vert'))return el;const w=h('div',{class:'skrowin'}),kids=[...el.childNodes],nav=kids.filter(n=>n.classList&&n.classList.contains('sknav'));w.append(...kids.filter(n=>!nav.includes(n)));el.append(...nav,w);return el;}
+function skBarRow(el){if(!el.classList.contains('dock')&&!el.classList.contains('vert'))return el;const w=h('div',{class:'skrowin'}),kids=[...el.childNodes],nav=kids.filter(n=>n.classList&&n.classList.contains('sknav')),pin=el.classList.contains('dock')?kids.filter(n=>n.classList&&n.classList.contains('skacts')):[];
+  /* the settings and export buttons stay pinned at the right; only the tools scroll */
+  w.append(...kids.filter(n=>!nav.includes(n)&&!pin.includes(n)));el.append(...nav,w,...pin);pin.forEach(n=>n.classList.add('skpin'));return el;}
 /* floating: the name and back arrow sit quietly in the top-left corner */
 /* After Effects panel: fill the screen with this panel (After Effects' Window › Maximize Frame, same as the ` key), and back */
 const skMaxBtn=()=>window.aeRun?ib('maxi','Maximize this panel (same as the ` key); tap again to restore',()=>{window.aeRun('(function(){try{var i=app.findMenuCommandId("Maximize Frame");if(!i)return "ERR:none";app.executeCommand(i);return "ok";}catch(e){return "ERR:"+e.toString();}})()').then(r=>{if(/^ERR|undefined/.test(String(r||'')))flash('After Effects didn’t maximize the panel. Use the ` key over the panel.');});}):null;
