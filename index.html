@@ -1521,6 +1521,20 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skdefb{font-weight:700}
 .skcardm{position:relative;flex:none}.skmorebtn{font-size:1.4rem;line-height:1;padding:0 4px;letter-spacing:.05em}
 .skcardpop{position:absolute!important;right:0;left:auto!important;top:calc(100% + 4px);z-index:60;min-width:11rem}
+/* size pad: a circle with the live brush dot */
+.skszpad{display:flex;flex-direction:column;align-items:center;gap:4px;margin:4px auto 6px;user-select:none;width:100%}
+.skszring{position:relative;flex:none;display:flex;align-items:center;justify-content:center;border-radius:50%;background:color-mix(in srgb,var(--ink) 6%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 18%,transparent);cursor:grab;touch-action:none}
+.skszpad.on .skszring{cursor:grabbing;background:color-mix(in srgb,var(--ink) 11%,transparent)}
+.skszring i{display:block;border-radius:50%;background:var(--ink);pointer-events:none}.skszring i.max{opacity:.75}
+.skszpad b{font-weight:700;font-size:.8rem;font-variant-numeric:tabular-nums}
+/* floating colour / pen settings / size panels (restored) */
+.skcolfloat .skscr{display:grid;grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:7px;padding:4px 2px 2px;justify-items:center}
+.skcolfloat .skscr>.skgrow,.skcolfloat .skscr>.skwheel,.skcolfloat .skscr>.skrow{justify-self:stretch}
+.skpenfloat .skscr{display:flex;flex-direction:column;gap:2px}
+.sksizefloat{width:11rem}
+.skszfl{display:flex;gap:12px;padding:0 6px 6px}.skszfl .tlink{display:inline-flex;align-items:center;gap:5px;font-size:.8rem}.skszfl svg{width:16px;height:16px}
+.skeyecol{display:flex;align-items:center;justify-content:center;background:var(--sheet,#fff)!important;box-shadow:0 0 0 1.5px var(--rule)}.skeyecol svg{width:16px;height:16px}
+.skeyeb svg{width:18px;height:18px}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3049,7 +3063,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121104550',newer=false,want='',last=Date.now();
+  var MINE='20261121105251',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9598,13 +9612,17 @@ async function skEyeDrop(){if(window.EyeDropper){try{const r=await new EyeDroppe
       S.skColor=hx;S.skGStop=null;if(skSel().length||(S.skColTarget==='fill'&&skPenSel().length))skRecolor(hx);saveUI();render();flash('Colour picked: '+hx);}catch(e){}return;}
   S.skPop=null;skSetTool('pick');render();flash('Tap a line or a filled area to pick its colour');}
 const skEyeBtn=()=>h('button',{class:'sklb skeyeb',title:'Eyedropper: pick a colour from anywhere on the screen (or the canvas)','aria-label':'Eyedropper',onclick:e=>{e.stopPropagation();skEyeDrop();}},skIcoL('eyedrop'));
-/* the size pad: drag left or right on it to change the brush size (like Concepts); the dot shows the size */
-function skSizePad(){const dot=h('i'),val=h('b'),pad=h('div',{class:'skszpad',title:'Drag left or right to change the brush size','aria-label':'Brush size pad',role:'slider'},h('span',{class:'skszpadd'},dot),val);
-  const show=()=>{const dt=skDrawTool(),w=skBaseW(dt);dot.style.width=dot.style.height=Math.max(2,Math.min(40,w))+'px';val.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';pad.setAttribute('aria-valuenow',String(w));};pad._show=show;
-  let sx=0,t0=0;
-  pad.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();pad.setPointerCapture(e.pointerId);sx=e.clientX;t0=skW2t(skBaseW(skDrawTool()),skDrawTool());pad.classList.add('on');});
-  pad.addEventListener('pointermove',e=>{if(!pad.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),t=Math.max(0,Math.min(1,t0+(e.clientX-sx)/280));skSetW(skT2w(t,dt),dt);skSizeSync();});
-  const end=()=>{pad.classList.remove('on');saveUI();};pad.addEventListener('pointerup',end);pad.addEventListener('pointercancel',end);
+/* the size pad: a circle with the brush dot in its centre, at its real size on screen. Press anywhere in it and drag:
+   moving away from the centre grows the brush, toward it shrinks it, in any direction (and on past the circle) until you let go */
+function skSizePad(small){const D=small?96:120,dot=h('i'),val=h('b'),ring=h('div',{class:'skszring',style:`width:${D}px;height:${D}px`},dot),
+    pad=h('div',{class:'skszpad'+(small?' sm':''),title:'Press in the circle and drag: away from the centre grows the brush, toward it shrinks it','aria-label':'Brush size pad',role:'slider'},ring,val);
+  const show=()=>{const dt=skDrawTool(),w=skBaseW(dt),z=(SKW&&SKW.view&&SKW.view.z)||1,px=Math.max(2,Math.min(D-6,w*z));dot.style.width=dot.style.height=px+'px';dot.classList.toggle('max',w*z>D-6);
+    val.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';pad.setAttribute('aria-valuenow',String(w));};pad._show=show;
+  let g=null;
+  ring.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();ring.setPointerCapture(e.pointerId);const r=ring.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    g={cx,cy,d0:Math.hypot(e.clientX-cx,e.clientY-cy),t0:skW2t(skBaseW(skDrawTool()),skDrawTool())};pad.classList.add('on');});
+  ring.addEventListener('pointermove',e=>{if(!g||!ring.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),d=Math.hypot(e.clientX-g.cx,e.clientY-g.cy),t=Math.max(0,Math.min(1,g.t0+(d-g.d0)/260));skSetW(skT2w(t,dt),dt);skSizeSync();});
+  const end=()=>{if(!g)return;g=null;pad.classList.remove('on');saveUI();};ring.addEventListener('pointerup',end);ring.addEventListener('pointercancel',end);
   requestAnimationFrame(show);show();return pad;}
 /* floating panels for the colour menu, the pen settings and the size pad (all stackable) */
 function skFloatPanel(cls,title,o,key,kids,btns){const el=h('div',{class:'skpop sklfloat '+cls,style:`left:${o.x}px;top:${o.y}px`},h('div',{class:'sklfh'},h('span',null,title),btns),kids);
@@ -9617,7 +9635,7 @@ function skColFloatView(){if(!SKW||!S.skColFloat||S.skColHide)return null;
 function skPenFloatView(){if(!SKW||!S.skPenFloat||S.skPenHide)return null;
   return skFloatPanel('skpenfloat','Pen settings',S.skPenFloat,'pen',skSizeItems(),[skDockB('pen settings',()=>{S.skPenFloat=null;S.skPenHide=false;}),skHideB('pen settings',()=>{S.skPenHide=true;})]);}
 function skSizeFloatView(){if(!SKW||!S.skSizeFloat)return null;
-  return skFloatPanel('sksizefloat','Size',S.skSizeFloat,'size',[skSizePad()],[h('button',{class:'sklb',title:'Close the size panel','aria-label':'Close the size panel',onclick:()=>{S.skSizeFloat=null;saveUI();render();}},skIcoL('x'))]);}
+  return skFloatPanel('sksizefloat','Size',S.skSizeFloat,'size',[skSizePad(true)],[h('button',{class:'sklb',title:'Close the size panel','aria-label':'Close the size panel',onclick:()=>{S.skSizeFloat=null;saveUI();render();}},skIcoL('x'))]);}
 /* the colour menu and the pen settings, as functions so each can also live in its own floating panel */
 function skColorItems(){const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(skColor().toUpperCase()===c),title:c==='#FFFFFF'?'White':c,'aria-label':c==='#FFFFFF'?'White':c,style:`--c:${c}`,onclick:skPick(()=>{S.skColor=c;if(skSel().length)skRecolor(c);})});
           /* the rainbow swatch opens the system colour picker; the last few custom colours are kept after the standard ones */
