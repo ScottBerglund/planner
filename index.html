@@ -3047,7 +3047,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121093234',newer=false,want='',last=Date.now();
+  var MINE='20261121093958',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9808,8 +9808,6 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
         books.some(b=>!mine.has(b.id))?h('div',{class:'skmrow'},h('span',{title:'Keep it where it is and show it in another sketchbook too'},'Also in'),books.filter(b=>!mine.has(b.id)).map(b=>h('button',{class:'btn sm',onclick:()=>{skSetBooks(id,[...mine,b.id]);flash('Also in “'+b.name+'” now');}},'+ '+b.name))):null,
         ob&&mine.size>1&&mine.has(ob.id)?h('div',{class:'skmrow'},h('button',{class:'btn sm',onclick:()=>{skSetBooks(id,[...mine].filter(x=>x!==ob.id));flash('Taken out of “'+ob.name+'”');}},'Take it out of “'+ob.name+'”'),h('span',{class:'skd'},'It stays in its other sketchbooks')):null);
       if(S.skDelFor===id){const arm=S.confirm==='skdel:'+id;return h('div',{class:'skmove skdelp'},
-        h('div',{class:'skmrow'},h('span',null,'Move it instead'),books.filter(b=>!(mine.size===1&&mine.has(b.id))).map(b=>h('button',{class:'btn sm',onclick:()=>skMoveTo(id,b.id)},bk(b))),
-          S.skBookNew?skBookNameInput(id):h('button',{class:'btn sm',onclick:()=>{S.skBookNew=true;render();}},'+ New sketchbook')),
         h('div',{class:'skmrow'},h('button',{class:'btn sm skdanger'+(arm?' skarm':''),onclick:()=>{const was=arm;skDelete(id);if(was)S.skDelFor=null;}},arm?'Tap again to delete for good':'Delete permanently'),
           h('span',{class:'skd'},arm?'This can’t be undone, and it leaves every sketchbook.':'Removes the drawing everywhere. This can’t be undone.')));}
       return null;})());
