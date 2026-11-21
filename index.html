@@ -1542,6 +1542,18 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skpalwrap{display:flex;flex-direction:column}
 /* docked toolbar: settings + export pinned at the right edge */
 .skbar.dock>.skpin{flex:none;position:relative;padding-left:6px;margin-left:2px;box-shadow:-10px 0 10px -8px rgba(0,0,0,.18);background:var(--paper)}
+/* layer solo */
+.sksolo{font:800 .72rem/1 system-ui,sans-serif;width:22px;height:22px;border-radius:5px;opacity:.45}.sksolo.on{opacity:1;background:#f2c94c;color:#1a1a1a}
+/* the size panel on its own: just the circle, with × at its corner; stacked with others it's a normal panel */
+.sksizefloat:not(.skstacked){width:136px!important;height:136px!important;padding:0!important;border-radius:50%!important;overflow:visible}
+.sksizefloat:not(.skstacked)>.sklfh{position:absolute;inset:0;margin:0;padding:0;border:0;border-radius:50%;cursor:move;z-index:0}
+.sksizefloat:not(.skstacked)>.sklfh>span{display:none}
+.sksizefloat:not(.skstacked) .skszx{position:absolute;right:-4px;top:-4px;z-index:3;width:26px;height:26px;border-radius:50%;background:var(--sheet,#fff);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.sksizefloat:not(.skstacked)>.skscr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:visible}
+.sksizefloat:not(.skstacked) .skszpad{margin:0;width:auto;pointer-events:none;position:relative}
+.sksizefloat:not(.skstacked) .skszring{pointer-events:auto}
+.sksizefloat:not(.skstacked) .skszpad b{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:.68rem;opacity:.7;pointer-events:none}
+.sksizefloat:not(.skstacked)>.skrz{display:none}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3070,7 +3082,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121110442',newer=false,want='',last=Date.now();
+  var MINE='20261121180651',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7376,7 +7388,7 @@ function skOnionPaint(ctx){const n=S.skOnionOn?(S.skOnion||1):0;if(!n||!SKW||SKW
     skPaintDoc(c2,Object.assign({},d,{strokes:arr.map(st=>ghost(st,col))}),1);
     ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=.42/k;ctx.drawImage(o,0,0);ctx.restore();}}
 let SKISOPAINT=false;
-function skPaintDoc(ctx,d,s){SKMCTX=skMaskMap(d.strokes);const iso=SKISOPAINT&&SKW&&SKW.iso&&d===SKW.doc;for(const g of skByLayer(d)){const op=g.l.op==null?1:g.l.op,bm=g.l.bm&&g.l.bm!=='normal'?g.l.bm:null;if(op<=0)continue;
+function skPaintDoc(ctx,d,s){SKMCTX=skMaskMap(d.strokes);const iso=SKISOPAINT&&SKW&&SKW.iso&&d===SKW.doc,solo=SKISOPAINT&&SKW&&SKW.solo&&d===SKW.doc?SKW.solo:null;for(const g of skByLayer(d)){if(solo&&g.l.id!==solo)continue;const op=g.l.op==null?1:g.l.op,bm=g.l.bm&&g.l.bm!=='normal'?g.l.bm:null;if(op<=0)continue;
   if(op>=.999&&!bm){for(const st of g.strokes){if(iso&&!skInIso(st)){ctx.save();ctx.globalAlpha*=.28;skPaint(ctx,st,s);ctx.restore();}else skPaint(ctx,st,s);}continue;}
   const cv=ctx.canvas;if(!SKOFF)SKOFF=document.createElement('canvas');const o=SKOFF;if(o.width!==cv.width||o.height!==cv.height){o.width=cv.width;o.height=cv.height;}
   const c2=o.getContext('2d');c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,o.width,o.height);c2.setTransform(ctx.getTransform());for(const st of g.strokes){if(iso&&!skInIso(st)){c2.save();c2.globalAlpha*=.28;skPaint(c2,st,s);c2.restore();}else skPaint(c2,st,s);}
@@ -7848,7 +7860,7 @@ const skSelTool=()=>skTool()==='lasso'||skTool()==='rect'||skTool()==='ptr';
 function skSetTool(k){const t=skTool();if(k!==t)S.skLast=t;try{const sub=k==='shape'?'shape:'+(S.skShape||'rect'):k==='eraser'?'eraser:'+(S.skEraseMode==='part'?'part':'line'):k,g=SK_GROUPS.find(x=>x[2].includes(sub));if(g)S.skGrpLast=Object.assign({},S.skGrpLast||{},{[g[0]]:sub});}catch(e){}if(S.skColTarget==='fill'&&!['vpen','shape','ptr','pt','lasso','rect','hand','rotv','pick'].includes(k))skColTargetSet('stroke');if(SKW&&SKW.drawLive)setTimeout(()=>SKW&&SKW.drawLive&&SKW.drawLive(),0);if(SKW&&SKW.pen&&k!=='vpen')skPenFinish();if(SKW&&!['pt','padd','pdel','pconv','vpen'].includes(k))SKW.ped=null;if(k==='pick'&&t!=='pick')S.skPrevTool=t;S.skTool=k;if(k==='hl'&&(!S.skColor||S.skColor==='#23374A'||S.skColor==='#111111'))S.skColor='#FFC107';
   if(SKW&&!['lasso','rect','ptr','hand','rotv','board','pt','pick','vpen','padd','pdel','pconv','grad'].includes(k))SKW.sel=[];saveUI();render();}
 /* selection reaches every layer that's showing and unlocked, not just the current one */
-function skSelable(d,st){if(st.lk||st.hid)return false;if(SKW&&SKW.iso&&d===SKW.doc&&!skInIso(st))return false;const id=skLid(d,st),L=(d.layers||[]).find(l=>l.id===id);return !L||(!L.hidden&&!L.locked);}
+function skSelable(d,st){if(st.lk||st.hid)return false;if(SKW&&SKW.iso&&d===SKW.doc&&!skInIso(st))return false;const id=skLid(d,st);if(SKW&&SKW.solo&&d===SKW.doc&&id!==SKW.solo)return false;const L=(d.layers||[]).find(l=>l.id===id);return !L||(!L.hidden&&!L.locked);}
 /* isolation (like Illustrator): double-click a group or item to work only inside it; everything else dims and can't be picked */
 /* lock or hide single elements (like Illustrator's Object > Lock / Hide); a group's members go together */
 function skElName(st){if(st.name)return st.name;if(skIsFill(st))return 'Fill';if(st.t==='hl')return 'Highlight';if(st.t==='marker')return 'Marker line';if(st.vp||st.v)return skHasPFill(st)?'Shape':'Path';return 'Line';}
@@ -9388,6 +9400,7 @@ function skLayersPanel(floating){const d=SKW.doc,L=d.layers;
       h('span',{class:'skgrip',title:'Drag to reorder'+(inM?' the selected layers':''),'aria-hidden':'true',onpointerdown:e=>skLDrag(e,grp)},'⋮⋮'),
       h('button',{type:'button',class:'sklb sktw'+(tw?' open':''),title:tw?'Hide the items on this layer':'Show the items on this layer','aria-label':(tw?'Collapse ':'Expand ')+l.name,'aria-expanded':String(tw),onclick:()=>{const a=(S.skLOpen||[]).filter(x=>x!==l.id);if(!tw)a.push(l.id);S.skLOpen=a;render();}},skIcoL('twirl')),
       h('button',{class:'sklb'+(l.hidden?' off':''),title:l.hidden?'Show this layer':'Hide this layer','aria-label':(l.hidden?'Show ':'Hide ')+l.name,'aria-pressed':String(!l.hidden),onclick:()=>{const v=!l.hidden;for(const id of grp){const x=d.layers.find(y=>y.id===id);if(x)x.hidden=v;}skSave();render();}},skIcoL(l.hidden?'eyeoff':'eye')),
+      h('button',{class:'sklb sksolo'+(SKW.solo===l.id?' on':''),title:SKW.solo===l.id?'Solo: only this layer shows (tap to show them all again)':'Solo: show only this layer while you work (other layers stay as they are)','aria-label':'Solo '+l.name,'aria-pressed':String(SKW.solo===l.id),onclick:()=>{SKW.solo=SKW.solo===l.id?null:l.id;SKW.repaint&&SKW.repaint();render();}},'S'),
       on?h('input',{class:'sklname','data-keep':'1',value:l.name,maxlength:'40','aria-label':'Layer name',onchange:e=>{const v=e.target.value.trim()||l.name;if(v!==l.name)skLayerAct(d=>{d.layers.find(x=>x.id===l.id).name=v;});},onkeydown:e=>{if(e.key==='Enter')e.target.blur();}})
         :h('button',{class:'sklname',title:'Draw on this layer · Shift or Ctrl+click to select several',onclick:e=>{if(e.shiftKey||e.ctrlKey||e.metaKey||S.skLPick)return;d.cur=l.id;SKW.lsel=null;SKW.lanchor=l.id;S.confirm=null;skSave();render();}},l.name),
       h('button',{class:'sklb'+(l.locked?'':' off'),title:l.locked?'Unlock this layer':'Lock this layer','aria-label':(l.locked?'Unlock ':'Lock ')+l.name,'aria-pressed':String(!!l.locked),onclick:()=>{const v=!l.locked;for(const id of grp){const x=d.layers.find(y=>y.id===id);if(x)x.locked=v;}skSave();render();}},skIcoL(l.locked?'lock':'unlock')),
@@ -9623,12 +9636,13 @@ const skEyeBtn=()=>h('button',{class:'sklb skeyeb',title:'Eyedropper: pick a col
    up or right grows the brush, down or left shrinks it (and on past the circle) until you let go */
 function skSizePad(small){const D=small?96:120,dot=h('i'),val=h('b'),ring=h('div',{class:'skszring',style:`width:${D}px;height:${D}px`},dot),
     pad=h('div',{class:'skszpad'+(small?' sm':''),title:'Press in the circle and drag: up or right grows the brush, down or left shrinks it','aria-label':'Brush size pad',role:'slider'},ring,val);
-  const show=()=>{const dt=skDrawTool(),w=skBaseW(dt),z=(SKW&&SKW.view&&SKW.view.z)||1,px=Math.max(2,Math.min(D-6,w*z));dot.style.width=dot.style.height=px+'px';dot.classList.toggle('max',w*z>D-6);
+  const sizeTool=()=>skTool()==='eraser'?'eraser':skDrawTool();
+  const show=()=>{const dt=sizeTool(),w=skBaseW(dt),z=(SKW&&SKW.view&&SKW.view.z)||1,px=Math.max(2,Math.min(D-6,w*z));dot.style.width=dot.style.height=px+'px';dot.classList.toggle('max',w*z>D-6);
     val.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';pad.setAttribute('aria-valuenow',String(w));};pad._show=show;
   let g=null;
   ring.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();ring.setPointerCapture(e.pointerId);const r=ring.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-    g={x0:e.clientX,y0:e.clientY,t0:skW2t(skBaseW(skDrawTool()),skDrawTool())};pad.classList.add('on');});
-  ring.addEventListener('pointermove',e=>{if(!g||!ring.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),d=(e.clientX-g.x0)-(e.clientY-g.y0),t=Math.max(0,Math.min(1,g.t0+d/320));skSetW(skT2w(t,dt),dt);skSizeSync();});
+    g={x0:e.clientX,y0:e.clientY,t0:skW2t(skBaseW(sizeTool()),sizeTool())};pad.classList.add('on');});
+  ring.addEventListener('pointermove',e=>{if(!g||!ring.hasPointerCapture(e.pointerId))return;if(skTool()==='eraser'&&!skErasePart()){S.skEraseMode='part';}const dt=sizeTool(),d=(e.clientX-g.x0)-(e.clientY-g.y0),t=Math.max(0,Math.min(1,g.t0+d/320));skSetW(skT2w(t,dt),dt);skSizeSync();});
   const end=()=>{if(!g)return;g=null;pad.classList.remove('on');saveUI();};ring.addEventListener('pointerup',end);ring.addEventListener('pointercancel',end);
   requestAnimationFrame(show);show();return pad;}
 /* floating panels for the colour menu, the pen settings and the size pad (all stackable) */
@@ -9642,7 +9656,9 @@ function skColFloatView(){if(!SKW||!S.skColFloat||S.skColHide)return null;
 function skPenFloatView(){if(!SKW||!S.skPenFloat||S.skPenHide)return null;
   return skFloatPanel('skpenfloat','Pen settings',S.skPenFloat,'pen',skSizeItems(),[skDockB('pen settings',()=>{S.skPenFloat=null;S.skPenHide=false;}),skHideB('pen settings',()=>{S.skPenHide=true;})]);}
 function skSizeFloatView(){if(!SKW||!S.skSizeFloat)return null;
-  return skFloatPanel('sksizefloat','Size',S.skSizeFloat,'size',[skSizePad(true)],[h('button',{class:'sklb',title:'Close the size panel','aria-label':'Close the size panel',onclick:()=>{S.skSizeFloat=null;saveUI();render();}},skIcoL('x'))]);}
+  /* on its own it's just the circle (drag its rim to move it, × to close); in a stack with other panels it becomes a normal panel */
+  const close=h('button',{class:'sklb skszx',title:'Close the size panel','aria-label':'Close the size panel',onclick:()=>{S.skSizeFloat=null;saveUI();render();}},skIcoL('x'));
+  return skFloatPanel('sksizefloat','Size',S.skSizeFloat,'size',[skSizePad(true)],[close]);}
 /* the colour menu and the pen settings, as functions so each can also live in its own floating panel */
 function skColorItems(){const sw=c=>h('button',{class:'skcol'+(c==='#FFFFFF'?' white':''),'aria-pressed':String(skColor().toUpperCase()===c),title:c==='#FFFFFF'?'White':c,'aria-label':c==='#FFFFFF'?'White':c,style:`--c:${c}`,onclick:skPick(()=>{S.skColor=c;if(skSel().length)skRecolor(c);})});
           /* the rainbow swatch opens the system colour picker; the last few custom colours are kept after the standard ones */
