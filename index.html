@@ -3063,7 +3063,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121105251',newer=false,want='',last=Date.now();
+  var MINE='20261121105644',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9613,15 +9613,15 @@ async function skEyeDrop(){if(window.EyeDropper){try{const r=await new EyeDroppe
   S.skPop=null;skSetTool('pick');render();flash('Tap a line or a filled area to pick its colour');}
 const skEyeBtn=()=>h('button',{class:'sklb skeyeb',title:'Eyedropper: pick a colour from anywhere on the screen (or the canvas)','aria-label':'Eyedropper',onclick:e=>{e.stopPropagation();skEyeDrop();}},skIcoL('eyedrop'));
 /* the size pad: a circle with the brush dot in its centre, at its real size on screen. Press anywhere in it and drag:
-   moving away from the centre grows the brush, toward it shrinks it, in any direction (and on past the circle) until you let go */
+   up or right grows the brush, down or left shrinks it (and on past the circle) until you let go */
 function skSizePad(small){const D=small?96:120,dot=h('i'),val=h('b'),ring=h('div',{class:'skszring',style:`width:${D}px;height:${D}px`},dot),
-    pad=h('div',{class:'skszpad'+(small?' sm':''),title:'Press in the circle and drag: away from the centre grows the brush, toward it shrinks it','aria-label':'Brush size pad',role:'slider'},ring,val);
+    pad=h('div',{class:'skszpad'+(small?' sm':''),title:'Press in the circle and drag: up or right grows the brush, down or left shrinks it','aria-label':'Brush size pad',role:'slider'},ring,val);
   const show=()=>{const dt=skDrawTool(),w=skBaseW(dt),z=(SKW&&SKW.view&&SKW.view.z)||1,px=Math.max(2,Math.min(D-6,w*z));dot.style.width=dot.style.height=px+'px';dot.classList.toggle('max',w*z>D-6);
     val.textContent=(w<10?w.toFixed(1):Math.round(w))+' px';pad.setAttribute('aria-valuenow',String(w));};pad._show=show;
   let g=null;
   ring.addEventListener('pointerdown',e=>{if(e.button>0)return;e.preventDefault();e.stopPropagation();ring.setPointerCapture(e.pointerId);const r=ring.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-    g={cx,cy,d0:Math.hypot(e.clientX-cx,e.clientY-cy),t0:skW2t(skBaseW(skDrawTool()),skDrawTool())};pad.classList.add('on');});
-  ring.addEventListener('pointermove',e=>{if(!g||!ring.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),d=Math.hypot(e.clientX-g.cx,e.clientY-g.cy),t=Math.max(0,Math.min(1,g.t0+(d-g.d0)/260));skSetW(skT2w(t,dt),dt);skSizeSync();});
+    g={x0:e.clientX,y0:e.clientY,t0:skW2t(skBaseW(skDrawTool()),skDrawTool())};pad.classList.add('on');});
+  ring.addEventListener('pointermove',e=>{if(!g||!ring.hasPointerCapture(e.pointerId))return;const dt=skDrawTool(),d=(e.clientX-g.x0)-(e.clientY-g.y0),t=Math.max(0,Math.min(1,g.t0+d/320));skSetW(skT2w(t,dt),dt);skSizeSync();});
   const end=()=>{if(!g)return;g=null;pad.classList.remove('on');saveUI();};ring.addEventListener('pointerup',end);ring.addEventListener('pointercancel',end);
   requestAnimationFrame(show);show();return pad;}
 /* floating panels for the colour menu, the pen settings and the size pad (all stackable) */
