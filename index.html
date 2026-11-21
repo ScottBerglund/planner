@@ -1519,6 +1519,8 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skmove{display:flex;flex-direction:column;gap:6px}.skmrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .skdanger,.skdanger *{color:#b42318!important;border-color:#e8a29b!important}.skdanger.skarm{background:#b42318!important;color:#fff!important}
 .skdefb{font-weight:700}
+.skcardm{position:relative;flex:none}.skmorebtn{font-size:1.4rem;line-height:1;padding:0 4px;letter-spacing:.05em}
+.skcardpop{position:absolute!important;right:0;left:auto!important;top:calc(100% + 4px);z-index:60;min-width:11rem}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3047,7 +3049,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121093958',newer=false,want='',last=Date.now();
+  var MINE='20261121104550',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9795,12 +9797,14 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   const nb=(k,l)=>h('button',{class:'btn sm',onclick:()=>skNew(k)},l);
   const card=([id,d])=>h('div',{class:'skcard'},
     h('button',{class:'skthumb'+(d.bg==='grid'?' grid':d.bg==='dots'?' dots':''),'aria-label':'Open '+(d.name||'sketch'),onclick:()=>skOpen(id)},skThumbEl(id,d)),
-    h('div',{class:'skmeta'},h('div',null,skInlineName('sk:'+id,d.name||'Untitled',v=>skRenameDrawing(id,v)),h('div',{class:'skd'},shortDate(String(d.updated||d.created||'').slice(0,10))+' · '+(d.strokes||[]).length+' strokes')),
-      h('div',{class:'skcardb'},ob?(()=>{const isCov=(ob.cover&&all.some(([k,dd])=>k===ob.cover&&inB(k,dd).has(ob.id))?ob.cover:(all.find(([k,dd])=>inB(k,dd).has(ob.id))||[])[0])===id;
-          return h('button',{class:'tlink skcovb'+(isCov?' on':''),title:isCov?'This drawing is on the sketchbook’s cover':'Show this drawing on the sketchbook’s cover','aria-pressed':String(isCov),disabled:isCov,
-            onclick:()=>{ob.cover=id;skBooksSave();render();flash('Now on the cover of “'+ob.name+'”');}},isCov?'★ Cover':'☆ Make cover');})():null,
-        h('button',{class:'tlink','aria-expanded':String(S.skMoveFor===id),onclick:()=>{S.skMoveFor=S.skMoveFor===id?null:id;S.skDelFor=null;S.skBookNew=false;render();}},'Move'),
-        h('button',{class:'tlink','aria-expanded':String(S.skDelFor===id),onclick:()=>{S.skDelFor=S.skDelFor===id?null:id;S.skMoveFor=null;S.skBookNew=false;S.confirm=null;render();}},'Delete'))),
+    h('div',{class:'skmeta'},h('div',null,skInlineName('sk:'+id,d.name||'Untitled',v=>skRenameDrawing(id,v)),h('div',{class:'skd'},shortDate(String(d.updated||d.created||'').slice(0,10)))),
+      (()=>{const open=S.skCardMenu===id,isCov=ob?(ob.cover&&all.some(([k,dd])=>k===ob.cover&&inB(k,dd).has(ob.id))?ob.cover:(all.find(([k,dd])=>inB(k,dd).has(ob.id))||[])[0])===id:false,
+          mi=(l,fn,o)=>h('button',Object.assign({class:'skrow',role:'menuitem',onclick:()=>{S.skCardMenu=null;fn();render();}},o||{}),l);
+        return h('div',{class:'skcardm'},h('button',{class:'tlink skmorebtn','aria-label':'More for '+(d.name||'this drawing'),'aria-expanded':String(open),title:'Cover, move, delete',onclick:()=>{S.skCardMenu=open?null:id;render();}},'⋯'),
+          open?h('div',{class:'skpop list skcardpop',role:'menu'},
+            ob?mi(isCov?'★ On the cover':'☆ Make cover',()=>{ob.cover=id;skBooksSave();flash('Now on the cover of “'+ob.name+'”');},{disabled:isCov}):null,
+            mi('Move…',()=>{S.skMoveFor=id;S.skDelFor=null;S.skBookNew=false;}),
+            mi('Delete…',()=>{S.skDelFor=id;S.skMoveFor=null;S.skBookNew=false;S.confirm=null;})):null);})()),
     (()=>{const mine=inB(id,d),bk=b=>'▤ '+b.name+(b.def?' (default)':'');
       if(S.skMoveFor===id)return h('div',{class:'skmove'},
         h('div',{class:'skmrow'},h('span',null,'Move to'),books.filter(b=>!(mine.size===1&&mine.has(b.id))).map(b=>h('button',{class:'btn sm',onclick:()=>skMoveTo(id,b.id)},bk(b))),
