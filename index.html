@@ -3047,7 +3047,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121092722',newer=false,want='',last=Date.now();
+  var MINE='20261121093234',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9847,7 +9847,7 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   /* every storyboard lives in one Storyboards folder, shown like a sketchbook with the newest board's first panel in the window */
   const boardFold=()=>h('div',{class:'skcard skbook skbdfold'},h('button',{class:'skbk','aria-label':'Open the Storyboards folder',onclick:()=>{S.skBook='__boards';S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},skBoardFolderArt()),
       h('div',{class:'skd skbkn'},boards.length+(boards.length===1?' storyboard':' storyboards')));
-  return [head,typeof sotdCard==='function'?sotdCard():null,newRow,custom,boardSec,
+  return [head,newRow,custom,boardSec,
     boards.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Storyboards')),h('div',{class:'skgal skbooks'},[boardFold()])]:null,
     [h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),books.length?h('div',{class:'skgal skbooks'},books.map(bookCard)):null],
     all.length?null:h('p',{class:'calnote'},'No sketches yet. Pick a page shape above to start drawing with a pen, your finger or the mouse.')];}
@@ -9905,8 +9905,8 @@ function skSetBooks(id,arr){const d=S.sketches&&S.sketches.get(id);if(!d)return;
   const m=S.skMain&&S.skMain.get(id);if(m){const nm=Object.assign({},m,{books,book,bookAt:at});S.skMain.set(id,nm);write(()=>col('sketches').doc(id).set(nm));}render();}
 /* ---------- sketchbooks: every drawing is in at least one ----------
    One sketchbook is the default (yours: Scott's Drawings; anyone new: "Sketchbook"). A drawing with no sketchbook of its own shows in the default,
-   unless it's in a storyboard (then it lives there, until you put it in a sketchbook yourself). The Idea Generator sits in every sketchbook;
-   a drawing started from it goes in the sketchbook you're in (the default from the main page). Names can be changed. */
+   unless it's in a storyboard (then it lives there, until you put it in a sketchbook yourself). The Idea Generator lives inside each sketchbook (not on the main page);
+   a drawing started from it goes in that sketchbook. Names can be changed. */
 const skSotdIds=()=>{const s=new Set();try{const days=(S.sotd&&S.sotd.days)||{};for(const k in days)if(days[k]&&days[k].sk)s.add(days[k].sk);}catch(e){}return s;};
 function skBooksEnsure(){if(!S.skBooksSynced)return;const L=skBookList().map(b=>Object.assign({},b));let ch=false;
   if(!L.some(b=>b.def)){const pick=L.find(b=>b.name==="Scott's Drawings")||L.find(b=>!b.auto);if(pick)pick.def=true;else L.unshift({id:'bdef'+Date.now().toString(36),name:'Sketchbook',def:true});ch=true;}
