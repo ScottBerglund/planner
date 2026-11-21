@@ -1516,6 +1516,9 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .skrecb i{display:inline-block;width:14px;height:14px;border-radius:50%;background:#e04848}.skrecb.on i{border-radius:3px;animation:sbrec 1s infinite}
 .skhasaud{position:relative}.skhasaud::after{content:'';position:absolute;right:4px;top:4px;width:6px;height:6px;border-radius:50%;background:#3b6fd8}
 .skcount{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;font:800 min(30vh,220px)/1 system-ui,sans-serif;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none}
+.skmove{display:flex;flex-direction:column;gap:6px}.skmrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.skdanger,.skdanger *{color:#b42318!important;border-color:#e8a29b!important}.skdanger.skarm{background:#b42318!important;color:#fff!important}
+.skdefb{font-weight:700}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3044,7 +3047,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261120201519',newer=false,want='',last=Date.now();
+  var MINE='20261121085351',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7305,7 +7308,7 @@ function skSyncLocal(){const d=SKW.doc;if(!SKW.known)SKW.known=new Set();if(!SKW
   for(const id of SKW.known)if(!now.has(id))del.add(id);for(const id of now)SKW.known.add(id);
   const lnow=new Set(d.layers.map(l=>l.id));for(const id of SKW.knownL)if(!lnow.has(id))ldel.add(id);for(const id of lnow){ldel.delete(id);SKW.knownL.add(id);}
   d.del=[...del].slice(-3000);d.ldel=[...ldel].slice(-200);}
-function skMergeRemote(r){if(!SKW||!r)return false;const d=SKW.doc;skSyncLocal();let changed=false;if((r.bookAt||0)>(d.bookAt||0)){d.book=r.book||null;d.bookAt=r.bookAt;}
+function skMergeRemote(r){if(!SKW||!r)return false;const d=SKW.doc;skSyncLocal();let changed=false;if((r.bookAt||0)>(d.bookAt||0)){d.book=r.book||null;d.books=Array.isArray(r.books)?r.books.slice():undefined;if(!d.books)delete d.books;d.bookAt=r.bookAt;}
   const del=new Set([...(d.del||[]),...(r.del||[])]),ldel=new Set([...(d.ldel||[]),...(r.ldel||[])]);
   /* layers: add the other computer's new layers, drop ones it deleted */
   const lids=new Set(d.layers.map(l=>l.id));for(const l of (r.layers||[]))if(!lids.has(l.id)&&!ldel.has(l.id)){d.layers.push(Object.assign({},l));changed=true;}
@@ -9786,22 +9789,30 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   if(SKW){const doc=SKW.doc;requestAnimationFrame(skStackBottom);
     const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
   const all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
-  const books=skBookList(),has=new Set(books.map(b=>b.id)),inBook=d=>d.book&&has.has(d.book)?d.book:null;
+  skBooksEnsure();const books=skBookList().slice().sort((a,b)=>(b.def?1:0)-(a.def?1:0)),has=new Set(books.map(b=>b.id)),BC=skBookCtx(),inB=(id,d)=>skBooksOf(id,d,BC);
   if(S.skBoardOpen){const v=skBoardEditor();if(v)return [v];}
   const ob=S.skBook&&has.has(S.skBook)?books.find(b=>b.id===S.skBook):null;const bf=S.skBook==='__boards';
   const nb=(k,l)=>h('button',{class:'btn sm',onclick:()=>skNew(k)},l);
   const card=([id,d])=>h('div',{class:'skcard'},
     h('button',{class:'skthumb'+(d.bg==='grid'?' grid':d.bg==='dots'?' dots':''),'aria-label':'Open '+(d.name||'sketch'),onclick:()=>skOpen(id)},skThumbEl(id,d)),
     h('div',{class:'skmeta'},h('div',null,skInlineName('sk:'+id,d.name||'Untitled',v=>skRenameDrawing(id,v)),h('div',{class:'skd'},shortDate(String(d.updated||d.created||'').slice(0,10))+' · '+(d.strokes||[]).length+' strokes')),
-      h('div',{class:'skcardb'},ob?(()=>{const isCov=(ob.cover&&all.some(([k,dd])=>k===ob.cover&&inBook(dd)===ob.id)?ob.cover:(all.find(([,dd])=>inBook(dd)===ob.id)||[])[0])===id;
+      h('div',{class:'skcardb'},ob?(()=>{const isCov=(ob.cover&&all.some(([k,dd])=>k===ob.cover&&inB(k,dd).has(ob.id))?ob.cover:(all.find(([k,dd])=>inB(k,dd).has(ob.id))||[])[0])===id;
           return h('button',{class:'tlink skcovb'+(isCov?' on':''),title:isCov?'This drawing is on the sketchbook’s cover':'Show this drawing on the sketchbook’s cover','aria-pressed':String(isCov),disabled:isCov,
             onclick:()=>{ob.cover=id;skBooksSave();render();flash('Now on the cover of “'+ob.name+'”');}},isCov?'★ Cover':'☆ Make cover');})():null,
-        h('button',{class:'tlink','aria-expanded':String(S.skMoveFor===id),onclick:()=>{S.skMoveFor=S.skMoveFor===id?null:id;S.skBookNew=false;render();}},'Move'),
-        h('button',{class:'tlink',onclick:()=>skDelete(id)},S.confirm==='skdel:'+id?'Tap again':'Delete'))),
-    S.skMoveFor===id?h('div',{class:'skmove'},h('span',null,'Move to'),
-      books.filter(b=>b.id!==inBook(d)).map(b=>h('button',{class:'btn sm',onclick:()=>skMoveTo(id,b.id)},'▤ '+b.name)),
-      inBook(d)?h('button',{class:'btn sm',onclick:()=>skMoveTo(id,null)},'Loose (no sketchbook)'):null,
-      S.skBookNew?skBookNameInput(id):h('button',{class:'btn sm',onclick:()=>{S.skBookNew=true;render();}},'+ New sketchbook')):null);
+        h('button',{class:'tlink','aria-expanded':String(S.skMoveFor===id),onclick:()=>{S.skMoveFor=S.skMoveFor===id?null:id;S.skDelFor=null;S.skBookNew=false;render();}},'Move'),
+        h('button',{class:'tlink','aria-expanded':String(S.skDelFor===id),onclick:()=>{S.skDelFor=S.skDelFor===id?null:id;S.skMoveFor=null;S.skBookNew=false;S.confirm=null;render();}},'Delete'))),
+    (()=>{const mine=inB(id,d),bk=b=>'▤ '+b.name+(b.def?' (default)':'');
+      if(S.skMoveFor===id)return h('div',{class:'skmove'},
+        h('div',{class:'skmrow'},h('span',null,'Move to'),books.filter(b=>!(mine.size===1&&mine.has(b.id))).map(b=>h('button',{class:'btn sm',onclick:()=>skMoveTo(id,b.id)},bk(b))),
+          S.skBookNew?skBookNameInput(id):h('button',{class:'btn sm',onclick:()=>{S.skBookNew=true;render();}},'+ New sketchbook')),
+        books.some(b=>!mine.has(b.id))?h('div',{class:'skmrow'},h('span',{title:'Keep it where it is and show it in another sketchbook too'},'Also in'),books.filter(b=>!mine.has(b.id)).map(b=>h('button',{class:'btn sm',onclick:()=>{skSetBooks(id,[...mine,b.id]);flash('Also in “'+b.name+'” now');}},'+ '+b.name))):null,
+        ob&&mine.size>1&&mine.has(ob.id)?h('div',{class:'skmrow'},h('button',{class:'btn sm',onclick:()=>{skSetBooks(id,[...mine].filter(x=>x!==ob.id));flash('Taken out of “'+ob.name+'”');}},'Take it out of “'+ob.name+'”'),h('span',{class:'skd'},'It stays in its other sketchbooks')):null);
+      if(S.skDelFor===id){const arm=S.confirm==='skdel:'+id;return h('div',{class:'skmove skdelp'},
+        h('div',{class:'skmrow'},h('span',null,'Move it instead'),books.filter(b=>!(mine.size===1&&mine.has(b.id))).map(b=>h('button',{class:'btn sm',onclick:()=>skMoveTo(id,b.id)},bk(b))),
+          S.skBookNew?skBookNameInput(id):h('button',{class:'btn sm',onclick:()=>{S.skBookNew=true;render();}},'+ New sketchbook')),
+        h('div',{class:'skmrow'},h('button',{class:'btn sm skdanger'+(arm?' skarm':''),onclick:()=>{const was=arm;skDelete(id);if(was)S.skDelFor=null;}},arm?'Tap again to delete for good':'Delete permanently'),
+          h('span',{class:'skd'},arm?'This can’t be undone, and it leaves every sketchbook.':'Removes the drawing everywhere. This can’t be undone.')));}
+      return null;})());
   /* everything you can start lives in one + New menu, so the gallery stays clear */
   const mi=(l,fn)=>h('button',{class:'skrow',role:'menuitem',onclick:()=>{S.skPop=null;fn();render();}},l);
   const newRow=bf?h('div',{class:'sknewrow'},h('button',{class:'tlink',onclick:()=>{S.skBoardNew=!S.skBoardNew;render();}},h('span',{class:'sknewb'},S.skBoardNew?'Cancel':'+ New storyboard')),window.AEPCLOUDUI||window.aeRun?h('span',{class:'skcloudg'},window.AEPCLOUDUI?AEPCLOUDUI({kind:'gallery'}):null,skMaxBtn()):null):h('div',{class:'sknewrow'},skPopBtn('sknew','New',h('span',{class:'sknewb'},'+ New'+(ob?' in “'+ob.name+'”':'')),{popCls:'list',items:()=>[h('div',{class:'skgh'},'Sketch'),
@@ -9816,18 +9827,18 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
         h('span',{class:'skbookname skbdfoldname'},'Storyboards'),h('span',{class:'skd'},boards.length+(boards.length===1?' storyboard':' storyboards'))),
       newRow,S.skBoardNew?skBoardNewForm():null,
       boards.length?h('div',{class:'skgal skbdgal0'},boards.map(skBoardCard)):h('p',{class:'calnote'},'No storyboards yet. + New storyboard starts one.')];}
-  if(ob){const list=all.filter(([,d])=>inBook(d)===ob.id);
+  if(ob){const list=all.filter(([id,d])=>inB(id,d).has(ob.id));
     return [head,h('div',{class:'skbookbar'},h('button',{class:'tlink',onclick:()=>{S.skBook=null;S.skMoveFor=null;saveUI();render();}},triT('l'),'All sketches'),
         h('input',{class:'skbookname','data-keep':'1',value:ob.name,maxlength:'60','aria-label':'Sketchbook name',onchange:e=>{const v=e.target.value.trim();if(v&&v!==ob.name){ob.name=v;skBooksSave();}},onkeydown:e=>{if(e.key==='Enter')e.target.blur();}}),
         h('span',{class:'skd'},list.length+(list.length===1?' drawing':' drawings')),
-        h('button',{class:'tlink',title:'The drawings in it go back to loose drawings',onclick:()=>{if(S.confirm!=='skbdel')return armConfirm('skbdel');S.confirm=null;S.skBooks=books.filter(b=>b.id!==ob.id);S.skBook=null;skBooksSave();render();flash('Sketchbook deleted. Its drawings are loose now.');}},S.confirm==='skbdel'?'Tap again to delete the sketchbook':'Delete sketchbook')),
+        ob.def?h('span',{class:'skd skdefb',title:'New drawings, and drawings with no other sketchbook, go here'},'Default sketchbook'):h('button',{class:'tlink',title:'New drawings, and drawings with no other sketchbook, go here',onclick:()=>{S.skBooks=skBookList().map(b=>Object.assign({},b,{def:b.id===ob.id||undefined}));skBooksSave();render();flash('“'+ob.name+'” is the default sketchbook now');}},'Make default'),
+        ob.def||ob.auto?null:h('button',{class:'tlink',title:'Its drawings stay in their other sketchbooks, or go to the default one',onclick:()=>{if(S.confirm!=='skbdel')return armConfirm('skbdel');S.confirm=null;S.skBooks=skBookList().filter(b=>b.id!==ob.id);S.skBook=null;skBooksSave();render();flash('Sketchbook deleted. Its drawings are in the default sketchbook (or their other ones).');}},S.confirm==='skbdel'?'Tap again to delete the sketchbook':'Delete sketchbook')),
       newRow,custom,
       list.length?h('div',{class:'skgal'},list.map(card)):h('p',{class:'calnote'},'This sketchbook is empty. Start a sketch above, or use Move on a drawing to put it here.')];}
   /* drawings that sit in a storyboard live there, not in Loose drawings (they come back here if taken out of every storyboard) */
   const inBoard=new Set();for(const b of skBoards())for(const p of (b.panels||[]))if(p&&p.sk)inBoard.add(p.sk);
-  const loose=all.filter(([id,d])=>!inBook(d)&&!inBoard.has(id));
   /* a sketchbook looks like a black hardcover: the latest drawing in a window, the name on a label, the pages and strap showing at the bottom */
-  const bookCard=b=>{const its=all.filter(([,d])=>inBook(d)===b.id),top=its.find(([id])=>id===b.cover)||its[0];
+  const bookCard=b=>{const its=all.filter(([id,d])=>inB(id,d).has(b.id)),top=its.find(([id])=>id===b.cover)||its[0];
     return h('div',{class:'skcard skbook'},h('button',{class:'skbk','aria-label':'Open sketchbook '+b.name,onclick:()=>{S.skBook=b.id;S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},
         skBookFit(skBook3D([h('span',{class:'skbkwin'},top?skThumbEl(top[0],top[1]):h('span',{class:'skbookempty'},'Empty')),h('span',{class:'skbklab'},b.name)],312,380,24,{box:440,p:960,tr:'rotateX(38deg) rotateZ(var(--skz,-10deg))'}))),
       h('div',{class:'skd skbkn'},its.length+(its.length===1?' drawing':' drawings')));};
@@ -9837,11 +9848,9 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
   const boardFold=()=>h('div',{class:'skcard skbook skbdfold'},h('button',{class:'skbk','aria-label':'Open the Storyboards folder',onclick:()=>{S.skBook='__boards';S.skMoveFor=null;saveUI();render();window.scrollTo(0,0);}},skBoardFolderArt()),
       h('div',{class:'skd skbkn'},boards.length+(boards.length===1?' storyboard':' storyboards')));
   return [head,typeof sotdCard==='function'?sotdCard():null,newRow,custom,boardSec,
-    books.length||boards.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),h('div',{class:'skgal skbooks'},(boards.length?[boardFold()]:[]).concat(books.map(bookCard))),
-      h('h2',{class:'sksec'},'Loose drawings')]
-      :h('div',{class:'sksech'},addBook()),
-    loose.length?h('div',{class:'skgal'},loose.map(card)):
-      h('p',{class:'calnote'},all.length?'Every drawing is in a sketchbook or a storyboard.':'No sketches yet. Pick a page shape above to start drawing with a pen, your finger or the mouse.')];}
+    boards.length?[h('div',{class:'sksech'},h('h2',{class:'sksec'},'Storyboards')),h('div',{class:'skgal skbooks'},[boardFold()])]:null,
+    [h('div',{class:'sksech'},h('h2',{class:'sksec'},'Sketchbooks'),addBook()),books.length?h('div',{class:'skgal skbooks'},books.map(bookCard)):null],
+    all.length?null:h('p',{class:'calnote'},'No sketches yet. Pick a page shape above to start drawing with a pen, your finger or the mouse.')];}
 function skBook3D(front,W,H,T,view){W=W||200;H=H||244;T=T||12;const k=W/200,rc=5*k,b=2.5*k,o=3*k,x0=-W/2,f=[];
   const face=(w,hh,tr,cls,kids,st)=>f.push(h('span',{class:'b3f '+cls,style:`width:${w}px;height:${hh}px;left:${(W-w)/2}px;top:${(H-hh)/2}px;transform:${tr};${st||''}`},kids||null));
   const bw=W-rc+1.2,bx=rc/2-.6;/* a hair wider so the cover tucks into the spine with no seam */
@@ -9890,9 +9899,25 @@ function skBookNameInput(moveId){const inp=h('input',{class:'skbookname','data-k
   const ok=()=>{const v=inp.value.trim();if(!v)return;const b={id:'b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:v};S.skBooks=skBookList().concat([b]);S.skBookNew=false;skBooksSave();if(moveId)skMoveTo(moveId,b.id);else render();};
   inp.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')ok();if(e.key==='Escape'){S.skBookNew=false;render();}});setTimeout(()=>inp.focus(),30);
   return h('span',{class:'skbooknew'},inp,h('button',{class:'btn sm',onclick:ok},'Create'),h('button',{class:'tlink',onclick:()=>{S.skBookNew=false;render();}},'Cancel'));}
-function skMoveTo(id,book){const d=S.sketches&&S.sketches.get(id);if(!d)return;const at=Date.now();d.book=book;d.bookAt=at;S.skMoveFor=null;S.skBookNew=false;
-  const m=S.skMain&&S.skMain.get(id);if(m){const nm=Object.assign({},m,{book,bookAt:at});S.skMain.set(id,nm);write(()=>col('sketches').doc(id).set(nm));}
-  const b=skBookList().find(x=>x.id===book);flash(b?'Moved to “'+b.name+'”':'Moved to loose drawings');render();}
+function skMoveTo(id,book){skSetBooks(id,book?[book]:[]);const b=skBookList().find(x=>x.id===book);flash(b?'Moved to “'+b.name+'”':'Moved');}
+/* a drawing's sketchbooks, written to it (books: every sketchbook it's in; book: the first, for older copies) */
+function skSetBooks(id,arr){const d=S.sketches&&S.sketches.get(id);if(!d)return;const at=Date.now(),books=[...new Set(arr)],book=books[0]||null;d.books=books;d.book=book;d.bookAt=at;S.skMoveFor=null;S.skDelFor=null;S.skBookNew=false;
+  const m=S.skMain&&S.skMain.get(id);if(m){const nm=Object.assign({},m,{books,book,bookAt:at});S.skMain.set(id,nm);write(()=>col('sketches').doc(id).set(nm));}render();}
+/* ---------- sketchbooks: every drawing is in at least one ----------
+   One sketchbook is the default (yours: Scott's Drawings; anyone new: "Sketchbook"). A drawing with no sketchbook of its own shows in the default,
+   unless it's in a storyboard (then it lives there, until you put it in a sketchbook yourself). Drawings made from the sketch prompt
+   go in the Prompts sketchbook and the default too. Names can be changed. */
+const SK_PROMPTS_NAME='Prompts';
+const skSotdIds=()=>{const s=new Set();try{const days=(S.sotd&&S.sotd.days)||{};for(const k in days)if(days[k]&&days[k].sk)s.add(days[k].sk);}catch(e){}return s;};
+function skBooksEnsure(){if(!S.skBooksSynced)return;const L=skBookList().map(b=>Object.assign({},b));let ch=false;
+  if(!L.some(b=>b.def)){const pick=L.find(b=>b.name==="Scott's Drawings")||L.find(b=>!b.auto);if(pick)pick.def=true;else L.unshift({id:'bdef'+Date.now().toString(36),name:'Sketchbook',def:true});ch=true;}
+  if(skSotdIds().size&&!L.some(b=>b.auto==='prompts')){L.push({id:'bprompts',name:SK_PROMPTS_NAME,auto:'prompts'});ch=true;}
+  if(ch){S.skBooks=L;skBooksSave();}}
+function skBookCtx(){const L=skBookList(),board=new Set();for(const b of skBoards())for(const p of (b.panels||[]))if(p&&p.sk)board.add(p.sk);
+  return {has:new Set(L.map(b=>b.id)),sotd:skSotdIds(),board,def:(L.find(b=>b.def)||{}).id||null,pr:(L.find(b=>b.auto==='prompts')||{}).id||null};}
+function skBooksOf(id,d,c){const set=new Set();for(const b of [].concat(Array.isArray(d.books)?d.books:[],d.book?[d.book]:[]))if(c.has.has(b))set.add(b);
+  if(!set.size&&c.sotd.has(id)){if(c.pr)set.add(c.pr);if(c.def)set.add(c.def);}
+  if(!set.size&&!c.board.has(id)&&c.def)set.add(c.def);return set;}
 /* ---------- gallery thumbnails: the picture saved when you left the drawing; otherwise drawn once, only when the card scrolls into view ---------- */
 let SKTC=null;const skTC=()=>{if(!SKTC){SKTC=new Map();try{const o=JSON.parse(localStorage.getItem('sk-thumbs')||'{}');for(const k in o)SKTC.set(k,o[k]);}catch(e){}}return SKTC;};
 let SKTCT=0;function skTCKeep(){clearTimeout(SKTCT);SKTCT=setTimeout(()=>{try{const e=[...skTC().entries()].slice(-40);SKTC=new Map(e);localStorage.setItem('sk-thumbs',JSON.stringify(Object.fromEntries(e)));}catch(err){}},800);}
@@ -10287,7 +10312,7 @@ const SK_FILE_KIND='scotts-planner-sketch';
 async function skHandoffFile(ids,B){const out={kind:SK_FILE_KIND,v:1,saved:new Date().toISOString(),drawings:[]};
   for(const id of ids){if(!id||out.drawings.some(x=>x.id===id))continue;const d=SKW&&SKW.id===id?skFullDoc(SKW.doc):S.sketches&&S.sketches.get(id);if(!d||d._partial)continue;
     const guides={};for(const g of skGuides(d)){try{const sn=await col('skguides').doc(g.id).get();const src=sn&&sn.exists&&sn.data().src;if(src)guides[g.id]=src;}catch(e){}}
-    const doc=JSON.parse(JSON.stringify(Object.assign({},d,{strokes:d.strokes||[]})));delete doc.parts;delete doc.pv;delete doc.book;delete doc.bookAt;
+    const doc=JSON.parse(JSON.stringify(Object.assign({},d,{strokes:d.strokes||[]})));delete doc.parts;delete doc.pv;delete doc.book;delete doc.books;delete doc.bookAt;
     out.drawings.push({id,doc,guides});}
   if(B)out.board=JSON.parse(JSON.stringify(B));return JSON.stringify(out);}
 function skImportPick(){
@@ -10304,7 +10329,7 @@ async function skImportText(txt){let o;try{o=JSON.parse(txt);}catch(e){o=null;}
       if(a<b){id='sk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);d.name=(d.name||'Sketch')+' (older copy)';copied++;}else updated++;}
     else added++;
     for(const g of skGuides(d)){const src=it.guides&&it.guides[g.id];if(!src)continue;if(id!==it.id)g.id='gd'+skNewId();const gid=g.id;try{await write(()=>col('skguides').doc(gid).set({sk:id,src}));}catch(e){}}
-    if(have&&id===it.id&&have.book){d.book=have.book;d.bookAt=have.bookAt;}else if(!have&&S.skBook&&skBookList().some(b=>b.id===S.skBook)){d.book=S.skBook;d.bookAt=Date.now();}
+    if(have&&id===it.id&&(have.book||have.books)){d.book=have.book;if(have.books)d.books=have.books;d.bookAt=have.bookAt;}else if(!have&&S.skBook&&skBookList().some(b=>b.id===S.skBook)){d.book=S.skBook;d.bookAt=Date.now();}
     for(const st of d.strokes)if(!st.id)st.id=skNewId();
     S.sketches.set(id,d);skStore(id,d,null);map[it.id]=id;}
   let bmsg='';
@@ -10323,7 +10348,7 @@ function skListen(db){
   db.collection('skparts').onSnapshot(s=>{S.skParts=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.skMain)skSyncFromDb();},()=>{});
   try{db.doc('settings/skboards').onSnapshot(s=>{if(!s.exists)return;const b=skDeep(s.data().boards);if(Array.isArray(b)&&JSON.stringify(b)!==JSON.stringify(skBoards())){S.skBoards=b;saveUI();if(S.tab==='sketch')renderSoon();}},()=>{});}catch(e){}
   try{db.doc('settings/skpalettes').onSnapshot(s=>{if(!s.exists)return;const b=skDeep(s.data().pals);if(Array.isArray(b)&&JSON.stringify(b)!==JSON.stringify(skPals())){S.skPals=b;saveUI();if(S.tab==='sketch')renderSoon();}},()=>{});}catch(e){}
-  try{db.doc('settings/skbooks').onSnapshot(s=>{if(!s.exists)return;const b=skDeep(s.data().books);if(Array.isArray(b)&&JSON.stringify(b)!==JSON.stringify(S.skBooks||[])){S.skBooks=b;saveUI();if(S.tab==='sketch'&&!SKW)renderSoon();}},()=>{});}catch(e){}
+  try{db.doc('settings/skbooks').onSnapshot(s=>{S.skBooksSynced=true;if(!s.exists){if(S.tab==='sketch'&&!SKW)renderSoon();return;}const b=skDeep(s.data().books);if(Array.isArray(b)&&JSON.stringify(b)!==JSON.stringify(S.skBooks||[])){S.skBooks=b;saveUI();if(S.tab==='sketch'&&!SKW)renderSoon();}},()=>{});}catch(e){}
   try{db.doc('settings/skkeys').onSnapshot(s=>{if(!s.exists)return;const m=skDeep(s.data().map);if(m&&typeof m==='object'&&JSON.stringify(m)!==JSON.stringify(S.skKeymap||{})){S.skKeymap=m;saveUI();if(S.skKeys)renderSoon();}},()=>{});}catch(e){}
 }
 
