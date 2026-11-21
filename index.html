@@ -3047,7 +3047,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121085351',newer=false,want='',last=Date.now();
+  var MINE='20261121092722',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -3685,7 +3685,7 @@ function taskTails(k){const pk=addDays(k,-1);return allTasks().filter(t=>t.date=
 /* bookings: tasks in a project called "Booked…" (or one marked booked) get a $ and a green edge everywhere */
 function isBooked(t){const pj=t&&t.projectId&&S.projects.get(t.projectId);return !!(pj&&(pj.booked||/^booked/i.test(String(pj.name||'').trim())));}
 const bkTitle=t=>(isBooked(t)?'$ ':'')+t.title;
-/* ---------- Sketch of the day: one drawing prompt a day (Claude makes it; a built-in list is the fallback) ---------- */
+/* ---------- Idea Generator (was Sketch of the day): a drawing prompt (Claude makes it; a built-in list is the fallback) ---------- */
 const SOTD_KINDS=[['word','Word'],['word2','Two words'],['mash','Mash-up'],['rule','Constraint'],['motion','Motion']];
 const SOTD_LIST={
   word:['fog','umbrella','heron','teapot','kite','cactus','lantern','bicycle','owl','mailbox','guitar','snail','typewriter','turntable','whale','bonsai','moth','fox','tugboat','sneakers','harmonica','jellyfish','ladder','crow','tent','mushroom','camera','anchor','skateboard','bee','headphones','toaster','windmill','octopus','pretzel','scarecrow','volcano','submarine','walrus','castle','trombone','pinecone','raccoon','tractor','hammock','iguana','rainbow','bagel','flamingo','pizza','robot','backpack','dinosaur','lamp','sandwich','rocket','teddy','sock','balloon'],
@@ -3733,15 +3733,15 @@ function sotdCard(){if(!S.sotd&&!S.sotdLoaded)return null;const t=sotdToday();if
   /* starts folded to one line; tap it to open (remembered) */
   let open=false;try{open=localStorage.getItem('sotdOpen')==='1';}catch(e){}
   const fold=()=>{try{localStorage.setItem('sotdOpen',open?'0':'1');}catch(e){}render();};
-  const head=h('button',{class:'sotdhead sotdfold','aria-expanded':String(open),title:open?'Fold sketch of the day':'Open sketch of the day',onclick:fold},
-    h('span',{class:'sotdk'},'Sketch of the day'),open?(t?h('span',{class:'sotdkind'},kindLab(t.kind)):null):h('span',{class:'sotdmini'},SOTDBUSY&&!t?'…':t?t.text:''),
-    open&&streak>1?h('span',{class:'sotdstreak'},streak+' days in a row'):null,h('span',{class:'sotdtw','aria-hidden':'true'},open?'▾':'▸'));
+  const head=h('button',{class:'sotdhead sotdfold','aria-expanded':String(open),title:open?'Fold the Idea Generator':'Open the Idea Generator',onclick:fold},
+    h('span',{class:'sotdk'},'Idea Generator'),open?(t?h('span',{class:'sotdkind'},kindLab(t.kind)):null):h('span',{class:'sotdmini'},SOTDBUSY&&!t?'…':t?t.text:''),
+h('span',{class:'sotdtw','aria-hidden':'true'},open?'▾':'▸'));
   if(!open)return h('section',{class:'sotd shut'},head);
   return h('section',{class:'sotd'},
     head,
     h('div',{class:'sotdkinds',role:'radiogroup','aria-label':'Kind of prompt'},[['any','Any']].concat(SOTD_KINDS).map(([k,l])=>{const on=sotdMode()===k;return h('button',{class:'chip',role:'radio','aria-checked':String(on),'aria-pressed':String(on),onclick:()=>{if(on)return;S.sotd=Object.assign({},S.sotd||{},{mode:k});sotdNew(true);}},l);})),
     h('div',{class:'sotdtext'},SOTDBUSY&&!t?'Thinking of one…':t?t.text:''),
-    h('div',{class:'sotdacts'},t?h('button',{class:'btn solid',onclick:sotdStart},t.sk&&S.sketches&&S.sketches.has(t.sk)?'Open today’s sketch':'Start drawing'):null,
+    h('div',{class:'sotdacts'},t?h('button',{class:'btn solid',onclick:sotdStart},t.sk&&S.sketches&&S.sketches.has(t.sk)?'Open this sketch':'Start drawing'):null,
       h('button',{class:'btn sotdgen',disabled:SOTDBUSY,title:'Get a new prompt (any sketch you started stays saved)',onclick:()=>sotdNew(true)},SOTDBUSY?'Thinking…':'↻ Generate')),
     past.length?h('div',{class:'sotdpast'},past.map(([k,v])=>h('button',{class:'sotdp',title:v.text,onclick:()=>skOpen(v.sk)},skThumbEl(v.sk,S.sketches.get(v.sk)),h('span',{class:'sotdpt'},v.text),h('span',{class:'sotdpd'},shortDate(k))))):null);}
 function routinesSection(){const rs=[...S.routines.values()].sort((a,b)=>String(a.time||'99').localeCompare(String(b.time||'99')));
@@ -9833,7 +9833,7 @@ function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'big
         h('span',{class:'skd'},list.length+(list.length===1?' drawing':' drawings')),
         ob.def?h('span',{class:'skd skdefb',title:'New drawings, and drawings with no other sketchbook, go here'},'Default sketchbook'):h('button',{class:'tlink',title:'New drawings, and drawings with no other sketchbook, go here',onclick:()=>{S.skBooks=skBookList().map(b=>Object.assign({},b,{def:b.id===ob.id||undefined}));skBooksSave();render();flash('“'+ob.name+'” is the default sketchbook now');}},'Make default'),
         ob.def||ob.auto?null:h('button',{class:'tlink',title:'Its drawings stay in their other sketchbooks, or go to the default one',onclick:()=>{if(S.confirm!=='skbdel')return armConfirm('skbdel');S.confirm=null;S.skBooks=skBookList().filter(b=>b.id!==ob.id);S.skBook=null;skBooksSave();render();flash('Sketchbook deleted. Its drawings are in the default sketchbook (or their other ones).');}},S.confirm==='skbdel'?'Tap again to delete the sketchbook':'Delete sketchbook')),
-      newRow,custom,
+      typeof sotdCard==='function'?sotdCard():null,newRow,custom,
       list.length?h('div',{class:'skgal'},list.map(card)):h('p',{class:'calnote'},'This sketchbook is empty. Start a sketch above, or use Move on a drawing to put it here.')];}
   /* drawings that sit in a storyboard live there, not in Loose drawings (they come back here if taken out of every storyboard) */
   const inBoard=new Set();for(const b of skBoards())for(const p of (b.panels||[]))if(p&&p.sk)inBoard.add(p.sk);
@@ -9905,18 +9905,17 @@ function skSetBooks(id,arr){const d=S.sketches&&S.sketches.get(id);if(!d)return;
   const m=S.skMain&&S.skMain.get(id);if(m){const nm=Object.assign({},m,{books,book,bookAt:at});S.skMain.set(id,nm);write(()=>col('sketches').doc(id).set(nm));}render();}
 /* ---------- sketchbooks: every drawing is in at least one ----------
    One sketchbook is the default (yours: Scott's Drawings; anyone new: "Sketchbook"). A drawing with no sketchbook of its own shows in the default,
-   unless it's in a storyboard (then it lives there, until you put it in a sketchbook yourself). Drawings made from the sketch prompt
-   go in the Prompts sketchbook and the default too. Names can be changed. */
-const SK_PROMPTS_NAME='Prompts';
+   unless it's in a storyboard (then it lives there, until you put it in a sketchbook yourself). The Idea Generator sits in every sketchbook;
+   a drawing started from it goes in the sketchbook you're in (the default from the main page). Names can be changed. */
 const skSotdIds=()=>{const s=new Set();try{const days=(S.sotd&&S.sotd.days)||{};for(const k in days)if(days[k]&&days[k].sk)s.add(days[k].sk);}catch(e){}return s;};
 function skBooksEnsure(){if(!S.skBooksSynced)return;const L=skBookList().map(b=>Object.assign({},b));let ch=false;
   if(!L.some(b=>b.def)){const pick=L.find(b=>b.name==="Scott's Drawings")||L.find(b=>!b.auto);if(pick)pick.def=true;else L.unshift({id:'bdef'+Date.now().toString(36),name:'Sketchbook',def:true});ch=true;}
-  if(skSotdIds().size&&!L.some(b=>b.auto==='prompts')){L.push({id:'bprompts',name:SK_PROMPTS_NAME,auto:'prompts'});ch=true;}
+  /* the short-lived Prompts sketchbook is gone: its drawings show in the default */
+  if(L.some(b=>b.auto==='prompts')){S.skBooks=L.filter(b=>b.auto!=='prompts');skBooksSave();return;}
   if(ch){S.skBooks=L;skBooksSave();}}
 function skBookCtx(){const L=skBookList(),board=new Set();for(const b of skBoards())for(const p of (b.panels||[]))if(p&&p.sk)board.add(p.sk);
   return {has:new Set(L.map(b=>b.id)),sotd:skSotdIds(),board,def:(L.find(b=>b.def)||{}).id||null,pr:(L.find(b=>b.auto==='prompts')||{}).id||null};}
 function skBooksOf(id,d,c){const set=new Set();for(const b of [].concat(Array.isArray(d.books)?d.books:[],d.book?[d.book]:[]))if(c.has.has(b))set.add(b);
-  if(!set.size&&c.sotd.has(id)){if(c.pr)set.add(c.pr);if(c.def)set.add(c.def);}
   if(!set.size&&!c.board.has(id)&&c.def)set.add(c.def);return set;}
 /* ---------- gallery thumbnails: the picture saved when you left the drawing; otherwise drawn once, only when the card scrolls into view ---------- */
 let SKTC=null;const skTC=()=>{if(!SKTC){SKTC=new Map();try{const o=JSON.parse(localStorage.getItem('sk-thumbs')||'{}');for(const k in o)SKTC.set(k,o[k]);}catch(e){}}return SKTC;};
