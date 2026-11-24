@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124181620',newer=false,want='',last=Date.now();
+  var MINE='20261124185144',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -9284,7 +9284,7 @@ for(i=0;i<D.panels.length;i++){var P=D.panels[i],cm="skpanel:"+D.id+":"+P.sid,c=
     if(!a){a=proj.items.addComp(P.n+" · frames",D.pw,D.ph,1,len,P.fps);a.comment=acm;}a.parentFolder=folder;a.name=P.n+" · frames";a.frameRate=P.fps;a.duration=len;
     for(k=a.numLayers;k>=1;k--){a.layer(k).locked=false;a.layer(k).remove();}
     for(k=0;k<P.frames.length;k++)for(li=0;li<P.frames[k].length;li++)addLayer(a,P.frames[k][li],P,k,FD);
-    var AL=c.layers.add(a);AL.comment="sk-art";AL.name="Art (loops)";AL.timeRemapEnabled=true;AL.property("ADBE Time Remapping").expression=P.pong?'loopOut("pingpong")':'loopOut("cycle")';AL.outPoint=P.dur;}
+    var AL=c.layers.add(a);AL.comment="sk-art";AL.name="Art (loops)";AL.timeRemapEnabled=true;AL.property("ADBE Time Remapping").expression=P.pong?'var f=source.frameDuration,N=Math.max(1,Math.round(source.duration/f)),P=Math.max(1,2*(N-1)),n=Math.floor((time-startTime)/f+0.001);n=((n%P)+P)%P;(N<2?0:(n<N?n:P-n))*f':'var f=source.frameDuration,N=Math.max(1,Math.round(source.duration/f)),n=Math.floor((time-startTime)/f+0.001);(((n%N)+N)%N)*f';AL.outPoint=P.dur;}
   else for(li=0;li<P.layers.length;li++)addLayer(c,P.layers[li],P,null,0);
   var tl=null;for(k=1;k<=c.numLayers;k++)if(c.layer(k).comment==="sk-notes"){tl=c.layer(k);break;}
   var txt=String(P.num)+"   "+P.draw+(P.note?"\\r"+P.note.replace(/\\n/g,"\\r"):"");
