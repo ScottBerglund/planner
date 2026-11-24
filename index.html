@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124185144',newer=false,want='',last=Date.now();
+  var MINE='20261124185629',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -3167,7 +3167,9 @@ const isFS=()=>!!fsEl();
 /* tap anywhere outside the display menu closes it */
 addEventListener('pointerdown',e=>{if(!S.fold||!S.fold.disp)return;if(e.target.closest&&e.target.closest('.dispmenu,.dispbtn'))return;S.fold.disp=false;render();},true);
 /* first tap after opening goes full screen (browsers only allow it from a tap), hiding the Claude bar */
-let fsAuto=false;addEventListener('click',e=>{if(fsAuto)return;fsAuto=true;if(S.autoFS===false||!fsOK()||isFS())return;if(e.target.closest&&e.target.closest('.fsbtn,.dispmenu'))return;toggleFS();},true);
+const typing=el=>!!(el&&el.closest&&el.closest('input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]),textarea,select,[contenteditable=""],[contenteditable=true]'));
+/* the first tap goes full screen, but never a tap into a text box: the switch redraws the page and would close the keyboard */
+let fsAuto=false;addEventListener('click',e=>{if(fsAuto)return;if(typing(e.target))return;fsAuto=true;if(S.autoFS===false||!fsOK()||isFS())return;if(e.target.closest&&e.target.closest('.fsbtn,.dispmenu'))return;toggleFS();},true);
 const fsOK=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled||document.documentElement.requestFullscreen);
 function fsIcon(on){const sv=document.createElementNS('http://www.w3.org/2000/svg','svg');sv.setAttribute('viewBox','0 0 24 24');sv.setAttribute('width','22');sv.setAttribute('height','22');sv.setAttribute('aria-hidden','true');
   sv.innerHTML=on?'<path d="M9 3.5v5.5H3.5M15 3.5v5.5h5.5M9 20.5V15H3.5M15 20.5V15h5.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
@@ -3176,7 +3178,7 @@ async function toggleFS(){try{if(isFS()){await (document.exitFullscreen||documen
     else{const el=document.documentElement;await (el.requestFullscreen||el.webkitRequestFullscreen).call(el,{navigationUI:'hide'});}}
   catch(e){flash('This browser won’t let the page go full screen here. Try Add to Home screen instead.');}render();}
 /* going in or out of full screen: drop any half-finished wheel drag (its release can get lost in the switch, which held up redraws), then lay out again once the new size has settled (Firefox resizes after the event) */
-document.addEventListener('fullscreenchange',()=>{S.spinBusy=false;S.spinQ=false;render();setTimeout(()=>render(),250);setTimeout(()=>render(),700);});
+document.addEventListener('fullscreenchange',()=>{S.spinBusy=false;S.spinQ=false;const rr=()=>{if(!typing(document.activeElement))render();};rr();setTimeout(rr,250);setTimeout(rr,700);});
 function toggleRams(){S.rams=!S.rams;document.documentElement.classList.toggle('rams',S.rams);saveUI();render();}
 function toggleWarm(){S.warm=!S.warm;if(S.warm){S.inv=false;S.bright=false;}setTheme();}
 
