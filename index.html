@@ -837,6 +837,8 @@ html:root #app div.tabs.tlmode{gap:.3rem}
 .rpage .recipe h2{font-size:1.25rem}
 .rpage .steps li{margin-bottom:var(--s2);line-height:1.5}
 .rpanes{display:flex;align-items:baseline;gap:var(--s4);margin-top:var(--s4);border-bottom:1.5px solid var(--ink);padding-bottom:var(--s2)}
+.rpage .rpanes{position:sticky;top:0;z-index:15;background:var(--paper);padding-top:var(--s2)}.rpage .rpsent{height:0;margin-top:var(--s4)}.rpage .rpsent+.rpanes{margin-top:0}
+.rpage .rpane{min-height:calc(100vh - 5rem)}
 .rpanes .rpt{background:none;border:0;padding:0;font:inherit;font-family:"Red Hat Display",system-ui,sans-serif;font-weight:900;font-size:1.5rem;color:var(--graphite);opacity:.55;cursor:pointer}
 .rpanes .rpt.on{color:var(--ink);opacity:1}
 .rpdots{margin-left:auto;display:flex;gap:6px}.rpdots i{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink)}.rpdots i.on{background:var(--ink)}
@@ -3082,7 +3084,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261121180651',newer=false,want='',last=Date.now();
+  var MINE='20261124174934',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -3912,7 +3914,7 @@ function mealDrag(e,r,from){
   addEventListener('pointermove',onMove,{passive:false});addEventListener('pointerup',onUp);addEventListener('pointercancel',onCancel);
   if(touch)timer=setTimeout(()=>{if(navigator.vibrate)try{navigator.vibrate(15);}catch(x){}panLock();begin();},350);
 }
-function openRecipe(uid,date){S.recipeOpen=uid;S.ingChecks=new Set();S.stepDone=new Set();S.recPane='ing';if(date){S.mealWeek=mondayOf(date);}S.tab='meals';saveUI();render();window.scrollTo(0,0);}
+function openRecipe(uid,date){S.recipeOpen=uid;S.ingChecks=new Set();S.stepDone=new Set();S.recPane='ing';S.recScroll={};if(date){S.mealWeek=mondayOf(date);}S.tab='meals';saveUI();render();window.scrollTo(0,0);}
 function mealErr(c){return c==='rate_limited'?'Claude is busy or you’ve reached a usage limit. Try again in a little while.'
   :['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(c)?'Claude isn’t allowed on this page. Allow it from the page’s Permissions menu, then reload.'
   :(c==='invalid_json'||c==='empty_completion')?'The answer came back in a form the page couldn’t read. Try again.':'Something interrupted that. Try again.';}
@@ -3945,9 +3947,41 @@ Reply with only JSON: {"dinners":[{"date":"YYYY-MM-DD","recipeId":"id"}],"note":
 async function keepSuggestions(){const s=S.mealSug;if(!s)return;S.mealSug=null;
   for(const [d,uid] of Object.entries(s.picks)){const r=rec(uid);if(!r)continue;const cur=Object.assign({},S.meals.get(d)||{});cur.dinner={uid:r.uid,name:r.name};S.meals.set(d,cur);await write(()=>col('meals').doc(d).set(cur));}
   render();}
-async function buildGroceries(){if(!S.sample)return;const wk=S.mealWeek,days=[...Array(7)].map((_,i)=>addDays(wk,i));
+/* build the week's list without Claude: gather the planned recipes' ingredients, add up simple repeats, sort into store sections */
+const GQ={'½':.5,'¼':.25,'¾':.75,'⅓':1/3,'⅔':2/3,'⅛':.125};
+function gParse(t){let s=String(t).trim().replace(/^[-•*]\s*/,''),m=s.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d*\.?\d+\s*[½¼¾⅓⅔⅛]?|[½¼¾⅓⅔⅛])\s*/);
+  if(!m)return {q:null,rest:s};let a=m[1].trim(),q=0;
+  if(/^\d+\s+\d+\/\d+$/.test(a)){const [w,f]=a.split(/\s+/),[n,d]=f.split('/');q=+w+n/d;}else if(/^\d+\/\d+$/.test(a)){const [n,d]=a.split('/');q=n/d;}
+  else{const u=a.match(/[½¼¾⅓⅔⅛]/);q=(parseFloat(a)||0)+(u?GQ[u[0]]:0);}
+  if(/^\s*[-–]\s*\d/.test(s.slice(m[0].length)))return {q:null,rest:s};/* ranges like 2-3 stay as written */
+  return {q,rest:s.slice(m[0].length).trim()};}
+const gFmt=q=>{const w=Math.floor(q+1e-9),f=q-w,fr=[[.125,'⅛'],[.25,'¼'],[1/3,'⅓'],[.5,'½'],[2/3,'⅔'],[.75,'¾']].find(([v])=>Math.abs(v-f)<.02);return f<.02?String(w):fr?(w?w+' ':'')+fr[1]:String(Math.round(q*100)/100);};
+const gKey=r=>r.toLowerCase().replace(/\(.*?\)/g,'').replace(/,.*$/,'').replace(/[^a-z\s]/g,' ').split(/\s+/).filter(Boolean).map(w=>w.length>3?w.replace(/(oes|es|s)$/,w.endsWith('oes')?'o':''):w).join(' ');
+const GBASIC=/^(kosher |sea |fine |flaky )?(salt|black pepper|pepper|salt and (black )?pepper|salt & pepper|water|ice|(olive|vegetable|canola|neutral|cooking|avocado) oil|oil|cooking spray|nonstick spray)$/;
+function gSection(t){const l=String(t).toLowerCase(),nm=pantryName(t).toLowerCase();
+  if(GBASIC.test(nm)||/\b(to taste|for frying)\b/.test(l)&&/\b(salt|pepper|oil)\b/.test(l))return 'Check the pantry';
+  if(/\b(salmon|cod|tuna|shrimp|prawns?|fish|halibut|tilapia|trout|scallops?|mussels?|clams?|crab|lobster|anchov(y|ies)|sardines?|haddock|sea bass|mahi|snapper|calamari|squid|octopus|swordfish)\b/.test(l)&&!/\b(sauce|stock)\b/.test(l))return 'Fish & Seafood';
+  if(/\b(bread|baguette|buns?|rolls?|pita|naan|bagels?|sourdough|ciabatta|focaccia|brioche)\b/.test(l)&&!/crumbs/.test(l))return 'Bakery';
+  if(/\b(lemon|lime|orange) juice\b|\b(serrano|poblano|habanero|thai chil(e|i)|green chil(e|i))s?\b|\bfresh (herbs?|mint|basil|thyme|rosemary|oregano)\b/.test(l))return 'Produce';
+  if(/\b(mustard|cumin|fennel|coriander|caraway|nigella|sesame) seeds?\b/.test(l))return 'Spices';
+  if(/\bcans?\b|\bchickpeas?\b|\b(black|kidney|pinto|white|cannellini|navy) beans\b|\blentils?\b|\b(basmati|jasmine|brown|white) rice\b/.test(l))return 'Pantry';
+  const c=guessCat(l);return c==='Freezer'?'Frozen':c==='Fridge'?'Fridge':c==='Other'?'Other':c;}
+const GORDER=['Produce','Fish & Seafood','Fridge','Bakery','Pantry','Oils & sauces','Spices','Frozen','Other','Check the pantry'];
+function buildGroceriesLocal(wk,days,plan,used){const items=new Map();
+  for(const p of plan){for(const raw of String(Array.isArray(p.ingredients)?p.ingredients.join('\n'):p.ingredients||'').split('\n')){const t=raw.trim().replace(/^[-•*]\s*/,'');
+      if(!t||/:$/.test(t)&&t.length<40||/^(instructions checklist|for the |ingredients)$/i.test(t))continue;
+      const {q,rest}=gParse(t),k=(q!=null?'#':'')+gKey(rest||t);if(!k.replace('#',''))continue;
+      let it=items.get(k);if(!it){it={q:q!=null?0:null,rest,text:t,n:0,by:{}};items.set(k,it);}
+      if(q!=null&&it.q!=null)it.q+=q;it.n++;
+      it.by[p.date]=it.by[p.date]?(()=>{const a=gParse(it.by[p.date]);return a.q!=null&&q!=null?gFmt(a.q+q)+' '+a.rest:it.by[p.date]+' + '+t;})():t;}}
+  const secs=new Map();for(const it of items.values()){const text=it.n>1&&it.q!=null?gFmt(it.q)+' '+it.rest:it.text,sec=gSection(text);
+    if(!secs.has(sec))secs.set(sec,[]);secs.get(sec).push({text:text.slice(0,120),done:false,by:it.by,dd:{}});}
+  return GORDER.filter(n=>secs.has(n)).map(n=>({name:n,items:secs.get(n).sort((a,b)=>pantryName(a.text).localeCompare(pantryName(b.text)))}));}
+async function buildGroceries(){const wk=S.mealWeek,days=[...Array(7)].map((_,i)=>addDays(wk,i));
   const used=[],plan=[];for(const d of days){const m=S.meals.get(d)||{};for(const [s] of MEALKEYS){const x=m[s]&&rec(m[s].uid);if(x){used.push(x);plan.push({date:d,day:DAYS[parseKey(d).getDay()],recipe:x.name,servings:x.servings||null,ingredients:x.ingredients});}}}
   if(!used.length){flash('Add some meals to this week first.');return;}
+  if(!S.sample){const sections=buildGroceriesLocal(wk,days,plan,used);if(!sections.length){flash('No ingredients saved in this week’s recipes.');return;}
+    const doc={sections,recipes:used.map(r=>r.name),updated:new Date().toISOString()};S.groceries.set(wk,doc);render();await write(()=>col('groceries').doc(wk).set(doc));return;}
   S.mealBusy='groc';S.mealErr=null;render();
   const data=plan;
   const prompt=`Turn the ingredients of this week's meals into one grocery list.
@@ -4199,7 +4233,7 @@ function mealsView(){if(S.state==='ready')setTimeout(()=>{if(tidyMeals())render(
   const gsw=(id,l,n)=>h('button',{class:'gsw'+(gv===id?' on':''),'aria-pressed':String(gv===id),'aria-expanded':gv===id?String(!S.gshut):null,title:gv===id?(S.gshut?'Show list':'Collapse list'):null,onclick:()=>{if(gv===id){S.gshut=!S.gshut;saveUI();render();return;}S.gview=id;S.gshut=false;saveUI();render();}},l,n!=null?h('span',{class:'gswn'},String(n)):null);
   const genOpen=(S.general||[]).filter(x=>!x.done).length;
   const grocBody=[g?h('div',{class:'gmeta'},`${gLeft} of ${gAll} left to buy`):null,
-    S.sample?h('div',{class:'planacts',style:'margin-top:0'},h('button',{class:'btn sm',disabled:!!S.mealBusy,onclick:()=>buildGroceries()},S.mealBusy==='groc'?'Building list…':g?'Rebuild from this week':'Build from this week')):null,
+    h('div',{class:'planacts',style:'margin-top:0'},h('button',{class:'btn sm',disabled:!!S.mealBusy,onclick:()=>buildGroceries()},S.mealBusy==='groc'?'Building list…':g?'Rebuild from this week':'Build from this week')),
     g?h('div',{class:'gbyrow',role:'group','aria-label':'Show list'},h('button',{class:'tlink'+(S.gby?'':' on'),'aria-pressed':String(!S.gby),onclick:()=>{S.gby=false;render();}},'By week'),h('span',{class:'gdot','aria-hidden':'true'},'·'),h('button',{class:'tlink'+(S.gby?' on':''),'aria-pressed':String(!!S.gby),onclick:()=>{S.gby=true;render();}},'By day'),h('button',{class:'tlink gshare',title:'Send to Keep, Notes or a message',onclick:()=>shareGroceries(wk,g)},'Share list')):null,
     g&&S.gby?grocByDay(wk,g):
     g?h('div',{class:'grocsecs'},g.sections.map((sec,si)=>{const need=sec.items.map((it,ii)=>[it,ii]).filter(([it])=>!pantryHit(it.text));return need.length?h('div',{class:'grocsec'},h('h3',null,sec.name),
@@ -4214,7 +4248,7 @@ function mealsView(){if(S.state==='ready')setTimeout(()=>{if(tidyMeals())render(
   /* swipe between Ingredients and Directions from anywhere, but only on a clear, quick sideways flick */
   if(S.recipeOpen&&rec(S.recipeOpen)){let sx=null,sy=0,st=0;return [h('div',{class:'rpage',
       onpointerdown:e=>{sx=null;if(e.target.closest('input,textarea'))return;sx=e.clientX;sy=e.clientY;st=Date.now();},
-      onpointerup:e=>{if(sx==null||S.recipeEdit)return;const dx=e.clientX-sx,dy=e.clientY-sy,dt=Date.now()-st;sx=null;if(Math.abs(dx)>100&&Math.abs(dx)>Math.abs(dy)*3&&dt<600){const nx=dx<0?'cook':'ing';if(nx!==S.recPane){S.recPane=nx;render();}}}},
+      onpointerup:e=>{if(sx==null||S.recipeEdit)return;const dx=e.clientX-sx,dy=e.clientY-sy,dt=Date.now()-st;sx=null;if(Math.abs(dx)>100&&Math.abs(dx)>Math.abs(dy)*3&&dt<600){const nx=dx<0?'cook':'ing';setRecPane(nx);}}},
     recipeDetail(rec(S.recipeOpen)))];}
   const rshut=!!S.recShut&&!S.mealSlot;
   const side=rshut?h('aside',{class:'recside shut'},h('button',{class:'recpill','aria-expanded':'false',title:'Show recipes',onclick:()=>{S.recShut=false;saveUI();render();}},'RECIPES',S.recipes.length?h('span',{class:'recpn'},String(S.recipes.length)):null)):h('aside',{class:'recside'+(S.mealSlot?'':' open')},recipeBrowser());
@@ -4602,6 +4636,11 @@ function recAddPanel(r){const days=[...Array(14)].map((_,i)=>addDays(S.today,i))
     h('div',{class:'planacts',style:'margin-top:var(--s2)'},
       h('button',{class:'btn sm solid',disabled:!!(cur&&cur.uid===r.uid),onclick:()=>{const d=S.recAddD,k=S.recAddK;S.recAdd=null;assignMeal(d,k==='dinner'?'dinner':k,r,k);const now=S.meals.get(d)||{};if(Object.values(now).some(v=>v&&v.uid===r.uid))flash('Added to '+(d===S.today?'today':shortDate(d))+' · '+kl);}},'Add to '+dl(S.recAddD,days.indexOf(S.recAddD))+' · '+kl),
       h('button',{class:'btn sm',onclick:()=>{S.recAdd=null;render();}},'Cancel')));}
+/* Ingredients/Directions bar pins to the top while scrolling; once pinned, each side keeps its own place */
+function setRecPane(k){if(k===S.recPane)return;const sen=document.querySelector('.rpsent'),cur=S.recPane==='cook'?'cook':'ing';
+  if(!sen){S.recPane=k;render();return;}const stick=sen.getBoundingClientRect().top+window.scrollY,y=window.scrollY,pinned=y>=stick-2;
+  S.recScroll=S.recScroll||{};if(pinned)S.recScroll[cur]=y;S.recPane=k;render();
+  if(pinned)window.scrollTo(0,Math.max(stick,S.recScroll[k]||stick));}
 function recipeDetail(r){
   if(S.recipeEdit===r.uid&&String(r.uid).startsWith('m-'))return recipeEditForm(r);
   const slot=S.mealSlot,lines=(r.ingredients||'').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -4619,7 +4658,7 @@ function recipeDetail(r){
     h('div',{class:'pm'},[r.servings&&'Serves '+r.servings,...times].filter(Boolean).map(x=>h('span',null,x)),
       r.source_url?h('a',{href:r.source_url,target:'_blank',rel:'noopener'},r.source||'Source'):r.source?h('span',null,r.source):null),
     recipeTags(r),
-    h('div',{class:'rpanes',role:'tablist'},[['ing','Ingredients'],['cook','Directions']].map(([k,l])=>h('button',{role:'tab','aria-selected':String(pane===k),class:'rpt'+(pane===k?' on':''),onclick:()=>{S.recPane=k;render();}},l)),
+    h('div',{class:'rpsent','aria-hidden':'true'}),h('div',{class:'rpanes',role:'tablist'},[['ing','Ingredients'],['cook','Directions']].map(([k,l])=>h('button',{role:'tab','aria-selected':String(pane===k),class:'rpt'+(pane===k?' on':''),onclick:()=>setRecPane(k)},l)),
       pane==='ing'?h('button',{class:'ingcopy',type:'button','aria-label':'Copy ingredients',title:'Copy just the ingredients',onclick:()=>shareText(ingText(r),'Ingredients')},copyIcon()):null,
       h('span',{class:'rpdots','aria-hidden':'true'},h('i',{class:pane==='ing'?'on':''}),h('i',{class:pane==='cook'?'on':''}))),
     pane==='ing'?h('div',{class:'rpane'},
