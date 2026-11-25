@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124185629',newer=false,want='',last=Date.now();
+  var MINE='20261124190332',newer=false,want='',last=Date.now();
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -10166,7 +10166,10 @@ function skThumbEl(id,d){const u=String(d.updated||'');if(d.thumb&&d.thumbU===d.
     skTC().delete(id);skTC().set(id,{u:String(now.updated||''),url});skTCKeep();ph.replaceWith(h('img',{class:'skthumbimg',src:url,alt:''}));};
   if(!SKIO&&'IntersectionObserver' in window)SKIO=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){SKIO.unobserve(e.target);const t=e.target;setTimeout(()=>t._job&&t._job(),0);}},{rootMargin:'300px'});
   requestAnimationFrame(()=>{if(SKIO)SKIO.observe(ph);else ph._job();});return ph;}
-let SKRZ=0;addEventListener('resize',()=>{clearTimeout(SKRZ);SKRZ=setTimeout(()=>{if(skActive()&&!S.inking)renderSoon();},window.AEP?250:60);});
+/* a size change redraws the editor, but not while you're typing in a box: on a phone the keyboard opening is a size change, and the redraw would close it. Catch up when you leave the box */
+const skTyping=()=>{const a=document.activeElement;return !!(a&&(/^(INPUT|TEXTAREA)$/.test(a.tagName)&&!/^(checkbox|radio|range|button|submit|color|file)$/.test(a.type)||a.isContentEditable));};
+let SKRZ=0,SKRZQ=false;addEventListener('resize',()=>{clearTimeout(SKRZ);SKRZ=setTimeout(()=>{if(!skActive()||S.inking)return;if(skTyping()){SKRZQ=true;return;}renderSoon();},window.AEP?250:60);});
+addEventListener('focusout',()=>{if(!SKRZQ)return;setTimeout(()=>{if(SKRZQ&&!skTyping()&&skActive()){SKRZQ=false;renderSoon();}},120);});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&skActive()&&S.skMenu){S.skMenu=false;render();}});
 /* drag the floating toolbar by its handle; the spot is remembered on this device */
 function skBarDrag(e){if(e.button>0)return;e.preventDefault();const bar=e.currentTarget.parentElement,r=bar.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top,g=e.currentTarget;g.setPointerCapture(e.pointerId);
