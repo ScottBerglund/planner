@@ -1590,6 +1590,20 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .sktlc.tn::before{top:auto!important;bottom:3px;left:3px!important;width:6px!important;height:6px!important}
 .sktlc.tn::after{top:auto!important;bottom:5px!important}
 .sktlc.tn.h:not(.r)::before{bottom:2px!important;top:auto!important}
+/* timeline row headers: eye, solo, lock, name, ⋯ */
+.sktlh{position:sticky;left:-6px;z-index:3;flex:0 0 134px;width:134px;height:100%;display:flex;align-items:center;gap:1px;background:var(--sheet,#fff);border-radius:3px;padding-right:3px;box-sizing:border-box}
+.sktlb{flex:0 0 18px;width:18px;height:18px;padding:0;border:0;margin:0;background:none;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;font:700 9px/1 system-ui,sans-serif}
+.sktlb svg{width:13px;height:13px}.sktlb.off{opacity:.4}.sktlb.sksolo.on{background:var(--ink,#222);color:var(--sheet,#fff)}.sktlb:hover{background:rgba(0,0,0,.06)}
+.sktln{flex:1 1 auto;min-width:0;height:100%;padding:0 2px;border:0;background:none;color:inherit;text-align:left;font:600 9px/1 system-ui,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:grab;touch-action:none}
+.sktlrow.cur .sktln{color:var(--accent,#3b6fd8)}
+.sktlmore{font-size:13px;letter-spacing:-1px}.sktlmore.on{background:rgba(0,0,0,.08)}
+.skfrow .sktll.sp{flex:0 0 134px;width:134px;pointer-events:auto;display:flex;align-items:flex-end;justify-content:flex-end;height:auto;background:none}
+.sktladd{width:22px;height:22px;flex-basis:22px;margin:0 4px 2px 0;border-radius:6px;box-shadow:0 0 0 1px var(--rule,#ddd)}
+.sktlrow.drop{box-shadow:inset 0 2px 0 var(--accent,#3b6fd8)}.sktlrow.drop.dropb{box-shadow:inset 0 -2px 0 var(--accent,#3b6fd8)}
+.sktlmenu{position:fixed;z-index:200;width:240px;padding:8px;display:flex;flex-direction:column;gap:4px}
+.sktlmenu .sktlrn{width:100%;box-sizing:border-box}
+#app .sktlmenu{position:fixed;top:auto!important;right:auto!important;z-index:200}
+#app .sktlmenu .skrow{white-space:normal}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3118,7 +3132,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261125110752',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
+  var MINE='20261125111800',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7355,7 +7369,7 @@ function skFStrip(){const d=SKW.doc,ALL=skAllStrokes(),H=46,pw=d.inf?1920:(d.w||
       h('span',{class:'skfcv'},skFStripThumb(d,fid,H,ALL)),h('b',null,String(i+1)),hold>1?h('i',null,hold+'×'):null);});
   const fsel=new Set(SKW.fsel||[]);cells.forEach(c=>{if(fsel.has(c.dataset.fid))c.classList.add('sel');});
   const rows=S.skFLayers!==false,flt=!!S.skTLFloat,W=d.frames.map(fid=>bw+(skHold(d,fid)-1)*bw*.5);
-  const el=h('div',{class:'skfstrip'+(rows?' sktl':'')+(flt?' infloat':''),role:'listbox','aria-label':'Frames'},rows?[h('div',{class:'skfrow'},h('span',{class:'sktll sp'}),cells),skTLRows(d,W,ALL)]:cells);
+  const el=h('div',{class:'skfstrip'+(rows?' sktl':'')+(flt?' infloat':''),role:'listbox','aria-label':'Frames'},rows?[h('div',{class:'skfrow'},h('span',{class:'sktll sp'},h('button',{class:'sktlb sktladd',title:'New layer (above this one)','aria-label':'New layer',onclick:e=>{e.stopPropagation();skLayerAdd();}},skIcoL('plus'))),cells),skTLRows(d,W,ALL)]:cells);
   const cellAt=x=>{let best=null,bd=1e9;for(const c of el.querySelectorAll('.skfcell')){const r=c.getBoundingClientRect();const dd=x<r.left?r.left-x:x>r.right?x-r.right:0;if(dd<bd){bd=dd;best=c;}}return best;};
   let st=null;
   if(rows)skTLRowsWire(el);
@@ -7383,6 +7397,46 @@ function skFStrip(){const d=SKW.doc,ALL=skAllStrokes(),H=46,pw=d.inf?1920:(d.w||
   el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
   el.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){el.scrollLeft+=e.deltaY;e.preventDefault();}},{passive:false});
   requestAnimationFrame(()=>skFStripSync(true));return el;}
+/* each timeline row's header works like a row of the Layers panel: eye, solo, lock, the name (tap to select / fold its thumbnails,
+   drag up or down to reorder) and ⋯ for the rest */
+function skTLHead(d,l,big){const tb=(cls,title,on,fn,kid)=>h('button',{class:'sktlb'+cls,title,'aria-label':title,'aria-pressed':String(!!on),onclick:e=>{e.stopPropagation();fn();}},kid);
+  const nm=h('button',{class:'sktln',title:l.id===d.cur?(big?'Fold this layer’s thumbnails · drag up or down to reorder':'Show this layer’s thumbnails · drag up or down to reorder'):'Draw on “'+l.name+'” · drag up or down to reorder'},
+    l.id===d.cur?h('span',{class:'sktltw','aria-hidden':'true'},big?'▾':'▸'):null,l.name);
+  let dr=null;nm.addEventListener('pointerdown',e=>{if(e.button>0)return;e.stopPropagation();dr={y:e.clientY,id:e.pointerId,on:false};try{nm.setPointerCapture(e.pointerId);}catch(_){}});
+  nm.addEventListener('pointermove',e=>{if(!dr)return;if(!dr.on&&Math.abs(e.clientY-dr.y)<8)return;dr.on=true;document.querySelectorAll('#app .sktlrow.drop').forEach(x=>x.classList.remove('drop','dropb'));
+    const t=document.elementFromPoint(e.clientX,e.clientY),row=t&&t.closest&&t.closest('.sktlrow');if(row&&row.dataset.lid!==l.id){row.classList.add('drop');if(e.clientY>row.getBoundingClientRect().top+row.offsetHeight/2)row.classList.add('dropb');}dr.row=row;dr.below=row&&row.classList.contains('dropb');});
+  nm.addEventListener('pointerup',e=>{const x=dr;dr=null;if(!x)return;e.stopPropagation();
+    if(!x.on){if(l.id===d.cur){S.skTLThumb=S.skTLThumb===false;saveUI();render();}else{d.cur=l.id;S.skTLThumb=true;skSave();render();}return;}
+    const tid=x.row&&x.row.dataset.lid;if(!tid||tid===l.id){render();return;}
+    /* rows show the top layer first, so dropping below a row puts the layer under it in the stack */
+    skLayerAct(d=>{const L=d.layers.filter(y=>y.id!==l.id),ti=L.findIndex(y=>y.id===tid);L.splice(x.below?ti:ti+1,0,d.layers.find(y=>y.id===l.id));d.layers=L;});});
+  nm.addEventListener('pointercancel',()=>{dr=null;render();});
+  return h('div',{class:'sktlh'},
+    tb(l.hidden?' off':'',l.hidden?'Show this layer':'Hide this layer',!l.hidden,()=>skLayerAct(d=>{const x=d.layers.find(y=>y.id===l.id);x.hidden=!x.hidden;}),skIcoL(l.hidden?'eyeoff':'eye')),
+    tb(SKW.solo===l.id?' sksolo on':' sksolo','Solo: show only this layer while you work',SKW.solo===l.id,()=>{SKW.solo=SKW.solo===l.id?null:l.id;SKW.repaint&&SKW.repaint();render();},'S'),
+    tb(l.locked?'':' off',l.locked?'Unlock this layer':'Lock this layer',!!l.locked,()=>skLayerAct(d=>{const x=d.layers.find(y=>y.id===l.id);x.locked=!x.locked;}),skIcoL(l.locked?'lock':'unlock')),
+    nm,
+    h('button',{class:'sktlb sktlmore'+(S.skTLMenu&&S.skTLMenu.id===l.id?' on':''),title:'More: rename, opacity, blending, duplicate, merge, delete…','aria-label':'More for '+l.name,
+      onclick:e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();S.skTLMenu=S.skTLMenu&&S.skTLMenu.id===l.id?null:{id:l.id,x:r.left,y:r.top};S.confirm=null;render();}},'⋯'));}
+/* the ⋯ menu for a timeline row */
+function skTLMenuView(){const m=S.skTLMenu;if(!m||!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.doc,l=d.layers.find(y=>y.id===m.id);if(!l){S.skTLMenu=null;return null;}
+  const close=()=>{S.skTLMenu=null;render();},i=d.layers.indexOf(l),below=d.layers[i-1],op=l.op==null?1:l.op,lab=h('span',null,Math.round(op*100)+'%');
+  const row=(ico,txt,fn,cls)=>h('button',{class:'skrow'+(cls||''),onclick:()=>fn()},ico?skIcoL(ico):null,txt);
+  const el=h('div',{class:'skpop list sktlmenu',style:`left:${Math.max(8,Math.min(innerWidth-250,m.x))}px;bottom:${Math.max(8,innerHeight-m.y+6)}px`,onpointerdown:e=>e.stopPropagation()},
+    h('input',{class:'sklname sktlrn',value:l.name,maxlength:'40','aria-label':'Layer name',onkeydown:e=>{e.stopPropagation();if(e.key==='Enter')e.target.blur();},onchange:e=>{const v=e.target.value.trim()||l.name;if(v!==l.name)skLayerAct(d=>{d.layers.find(x=>x.id===l.id).name=v;});}}),
+    h('label',{class:'sklop',title:'Layer opacity'},skIcoL('opacity'),h('input',{type:'range',min:'0',max:'100',step:'5',value:String(Math.round(op*100)),'aria-label':'Layer opacity',
+      oninput:e=>{if(!SKW.opSnap)SKW.opSnap=skSnap();l.op=+e.target.value/100;lab.textContent=e.target.value+'%';SKW.repaint&&SKW.repaint();},
+      onchange:()=>{const before=SKW.opSnap;SKW.opSnap=null;if(before){SKW.undo.push({type:'snap',before,after:skSnap()});SKW.redo.length=0;}skSave();}}),lab),
+    h('select',{class:'sklbm','aria-label':'Blending mode',title:'Blending mode',onkeydown:e=>e.stopPropagation(),onchange:e=>{const v=e.target.value;skLayerAct(d=>{const x=d.layers.find(y=>y.id===l.id);if(v==='normal')delete x.bm;else x.bm=v;});}},
+      SK_BLENDS.map(([v,n])=>v==='-'?h('option',{disabled:true},'──────'):h('option',{value:v,selected:(l.bm||'normal')===v},n))),
+    row('allframes',l.all?'Same on every frame ✓':'Same on every frame',()=>{skLayerAllFrames(l.id);},S.confirm==='skall:'+l.id?' skarm':''),
+    row('dup','Duplicate layer',()=>{S.skTLMenu=null;skLayerDup(l.id);}),
+    below?row('merge','Merge down',()=>{S.skTLMenu=null;skLayersMerge([below.id,l.id]);}):null,
+    row('layers','Flatten',()=>{S.skTLMenu=null;skFlattenLayer(l.id);}),
+    d.layers.length>1?row('clear',S.confirm==='skldel:'+l.id?'Tap again to delete “'+l.name+'”':'Delete layer',()=>{skLayerDel(l.id);if(!d.layers.some(y=>y.id===l.id))S.skTLMenu=null;render();},S.confirm==='skldel:'+l.id?' skarm':''):null,
+    row('x','Close',close));
+  return el;}
+addEventListener('pointerdown',e=>{if(S.skTLMenu&&!(e.target.closest&&e.target.closest('.sktlmenu,.sktlmore'))){S.skTLMenu=null;render();}},true);
 /* the layer timeline: one row per layer under the frame strip. ● a drawing starts here, ─ it's held, ○ nothing on this frame.
    Tap a cell to go there on that layer; drag along a row to hold a drawing longer (right) or end it sooner (left) */
 function skTLRows(d,W,ALL){const F=d.frames,A=skAllL(d),lid=skLidFn(d),has=new Set();for(const st of ALL)has.add(lid(st)+'|'+st.f);
@@ -7394,8 +7448,7 @@ function skTLRows(d,W,ALL){const F=d.frames,A=skAllL(d),lid=skLidFn(d),has=new S
     return h('span',{class:'sktlcv'},skPanelCv(fake,{pw,ph},Math.round(TH*pw/ph)));};
   return h('div',{class:'sktlrows'},[...d.layers].reverse().map(l=>{const big=l.id===d.cur&&S.skTLThumb!==false;
     return h('div',{class:'sktlrow'+(l.id===d.cur?' cur':'')+(big?' big':'')+(l.hidden?' hid':''),'data-lid':l.id},
-    h('button',{class:'sktll',title:l.id===d.cur?(big?'Hide this layer’s thumbnails':'Show this layer’s thumbnails'):'Draw on “'+l.name+'” (and see its thumbnails)',onclick:()=>{if(l.id===d.cur){S.skTLThumb=S.skTLThumb===false;saveUI();render();return;}d.cur=l.id;S.skTLThumb=true;skSave();render();}},
-      l.id===d.cur?h('span',{class:'sktltw','aria-hidden':'true'},big?'▾':'▸'):null,l.name),
+    skTLHead(d,l,big),
     F.map((f,i)=>{const all=A.has(l.id),held=all?i>0:(i>0&&!!(l.h&&l.h[f])),k=held?'h':has.has(l.id+'|'+(all?'*':f))?'k':'e',more=i+1<F.length&&(all||!!(l.h&&l.h[F[i+1]]));
       return h('div',{class:'sktlc '+k+(more?' r':'')+(big?' tn':'')+(f===d.fcur?' on':''),'data-i':String(i),style:'width:'+W[i]+'px',title:l.name+' · frame '+(i+1)+(k==='h'?' · held':k==='e'?' · empty':'')},big&&k!=='e'?thumb(l,f):null);}));}));}
 function skTLRowsWire(el){let st=null;const cellsOf=row=>[...row.querySelectorAll('.sktlc')];
@@ -10061,7 +10114,7 @@ function skStackBottom(){skScrollKeep();const els=['.skframes','.skfstrip:not(.i
 addEventListener('resize',()=>{if(SKW)skStackBottom();});
 function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'bigrow'},h('h1',{class:'wkh1 fith','aria-label':'Sketch'},'SKETCH'),bigClock()));
   if(SKW){const doc=SKW.doc;requestAnimationFrame(skStackBottom);
-    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
+    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skTLMenuView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
   const all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
   skBooksEnsure();const books=skBookList().slice().sort((a,b)=>(b.def?1:0)-(a.def?1:0)),has=new Set(books.map(b=>b.id)),BC=skBookCtx(),inB=(id,d)=>skBooksOf(id,d,BC);
   if(S.skBoardOpen){const v=skBoardEditor();if(v)return [v];}
