@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124193418',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
+  var MINE='20261125103546',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -8286,7 +8286,8 @@ function skToolGroups(){const now=skSubNow();return SK_GROUPS.map(([g,name,subs]
     if(subs.length>1)main.addEventListener('pointerdown',e=>{const r=main.getBoundingClientRect();if(e.clientX>r.right-12&&e.clientY>r.bottom-12){e.preventDefault();long=true;S.skPop=open?null:key;render();}});
     if(open)skPopPlace();return h('div',{class:'skpk skgk'},main,open?h('div',{class:'skpop row skgpop',role:'menu'},subs.map(sb=>h('button',{class:'sktool','aria-pressed':String(sb===now),title:skSubLabel(sb),'aria-label':skSubLabel(sb),onclick:()=>skSubPick(sb)},skSubIco(sb)))):null);});}
 function skPenBack(){const P=SKW&&SKW.pen;if(!P)return false;P.a.pop();if(!P.a.length)SKW.pen=null;else P.z=false;skVecRedraw();return true;}
-const skCopyStroke=st=>{const o=Object.assign({},st,{p:st.p.slice(),id:skNewId(),m:Date.now()});if(st.r)o.r=st.r.map(r=>r.slice());return o;};
+/* a full, separate copy: nothing inside (points, Pen path anchors, gradients, groups) is shared with the original, so editing one never changes the other */
+const skCopyStroke=st=>{const sym=st.strokes,o=skDeep(Object.assign({},st,{strokes:undefined}));delete o.strokes;if(sym)o.strokes=sym;o.p=Array.isArray(st.p)?st.p.slice():[];o.id=skNewId();o.m=Date.now();SKSM.delete(o);return o;};
 function skEditSel(list,fn){if(!list.length)return;const items=list.map(st=>{const a=fn(st),b={};for(const k in a)b[k]=st[k];Object.assign(st,a);st.m=Date.now();SKSM.delete(st);return {st,b,a};});
   SKW.undo.push({type:'edit',items});SKW.redo.length=0;skSave();render();}
 function skSelAll(){if(!skSelAnyOk())return;const d=SKW.doc;SKW.sel=d.strokes.filter(st=>skSelable(d,st));if(!skSelTool())S.skTool='rect';render();}
