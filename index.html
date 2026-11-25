@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124190332',newer=false,want='',last=Date.now();
+  var MINE='20261124191411',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -5588,6 +5588,7 @@ function header(){
     S.sample?h('button',{class:'cmdbtn','aria-label':'Tell the planner what to do','aria-expanded':String(!!CMD.open),title:'Add or plan something',onclick:()=>{CMD.open=!CMD.open;render();if(CMD.open)setTimeout(()=>{const el=document.getElementById('cmd-in');if(el)el.focus();},0);}},cmdIcon()):null,
     h('button',{class:'wake dispbtn','aria-expanded':String(isOpen('disp')),'aria-label':'Display options',onclick:()=>{S.fold.disp=!S.fold.disp;render();},title:'Display options'},S.rams?halfIcon():'Display'),
     isOpen('disp')?h('div',{class:'dispmenu'},
+      window.PLANNER_BUILD?h('div',{class:'calnote',style:'order:99;width:100%;font-size:.75rem;opacity:.6'},(()=>{const b=String(window.PLANNER_BUILD),d=new Date(+b.slice(0,4),+b.slice(4,6)-1,+b.slice(6,8),+b.slice(8,10),+b.slice(10,12));return 'Version: '+d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});})()):null,
       S.rams?null:h('button',{class:'wake','aria-pressed':String(S.grid&&!S.dots),onclick:toggleGrid},'Grid'),
       h('button',{class:'wake','aria-pressed':String(!!S.dots),onclick:toggleDots},'Dots'),
       h('button',{class:'wake','aria-pressed':String(S.inv),onclick:toggleInv},'Invert'),
