@@ -3108,7 +3108,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261124191411',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
+  var MINE='20261124193418',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7260,7 +7260,10 @@ let SKFCLIP=null;
 const skFSel=()=>{const d=SKW.doc,s=(SKW.fsel||[]).filter(f=>d.frames.includes(f));return s.length?d.frames.filter(f=>s.includes(f)):[d.fcur];};
 function skFramesSnap(){const d=SKW.doc,m=new Map(),sh=[];for(const st of skAllStrokes()){if(st.f==='*'){sh.push(st);continue;}if(!m.has(st.f))m.set(st.f,[]);m.get(st.f).push(st);}
   return {frames:d.frames.slice(),fh:Object.assign({},d.fh||{}),fcur:d.fcur,m,sh,layers:d.layers.map(l=>skDeep(l)),cur:d.cur,poster:d.poster||null};}
-function skFramesRestore(o){const d=SKW.doc;d.frames=o.frames.slice();d.fh=Object.assign({},o.fh);if(o.layers){d.layers=o.layers.map(l=>skDeep(l));d.cur=o.cur;}else for(const [id,a] of o.all||[]){const l=d.layers.find(x=>x.id===id);if(l){if(a)l.all=true;else delete l.all;}}
+function skFramesRestore(o){const d=SKW.doc;
+  /* frames that undo/redo takes away are marked deleted, so a sync echo of the last save can't bring them back; frames it brings back are unmarked */
+  {const now=new Set(o.frames),gone=d.frames.filter(f=>!now.has(f));d.fdel=(d.fdel||[]).filter(f=>!now.has(f)).concat(gone).slice(-200);}
+  d.frames=o.frames.slice();d.fh=Object.assign({},o.fh);if(o.layers){d.layers=o.layers.map(l=>skDeep(l));d.cur=o.cur;}else for(const [id,a] of o.all||[]){const l=d.layers.find(x=>x.id===id);if(l){if(a)l.all=true;else delete l.all;}}
   if('poster' in o)d.poster=o.poster;SKW.fr=new Map();for(const [f,arr] of o.m){for(const st of arr)st.f=f;SKW.fr.set(f,arr.slice());}for(const st of o.sh)st.f='*';d.strokes=o.sh.slice();
   skLoad(d.frames.includes(o.fcur)?o.fcur:d.frames[0]);SKW.sel=[];SKW.fsel=null;}
 /* where each layer's drawing comes from on every frame, and a copy of every frame's lines (taken with everything put away) */
