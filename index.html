@@ -1631,6 +1631,7 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 #app .sktlfloat.sktlcompact:not(.sksized){width:min(560px,calc(100vw - 24px))}
 #app .sktlcompact .sklfh{min-height:12px;padding-bottom:2px;margin-bottom:2px}
 .sktladd.on{background:rgba(0,0,0,.08)}
+.sktlhgap{flex:1}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3159,7 +3160,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261126115711',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
+  var MINE='20261126132033',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7530,8 +7531,8 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
     const bar=h('div',{class:'skframes infloat'},ib('fprev','Previous frame (, or Page Up)',()=>skStepFrame(-1)),h('span',{class:'skfn',title:'Frame'},(i+1)+' / '+n),ib('fnext','Next frame (. or Page Down)',()=>skStepFrame(1)),
       h('span',{class:'skfsep'}),skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('fnew','Copy this frame to a new frame',true),
       ib('clear',S.confirm==='skfdel'?'Tap again to delete this frame':'Delete this frame',skDelFrame,{disabled:n<2,cls:S.confirm==='skfdel'?'skarm':''}),
-      h('span',{class:'skfsep'}),ib('up','Show the whole timeline (layers, sound and all the frame controls)',()=>{S.skTLMode=null;saveUI();render();}),ib('collapse','Fold the timeline down to a small button',()=>{S.skFrMini=true;saveUI();render();}));
-    return skFloatPanel('sktlfloat sktlcompact','',S.skTLFloat,'tlc',[strip,bar],[]);}
+      );
+    return skFloatPanel('sktlfloat sktlcompact','Timeline',S.skTLFloat,'tlc',[strip,bar],skTLHeadBtns(true));}
   const strip=S.skFStrip!==false?skFStrip():null;
   if(!S.skTLFloat||typeof S.skTLFloat.x!=='number')S.skTLFloat={x:12,y:Math.max(60,innerHeight-330)};
   const bar=h('div',{class:'skframes infloat'},
@@ -7565,8 +7566,12 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
     h('button',{class:'sktool skib','aria-pressed':String(S.skFStrip!==false),title:S.skFStrip!==false?'Hide the frame strip':'Show the frame strip (thumbnails to scrub through)',onclick:()=>{S.skFStrip=S.skFStrip===false;saveUI();render();}},skIcoL('fstrip')),
     S.skFStrip!==false?h('button',{class:'sktool skib','aria-pressed':String(S.skFLayers!==false),title:S.skFLayers!==false?'Hide the layer rows':'Show a row per layer under the strip (holds and new drawings)',onclick:()=>{S.skFLayers=S.skFLayers===false;saveUI();render();}},skIcoL('tlrows')):null,
 
-    ib('down','Make the timeline smaller: just the frames and the basic buttons',()=>{S.skTLMode='compact';saveUI();render();}));
-  return skFloatPanel('sktlfloat','Timeline',S.skTLFloat,'tl',[strip,bar],[]);}
+    );
+  return skFloatPanel('sktlfloat','Timeline',S.skTLFloat,'tl',[strip,bar],skTLHeadBtns(false));}
+/* collapse buttons beside the word Timeline: smaller/bigger, and fold to a small button */
+function skTLHeadBtns(compact){return [h('span',{class:'sktlhgap'}),
+  h('button',{class:'sklb',title:compact?'Show the whole timeline (layers, sound and all the frame controls)':'Make the timeline smaller: just the frames and the basic buttons','aria-label':compact?'Expand the timeline':'Make the timeline smaller',onclick:()=>{S.skTLMode=compact?null:'compact';saveUI();render();}},skIcoL(compact?'up':'down')),
+  h('button',{class:'sklb',title:'Fold the timeline down to a small button','aria-label':'Fold the timeline',onclick:()=>{S.skFrMini=true;saveUI();render();}},skIcoL('collapse'))];}
 function skOpen(id){skColTargetSet('stroke');const d=S.sketches&&S.sketches.get(id);if(!d)return;if(S.skFromBoard&&!(skBoardGet(S.skFromBoard)||{panels:[]}).panels.some(p=>p.sk===id))S.skFromBoard=null;if(d._partial){flash(Date.now()-(window.SKLOAD0||Date.now())>10000?'Part of this drawing is missing from this copy, so it can’t open safely. Bring it back with Restore a backup (◐ menu).':'Still loading this sketch. Try again in a moment.');return;}SKW={id,doc:skLayersInit(skClone(d)),undo:[],redo:[],fitNext:true};skPrefsApply(SKW.doc.prefs);SKW.known=new Set(SKW.doc.strokes.map(st=>st.id));skSplitFrames();SKW.knownL=new Set(SKW.doc.layers.map(l=>l.id));skUndoRestore();/* always open fitted and centred */S.skFS=false;render();window.scrollTo(0,0);}
 function skClose(){skColTargetSet('stroke');S.skTween=null;if(SKPLAY){clearInterval(SKPLAY);SKPLAY=0;}try{skPenFinish();}catch(e){}if(SKW&&SKW.simp)skSimpEnd(true);if(SKW)SKW.wantThumb=true;skSaveNow();skUndoKeep();SKW=null;S.skFS=false;S.skMenu=false;render();}
 let SKSAVE=0,SKLASTSAVE=0;
