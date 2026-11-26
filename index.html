@@ -1329,7 +1329,6 @@ input.sklname{background:var(--sheet,#fff);border:1px solid var(--line,#ddd);cur
 .skbar.float.vert>.skrowin .skpk{position:static}
 
 /* playback: everything but the drawing hides; one pause button */
-.skeditor.skplaying>*:not(.skwrap):not(.skplayveil){visibility:hidden!important;pointer-events:none!important}
 .skplayveil{position:fixed;inset:0;z-index:120;cursor:pointer;touch-action:none;background:transparent}
 .skplaybtn{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,0) scale(var(--skui,1));transform-origin:50% 50%;touch-action:none;width:52px;height:52px;border-radius:50%;border:1px solid var(--line,rgba(0,0,0,.15));background:var(--paper);color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;opacity:.6;transition:opacity .2s;cursor:pointer;padding:0}
 .skplaybtn:hover,.skplaybtn:focus-visible{opacity:1}
@@ -1604,6 +1603,31 @@ body:has(.sbplayer) .toast{z-index:10060;bottom:110px}
 .sktlmenu .sktlrn{width:100%;box-sizing:border-box}
 #app .sktlmenu{position:fixed;top:auto!important;right:auto!important;z-index:200}
 #app .sktlmenu .skrow{white-space:normal}
+/* ---- the timeline as one floating panel ---- */
+#app .sktlfloat{min-width:240px;max-width:calc(100vw - 16px)}
+#app .sktlfloat .skscr{display:flex;flex-direction:column;gap:6px;overflow:hidden}
+#app .sktlfloat .skfstrip{position:static!important;transform:none!important;max-width:none!important;max-height:none!important;box-shadow:none!important;background:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;padding:2px 2px 4px;overflow:auto;flex:1 1 auto;min-height:0}
+#app .sktlfloat .skframes.infloat{position:static!important;transform:none!important;left:auto!important;bottom:auto!important;box-shadow:none!important;background:none!important;-webkit-backdrop-filter:none;backdrop-filter:none;max-width:none!important;padding:2px 0;flex:none;overflow-x:auto}
+/* rows are as wide as their cells, so the name column stays pinned while you scroll sideways */
+.skfstrip.sktl .skfrow,.skfstrip.sktl .sktlrows,.skfstrip.sktl .sktlrow{width:max-content;min-width:100%}
+.skfrow .sktll.sp{gap:3px}
+.sktlall{width:auto!important;flex:none!important;padding:0 5px!important;height:22px!important;margin:0 0 2px;border-radius:6px;box-shadow:0 0 0 1px var(--rule,#ddd)}
+.sktlall.on{background:var(--ink,#222);color:var(--sheet,#fff)}
+.sktln.pv{color:var(--sheet,#fff)!important;background:var(--accent,#3b6fd8);border-radius:3px}
+/* sound row */
+.sktlrow.sktlsnd{height:22px}.sktlrow.sktlsnd.big{height:56px}.sktlrow.sktlsnd .sktlh{height:100%}
+.sktlsndc{flex:none;height:100%;position:relative}
+.sktlsndcv{display:block;height:100%!important;border-radius:4px;background:color-mix(in srgb,var(--ink,#222) 5%,transparent);touch-action:none;cursor:pointer;color:var(--ink,#222)}
+.sktlrow.sktlsnd.locked .sktlsndcv{cursor:default}
+.sktlrec i{display:block;width:9px;height:9px;border-radius:50%;background:#e04848}.sktlrec.on i{border-radius:2px;animation:skrecp 1s ease-in-out infinite}
+@keyframes skrecp{50%{opacity:.35}}
+/* the play button floats on its own and stays visible while playing */
+.skeditor.skplaying>*:not(.skwrap):not(.skplayveil):not(.skplayfab){visibility:hidden!important;pointer-events:none!important}
+.skplayfab{position:fixed!important;z-index:125!important}
+.skeditor:not(.skplaying) .skplayfab{bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+.skplayfab:not([style*="top:"]){left:auto!important;right:16px;bottom:calc(205px + env(safe-area-inset-bottom,0px))!important;transform:scale(var(--skui,1))!important;transform-origin:100% 100%}
+.skplayfab{opacity:.92}.skplayfab.on{opacity:.7}
+#app .sktlfloat:not(.sksized){width:min(780px,calc(100vw - 24px))}
 
 .intfs{position:fixed;inset:0;z-index:80;background:var(--paper);padding:max(16px,3vh) max(16px,4vw);overflow:auto;display:flex;flex-direction:column}
 .intfshead{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
@@ -3132,7 +3156,7 @@ window.PHOTOSET_DEFAULT={cell:220,cols:10,rows:[10,10,10,2],
    Every few minutes, and whenever the page comes back into view, it reads version.txt; when that changes it reloads,
    but only while you're not typing, drawing or in the middle of something (nothing is lost: everything is saved as you go). */
 (function(){
-  var MINE='20261125111800',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
+  var MINE='20261126092538',newer=false,want='',last=Date.now();window.PLANNER_BUILD=MINE;
   /* tidy the address after an update reload */
   if(/[?&]v=\d+/.test(location.search)&&!/oobCode|panel=1/.test(location.search))history.replaceState(null,'',location.pathname);
   ['pointerdown','keydown','wheel','touchstart'].forEach(function(e){addEventListener(e,function(){last=Date.now();},{capture:true,passive:true});});
@@ -7165,16 +7189,17 @@ function skPlay(){const d=SKW.doc;if(!skHasFrames(d)||d.frames.length<2&&!(d.aud
     if(dd.pmode==='pong'&&n>1){j=i+(SKW.pdir||1);if(j>=n){SKW.pdir=-1;j=n-2;}else if(j<0){SKW.pdir=1;j=1;}}else j=j%n;const nf=dd.frames[Math.max(0,j)];SKW.hl=skHold(dd,nf);skGoFrame(nf,true);},1000/fps);render();}
 function skStop(){clearInterval(SKPLAY);SKPLAY=0;if(SKW){SKW.playing=false;if(SKW.snode){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}if(SKW.rec){skAudRecEnd();return;}skSave();}render();}
 /* while playing, every bar hides; a tap anywhere (or the pause button, Space or Esc) stops and brings them back */
-function skPlayVeil(){const P=S.skPlayPos;let st=null,moved=false;
-  const btn=h('button',{class:'skplaybtn',title:'Pause (Space). Drag to move','aria-label':'Pause',style:P?'left:'+(P.x*100)+'%;top:'+(P.y*100)+'%;bottom:auto':null},skIcoL('stop'));
+function skPlayVeil(){return h('div',{class:'skplayveil',title:'Tap to stop',onpointerdown:e=>{e.preventDefault();},onpointerup:()=>skPlayEnd()});}
+/* the play button: one floating button, always on screen in an animation (▶ to play, ■ to stop), drag it anywhere */
+function skPlayFab(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.doc;if(d.frames.length<2&&!d.aud&&!SKW.rec)return null;const P=S.skPlayPos,pl=!!SKW.playing;let st=null,moved=false;
+  const btn=h('button',{class:'skplaybtn skplayfab'+(pl?' on':''),title:(pl?'Stop':'Play')+' (Space) · drag to move','aria-label':pl?'Stop':'Play',style:P?'left:'+(P.x*100)+'%;top:'+(P.y*100)+'%;bottom:auto':null},skIcoL(pl?'stop':'play'));
   btn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();st={x:e.clientX,y:e.clientY};moved=false;try{btn.setPointerCapture(e.pointerId);}catch(_){}});
   btn.addEventListener('pointermove',e=>{if(!st)return;if(!moved&&Math.hypot(e.clientX-st.x,e.clientY-st.y)<6)return;moved=true;
     const r=btn.getBoundingClientRect(),hw=r.width/2,hh=r.height/2,x=Math.max(hw,Math.min(innerWidth-hw,e.clientX)),y=Math.max(hh,Math.min(innerHeight-hh,e.clientY));
     btn.style.left=x+'px';btn.style.top=y+'px';btn.style.bottom='auto';btn.classList.add('skdrag');});
   btn.addEventListener('pointerup',e=>{e.stopPropagation();if(!st)return;st=null;btn.classList.remove('skdrag');
-    if(moved){S.skPlayPos={x:parseFloat(btn.style.left)/innerWidth,y:parseFloat(btn.style.top)/innerHeight};saveUI();}else skPlayEnd();});
-  btn.addEventListener('pointercancel',()=>{st=null;});btn.addEventListener('click',e=>e.stopPropagation());
-  return h('div',{class:'skplayveil',title:'Tap to stop',onpointerdown:e=>{e.preventDefault();},onpointerup:()=>skPlayEnd()},btn);}
+    if(moved){S.skPlayPos={x:parseFloat(btn.style.left)/innerWidth,y:parseFloat(btn.style.top)/innerHeight};saveUI();return;}if(SKW.playing)skPlayEnd();else skPlay();});
+  btn.addEventListener('pointercancel',()=>{st=null;});btn.addEventListener('click',e=>e.stopPropagation());return btn;}
 /* stop from the playback screen: the tap that stopped it must not also press whatever bar button reappears under the finger */
 let SKPLAYEND=0;function skPlayEnd(){SKPLAYEND=Date.now();skStop();}
 addEventListener('click',e=>{if(Date.now()-SKPLAYEND<500){e.preventDefault();e.stopPropagation();}},true);
@@ -7199,13 +7224,13 @@ function skAudPlay(buf,off,t){if(!buf)return null;const ctx=skACtx();if(ctx.stat
 /* the drawing's timeline: the frame sequence (ping-pong unrolled) with holds, and how long one pass takes */
 function skFrTimeline(d){const seq=skFrameSeq(d)||d.frames||[],fps=d.fps||12,st=[];let t=0;for(const f of seq){st.push(t);t+=skHold(d,f)/fps;}return {seq,st,T:t||1/fps};}
 /* play the frames with the sound: one cycle lasts as long as the longer of the two; the frames loop under a longer sound */
-function skPlaySnd(){const d=SKW.doc;SKW.playing=true;const tl=skFrTimeline(d),C=()=>Math.max(tl.T,SKW.rec?1e9:skAudEnd(SKW.doc.aud));let t0=performance.now(),buf=null,cur=-1;
-  const startSnd=t=>{if(SKW.snode){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}if(!SKW.rec&&buf)SKW.snode=skAudPlay(buf,SKW.doc.aud.off,t);};
+function skPlaySnd(){const d=SKW.doc;SKW.playing=true;const tl=skFrTimeline(d),C=()=>Math.max(tl.T,SKW.rec?1e9:skAudEnd(SKW.doc.aud)),from=SKW.rec?(SKW.rec.from||0):0;let t0=performance.now()-from*1000,buf=null,cur=-1;
+  const startSnd=t=>{if(SKW.snode){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}if(!SKW.rec&&buf&&!S.skSndMute)SKW.snode=skAudPlay(buf,SKW.doc.aud.off,t);};
   if(!SKW.rec&&d.aud)skAudEdited(d.aud).then(b=>{buf=b;if(SKPLAY)startSnd((performance.now()-t0)/1000);}).catch(()=>{});
   const step=()=>{if(!SKW||!skHasFrames(SKW.doc)){skStop();return;}let t=(performance.now()-t0)/1000;if(t>=C()){t0=performance.now();t=0;startSnd(0);}
     const tt=t%tl.T;let i=0;while(i<tl.st.length-1&&tt>=tl.st[i+1])i++;if(i!==cur){cur=i;const f=tl.seq[i];if(f&&f!==SKW.doc.fcur)skGoFrame(f,true);}
     if(S.skFSnd)skFSndPaint(t);};
-  if(tl.seq[0]&&tl.seq[0]!==d.fcur)skGoFrame(tl.seq[0],true);SKPLAY=setInterval(step,15);render();}
+  if(!from&&tl.seq[0]&&tl.seq[0]!==d.fcur)skGoFrame(tl.seq[0],true);SKPLAY=setInterval(step,15);render();}
 /* recording: 3-2-1, then the frames play from frame 1 while the mic records; Stop (or Space / a tap) ends it */
 async function skAudRec(){const d=SKW.doc;if(SKW.rec)return;if(!navigator.mediaDevices||!window.MediaRecorder){flash('Recording isn’t available here.');return;}
   if(d.aud&&S.confirm!=='skaudrec')return armConfirm('skaudrec');S.confirm=null;if(SKPLAY)skStop();
@@ -7213,15 +7238,16 @@ async function skAudRec(){const d=SKW.doc;if(SKW.rec)return;if(!navigator.mediaD
   const mt=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4','audio/webm'].find(x=>{try{return MediaRecorder.isTypeSupported(x);}catch(e){return false;}});
   let mr;try{mr=new MediaRecorder(stream,mt?{mimeType:mt,audioBitsPerSecond:48000}:{audioBitsPerSecond:48000});}catch(e){stream.getTracks().forEach(x=>x.stop());flash('Recording isn’t available here.');return;}
   const big=h('div',{class:'skcount'});document.body.appendChild(big);for(const n of [3,2,1]){big.textContent=n;await new Promise(r=>setTimeout(r,650));}big.remove();
-  const r={mr,stream,chunks:[]};SKW.rec=r;mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data);};mr.start(250);skPlaySnd();flash('Recording… Stop (or Space, or a tap) ends it');}
+  /* recording starts at the frame you're on: the new sound is placed there */
+  const tl0=skFrTimeline(d),fi=tl0.seq.indexOf(d.fcur),r={mr,stream,chunks:[],from:fi>0?tl0.st[fi]:0};SKW.rec=r;mr.ondataavailable=e=>{if(e.data&&e.data.size)r.chunks.push(e.data);};mr.start(250);skPlaySnd();flash('Recording… Stop (or Space, or a tap) ends it');}
 async function skAudRecEnd(){const r=SKW.rec;SKW.rec=null;if(!r)return;const done=new Promise(res=>{r.mr.onstop=res;});try{r.mr.stop();}catch(e){}await done;r.stream.getTracks().forEach(x=>x.stop());render();
   const blob=new Blob(r.chunks,{type:r.mr.mimeType||'audio/webm'});if(blob.size<2000){flash('Nothing was recorded.');return;}
-  await skAudSetDrawing(blob,'Recording '+new Date().toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));}
-async function skAudSetDrawing(blob,name){const W=SKW,d=W&&W.doc;if(!d)return;flash('Saving the sound…');let buf;try{buf=await skAudioDecode(blob.slice(0));}catch(e){flash('Couldn’t read that audio file.');return;}
+  await skAudSetDrawing(blob,'Recording '+new Date().toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),r.from||0);}
+async function skAudSetDrawing(blob,name,off){const W=SKW,d=W&&W.doc;if(!d)return;flash('Saving the sound…');let buf;try{buf=await skAudioDecode(blob.slice(0));}catch(e){flash('Couldn’t read that audio file.');return;}
   /* kept as a plain WAV (up to 9 minutes) so After Effects and the AE panel can always read it */
   if(buf.duration<=540)blob=await skBufWav(buf,22050);else if(/wav|aiff/i.test(blob.type)||/\.(wav|aiff?)$/i.test(name||''))blob=await skAudioWav(blob,22050);if(blob.size>25e6){flash('That file is too big (25 MB max).');return;}
   let m;try{m=await SKA.put(blob);}catch(e){flash('Couldn’t save the sound.');return;}
-  const dur=Math.round(buf.duration*1000)/1000,nw=Object.assign(m,{name,dur,pk:skPeaks(buf,600),segs:[[0,dur]],off:0});SKABUF.set(nw.id,buf);
+  const dur=Math.round(buf.duration*1000)/1000,nw=Object.assign(m,{name,dur,pk:skPeaks(buf,600),segs:[[0,dur]],off:Math.max(0,Math.round((off||0)*1000)/1000)});SKABUF.set(nw.id,buf);
   if(SKW!==W)return;skAudEdit(()=>nw);flash('Sound saved · '+dur.toFixed(1)+'s');}
 function skAudPick(){const inp=document.createElement('input');inp.type='file';inp.accept='audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm,.aif,.aiff';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(f)skAudSetDrawing(f,f.name.replace(/\.[^.]+$/,''));};inp.click();}
 /* every sound edit is one undo step; fn gets a copy to change (or returns a whole new value; null removes the sound) */
@@ -7230,52 +7256,68 @@ function skAudEdit(fn){const d=SKW.doc,a=d.aud?JSON.parse(JSON.stringify(d.aud))
 /* the sound panel: the frames as a ruler, the sound's parts as blocks with their waveform. Drag a block to move the sound, drag its outer edges to trim,
    tap to put the cut line there (and pick that part); Split cuts at the line, Delete part takes the picked part out (the rest closes up) */
 let SKFS=null;
-function skFSndView(){const d=SKW.doc,m=d.aud,tl=skFrTimeline(d),cv=h('canvas',{class:'skfsndcv'}),rec=!!SKW.rec;
-  const len=skAudLen(m),info=m?(len.toFixed(1)+'s sound'+(m.segs.length>1?' in '+m.segs.length+' parts':'')+' · frames '+tl.T.toFixed(1)+'s'):'No sound yet · frames '+tl.T.toFixed(1)+'s';
-  const sel=SKW.aseg!=null&&m&&m.segs[SKW.aseg]?SKW.aseg:null;
-  const el=h('div',{class:'skfsnd'},h('div',{class:'skfsndbar'},
-      h('button',{class:'sktool skib skrecb'+(rec?' on':''),title:rec?'Stop recording':(m?(S.confirm==='skaudrec'?'Tap again to record over the current sound':'Record again (replaces the sound)'):'Record: frames play from frame 1 while you talk'),'aria-label':rec?'Stop recording':'Record',onclick:()=>{if(SKW.rec)skStop();else skAudRec();}},h('i')),
-      ib('import',m?'Replace with an audio file…':'Bring in an audio file…',skAudPick),
-      ib('play',SKW.playing?'Stop':'Play with the sound (Space)',skPlay,{disabled:!m&&d.frames.length<2}),
-      h('span',{class:'skfsndinfo'},info),
-      m?h('button',{class:'tlink',title:'Cut the sound at the red line',disabled:!(SKW.acur>0),onclick:()=>skAudSplit()},'Split'):null,
-      m?h('button',{class:'tlink',title:'Take the picked part out (the rest closes up)',disabled:sel==null||m.segs.length<2,onclick:()=>skAudEdit(x=>{x.segs.splice(sel,1);SKW.aseg=null;})},'Delete part'):null,
-      m?h('button',{class:'tlink',title:'Undo every trim and cut',disabled:m.segs.length===1&&m.segs[0][0]===0&&Math.abs(m.segs[0][1]-m.dur)<.001&&!m.off,onclick:()=>skAudEdit(x=>{x.segs=[[0,x.dur]];x.off=0;SKW.aseg=null;SKW.acur=0;})},'Reset'):null,
-      m?ib('clear',S.confirm==='skauddel'?'Tap again to remove the sound':'Remove the sound',()=>{if(S.confirm!=='skauddel')return armConfirm('skauddel');S.confirm=null;skAudEdit(()=>null);},{cls:S.confirm==='skauddel'?'skarm':''}):null),
-    cv);
-  SKFS={el,cv,tl};
-  const X=()=>{const r=cv.getBoundingClientRect(),S1=Math.max(tl.T,skAudEnd(SKW.doc.aud),1)*1.06;return {r,S1,k:r.width/S1};};
-  let drag=null;
-  cv.addEventListener('pointerdown',e=>{const M=SKW.doc.aud;e.preventDefault();cv.setPointerCapture(e.pointerId);const {r,k}=X(),x=e.clientX-r.left,t=x/k;
-    if(!M){SKW.acur=t;skFSndPaint();return;}
-    const L=skAudLen(M),s0=M.off||0,s1=s0+L,near=v=>Math.abs(x-v*k)<10;let mode=near(s0)?'a':near(s1)?'b':(t>=s0&&t<=s1)?'move':'cur';
-    drag={mode,x0:e.clientX,m0:JSON.parse(JSON.stringify(M)),moved:false,t};});
-  cv.addEventListener('pointermove',e=>{if(!drag||!cv.hasPointerCapture(e.pointerId))return;const {k}=X(),dt=(e.clientX-drag.x0)/k;if(Math.abs(e.clientX-drag.x0)>3)drag.moved=true;if(!drag.moved)return;
-    const M=SKW.doc.aud,m0=drag.m0,first=m0.segs[0],last=m0.segs[m0.segs.length-1];
+/* time ↔ position along the timeline: each frame's cell covers its own time (a held frame is wider); past the last frame, time runs on at the average rate */
+function skTLMap(d,W){const fps=d.fps||12,st=[],P=[];let t=0,x=0;d.frames.forEach((f,i)=>{st.push(t);t+=skHold(d,f)/fps;P.push(x);x+=W[i]+3;});
+  const T=t||1/fps,total=Math.max(1,x-3),kA=total/T,dur=i=>skHold(d,d.frames[i])/fps;
+  const t2x=v=>{if(v>=T)return total+(v-T)*kA;let i=0;while(i<st.length-1&&v>=st[i+1])i++;return P[i]+Math.max(0,v-st[i])/dur(i)*W[i];};
+  const x2t=v=>{if(v>=total)return T+(v-total)/kA;let i=0;while(i<P.length-1&&v>=P[i+1])i++;return st[i]+Math.min(1,Math.max(0,v-P[i])/W[i])*dur(i);};
+  return {t2x,x2t,T,total,kA,P,W,st};}
+/* the sound as the bottom row of the timeline: eye mutes it, lock keeps it from being changed, ● records from the frame you're on, ⋯ for the rest.
+   On the waveform: drag the ends to trim, drag the middle to slide it, tap to set the red line (Split cuts there), tap a part to pick it */
+function skTLSndRow(d,W){const m=d.aud,M0=skTLMap(d,W),rec=!!SKW.rec,big=!!S.skSndBig,mute=!!S.skSndMute,lock=!!d.audLock;
+  const ext=Math.max(0,skAudEnd(m)-M0.T),cw=Math.ceil(M0.total+ext*M0.kA+24),cv=h('canvas',{class:'skfsndcv sktlsndcv',style:'width:'+cw+'px'});
+  const tb=(cls,title,on,fn,kid)=>h('button',{class:'sktlb'+cls,title,'aria-label':title,'aria-pressed':String(!!on),onclick:e=>{e.stopPropagation();fn();}},kid);
+  const head=h('div',{class:'sktlh'},
+    tb(mute?' off':'',mute?'Sound is muted (tap to hear it)':'Mute the sound',!mute,()=>{S.skSndMute=!S.skSndMute;saveUI();if(SKW.snode&&S.skSndMute){try{SKW.snode.stop();}catch(e){}SKW.snode=null;}render();},skIcoL(mute?'eyeoff':'eye')),
+    h('button',{class:'sktlb sktlrec'+(rec?' on':''),title:rec?'Stop recording':(m?(S.confirm==='skaudrec'?'Tap again: record over the current sound, starting at this frame':'Record from this frame (replaces the sound)'):'Record from this frame: the frames play while you talk'),'aria-label':rec?'Stop recording':'Record',onclick:e=>{e.stopPropagation();if(SKW.rec)skStop();else skAudRec();}},h('i')),
+    tb(lock?'':' off',lock?'Unlock the sound':'Lock the sound (no trims or moves by accident)',lock,()=>{d.audLock=!d.audLock;skSave();render();},skIcoL(lock?'lock':'unlock')),
+    h('button',{class:'sktln',title:big?'Fold the waveform':'Open a bigger waveform',onclick:e=>{e.stopPropagation();S.skSndBig=!S.skSndBig;saveUI();render();}},h('span',{class:'sktltw','aria-hidden':'true'},big?'▾':'▸'),m?(m.name||'Sound'):'Sound'),
+    h('button',{class:'sktlb sktlmore'+(S.skTLMenu&&S.skTLMenu.id==='__snd'?' on':''),title:'More: bring in a file, download, split, delete…','aria-label':'More for the sound',
+      onclick:e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();S.skTLMenu=S.skTLMenu&&S.skTLMenu.id==='__snd'?null:{id:'__snd',x:r.left,y:r.top};S.confirm=null;render();}},'⋯'));
+  const row=h('div',{class:'sktlrow sktlsnd'+(big?' big':'')+(lock?' locked':''),'data-snd':'1'},head,h('div',{class:'sktlsndc'},cv));
+  const tl=skFrTimeline(d);SKFS={el:row,cv,tl,map:M0};
+  let drag=null;const X=e=>e.clientX-cv.getBoundingClientRect().left;
+  cv.addEventListener('pointerdown',e=>{const M=SKW.doc.aud;e.preventDefault();e.stopPropagation();cv.setPointerCapture(e.pointerId);const x=X(e),t=M0.x2t(x);
+    if(!M||d.audLock){SKW.acur=t;skFSndPaint();drag={mode:'cur',x0:e.clientX,moved:false,t,noedit:true};return;}
+    const L=skAudLen(M),s0=M.off||0,s1=s0+L,near=v=>Math.abs(x-M0.t2x(v))<10;let mode=near(s0)?'a':near(s1)?'b':(t>=s0&&t<=s1)?'move':'cur';
+    drag={mode,x0:e.clientX,xs:x,m0:JSON.parse(JSON.stringify(M)),moved:false,t};});
+  cv.addEventListener('pointermove',e=>{if(!drag||!cv.hasPointerCapture(e.pointerId))return;if(Math.abs(e.clientX-drag.x0)>3)drag.moved=true;if(!drag.moved||drag.noedit)return;
+    const dt=M0.x2t(X(e))-M0.x2t(drag.xs),M=SKW.doc.aud,m0=drag.m0,first=m0.segs[0],last=m0.segs[m0.segs.length-1];
     if(drag.mode==='move'){M.off=Math.max(0,(m0.off||0)+dt);}
     else if(drag.mode==='a'){const na=Math.max(0,Math.min(first[1]-.05,first[0]+dt));M.segs[0][0]=na;M.off=Math.max(0,(m0.off||0)+(na-first[0]));}
     else if(drag.mode==='b'){M.segs[M.segs.length-1][1]=Math.max(last[0]+.05,Math.min(m0.dur,last[1]+dt));}
     skFSndPaint();});
   const up=e=>{if(!drag)return;const g=drag;drag=null;const M=SKW.doc.aud;
-    if(!g.moved){SKW.acur=g.t;if(M){let a=M.off||0;SKW.aseg=null;M.segs.forEach(([p,q],i)=>{if(g.t>=a&&g.t<a+(q-p))SKW.aseg=i;a+=q-p;});}render();return;}
+    if(!g.moved||g.noedit){SKW.acur=g.t;if(M){let a=M.off||0;SKW.aseg=null;M.segs.forEach(([p,q],i)=>{if(g.t>=a&&g.t<a+(q-p))SKW.aseg=i;a+=q-p;});}render();return;}
     const now=JSON.parse(JSON.stringify(M));Object.assign(M,g.m0);M.segs=g.m0.segs;skAudEdit(()=>now);};
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
-  requestAnimationFrame(()=>skFSndPaint());if(m&&!SKABUF.has(m.id))skAudSrcBuf(m).catch(()=>{});return el;}
+  requestAnimationFrame(()=>skFSndPaint());if(m&&!SKABUF.has(m.id))skAudSrcBuf(m).then(()=>skFSndPaint()).catch(()=>{});return row;}
+/* save a file through the same route as exports */
+async function skDownload(blob,fn){try{const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;if(!dl){flash('Saving files isn’t available here.');return;}
+  await dl.save({filename:fn,data:new Uint8Array(await blob.arrayBuffer())});flash('Saved '+fn);}catch(err){const c=err&&err.code;if(c!=='declined')flash('The file didn’t save. Try again.');}}
+/* the ⋯ menu for the sound row */
+function skSndMenuItems(){const d=SKW.doc,m=d.aud,sel=SKW.aseg!=null&&m&&m.segs[SKW.aseg]?SKW.aseg:null,row=(ico,txt,fn,cls,dis)=>h('button',{class:'skrow'+(cls||''),disabled:!!dis,onclick:()=>fn()},ico?skIcoL(ico):null,txt);
+  return [h('div',{class:'skgh'},m?(m.name||'Sound')+' · '+skAudLen(m).toFixed(1)+'s':'No sound yet'),
+    row('import',m?'Replace with an audio file…':'Bring in an audio file…',()=>{S.skTLMenu=null;skAudPick();}),
+    m?row('dl','Download the sound',async()=>{S.skTLMenu=null;const f=await skAudFileFor(m);if(!f||f.err){flash((f&&f.err)||'Couldn’t get the sound.');return;}skDownload(new Blob([f.data],{type:f.ext==='wav'?'audio/wav':'audio/*'}),((d.name||'Sketch')+' sound.'+f.ext).replace(/[\\/:*?"<>|]+/g,''));}):null,
+    m?row('cut','Split at the red line',()=>{skAudSplit();},'',!(SKW.acur>0)||d.audLock):null,
+    m?row('clear','Delete the picked part',()=>{skAudEdit(x=>{x.segs.splice(sel,1);SKW.aseg=null;});},'',sel==null||m.segs.length<2||d.audLock):null,
+    m?row('undo','Undo every trim and cut',()=>{skAudEdit(x=>{x.segs=[[0,x.dur]];x.off=0;SKW.aseg=null;SKW.acur=0;});},'',d.audLock||(m.segs.length===1&&m.segs[0][0]===0&&Math.abs(m.segs[0][1]-m.dur)<.001&&!m.off)):null,
+    m?row('clear',S.confirm==='skauddel'?'Tap again to delete the sound':'Delete the sound',()=>{if(S.confirm!=='skauddel')return armConfirm('skauddel');S.confirm=null;S.skTLMenu=null;skAudEdit(()=>null);},S.confirm==='skauddel'?' skarm':''):null];}
 function skAudSplit(){const d=SKW.doc,m=d.aud,t=SKW.acur;if(!m||!(t>0))return;let a=m.off||0;
   skAudEdit(x=>{let acc=a;for(let i=0;i<x.segs.length;i++){const [p,q]=x.segs[i],L=q-p;if(t>acc+.02&&t<acc+L-.02){const cut=p+(t-acc);x.segs.splice(i,1,[p,cut],[cut,q]);SKW.aseg=i+1;return;}acc+=L;}});}
-function skFSndPaint(tPlay){if(!SKFS||!SKFS.cv.isConnected||!SKW)return;const {cv,tl}=SKFS,d=SKW.doc,m=d.aud,dpr=Math.min(2,devicePixelRatio||1),r=cv.getBoundingClientRect();if(!r.width)return;
-  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);const W=r.width,H=r.height,S1=Math.max(tl.T,skAudEnd(m),1)*1.06,k=W/S1;
-  const ink=getComputedStyle(cv).color||'#222';c.clearRect(0,0,W,H);
-  /* the frames as a ruler (repeating under a longer sound) */
-  for(let rep=0;rep*tl.T<S1;rep++)tl.st.forEach((s,i)=>{const x=(rep*tl.T+s)*k;c.fillStyle=rep?'rgba(127,127,127,.18)':'rgba(127,127,127,.35)';c.fillRect(x,0,1,i===0?H:9);});
-  /* the current frame */
-  const fi=tl.seq.indexOf(d.fcur);if(fi>=0){c.fillStyle='rgba(59,111,216,.18)';const x0=tl.st[fi]*k,x1=(tl.st[fi+1]!=null?tl.st[fi+1]:tl.T)*k;c.fillRect(x0,0,Math.max(2,x1-x0),H);}
-  if(m){let a=m.off||0;const pk=m.pk||[],n=pk.length;m.segs.forEach(([p,q],i)=>{const x0=a*k,w=(q-p)*k;c.fillStyle=SKW.aseg===i?'rgba(59,111,216,.28)':'rgba(127,127,127,.16)';c.fillRect(x0,10,w,H-14);
-      c.fillStyle=SKW.aseg===i?'#3b6fd8':'rgba(60,140,220,.8)';const mid=10+(H-14)/2;for(let px=0;px<w;px+=2){const st=p+(px/w)*(q-p),j=Math.min(n-1,Math.floor(st/m.dur*n)),hh=Math.max(1,(pk[j]||0)/99*(H-18)/2);c.fillRect(x0+px,mid-hh,1.4,hh*2);}
-      if(i>0){c.fillStyle=ink;c.fillRect(x0-1,10,2,H-14);}a+=q-p;});
-    const s0=(m.off||0)*k,s1=skAudEnd(m)*k;c.fillStyle=ink;c.fillRect(s0-2,8,4,H-10);c.fillRect(s1-2,8,4,H-10);}
-  if(SKW.acur>0){c.fillStyle='#e04848';c.fillRect(SKW.acur*k-1,0,2,H);}
-  if(tPlay!=null){c.fillStyle=SKW.rec?'#e04848':'#3b6fd8';c.fillRect((tPlay%S1)*k-1,0,2,H);}}
+function skFSndPaint(tPlay){if(!SKFS||!SKFS.cv.isConnected||!SKW)return;const {cv,map}=SKFS,d=SKW.doc,m=d.aud,dpr=Math.min(2,devicePixelRatio||1),r=cv.getBoundingClientRect();if(!r.width)return;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);const W=r.width,H=r.height,X=map.t2x;
+  const ink=getComputedStyle(cv).color||'#222',top=2,hh0=H-4;c.clearRect(0,0,W,H);
+  /* frame boundaries, and the current frame */
+  map.P.forEach((x,i)=>{c.fillStyle='rgba(127,127,127,.3)';c.fillRect(x-1.5,0,1,H);});
+  const fi=d.frames.indexOf(d.fcur);if(fi>=0){c.fillStyle='rgba(59,111,216,.16)';c.fillRect(map.P[fi],0,map.W[fi],H);}
+  if(m){let a=m.off||0;const pk=m.pk||[],n=pk.length;m.segs.forEach(([p,q],i)=>{const x0=X(a),x1=X(a+(q-p)),w=x1-x0;c.fillStyle=SKW.aseg===i?'rgba(59,111,216,.28)':'rgba(127,127,127,.14)';c.fillRect(x0,top,w,hh0);
+      c.fillStyle=SKW.aseg===i?'#3b6fd8':'rgba(60,140,220,.85)';const mid=top+hh0/2;for(let px=0;px<w;px+=2){const tt=map.x2t(x0+px)-a,stt=p+tt,j=Math.min(n-1,Math.max(0,Math.floor(stt/m.dur*n))),hh=Math.max(1,(pk[j]||0)/99*(hh0-2)/2);c.fillRect(x0+px,mid-hh,1.4,hh*2);}
+      if(i>0){c.fillStyle=ink;c.fillRect(x0-1,top,2,hh0);}a+=q-p;});
+    if(!d.audLock){const s0=X(m.off||0),s1=X(skAudEnd(m));c.fillStyle=ink;c.fillRect(s0-2,0,4,H);c.fillRect(s1-2,0,4,H);}}
+  if(SKW.acur>0){c.fillStyle='#e04848';c.fillRect(X(SKW.acur)-1,0,2,H);}
+  if(tPlay!=null){c.fillStyle=SKW.rec?'#e04848':'#3b6fd8';const tt=tPlay>map.T&&!(m&&tPlay<=skAudEnd(m))?tPlay%map.T:tPlay;c.fillRect(X(tt)-1,0,2,H);}}
 /* ---------- frames: copy and paste, several at once ----------
    Select frames in the strip (Shift = range, Ctrl = add/remove). Copy takes whole frames, or with "This layer only" just the current layer.
    Whole frames paste as new frames after this one (or at the end); a layer pastes as new frames or into this and the next frames, replacing that layer there.
@@ -7359,9 +7401,9 @@ function skCellHold(lid,a,b){const d0=SKW.doc,l=d0.layers.find(x=>x.id===lid);if
 function skCellClear(lid,fid){const d0=SKW.doc;lid=lid||d0.cur;fid=fid||d0.fcur;const l=d0.layers.find(x=>x.id===lid);if(!l)return;
   skFramesAct(d=>{skAllToHolds(d,l);const L=skLidFn(d),hh=Object.assign({},l.h);delete hh[fid];l.h=hh;SKW.fr.set(fid,(SKW.fr.get(fid)||[]).filter(st=>L(st)!==lid));return new Set([lid+'|'+fid]);},'Cleared “'+l.name+'” on this frame · Ctrl+Z to undo');}
 /* ---------- frame strip: a thumbnail of every frame (a held frame is wider), drag across it to scrub, click to jump, hold and drag to move a frame ---------- */
-function skFStripThumb(d,fid,H,ALL){const strokes=fid===d.fcur?d.strokes:skLiveAt(fid,ALL),pw=d.inf?1920:(d.w||1920),ph=d.inf?1080:(d.h||1080);
+function skFStripThumb(d,fid,H,ALL){const PV=SKW.prev&&SKW.prev.size?SKW.prev:null,LI=skLidFn(d);let strokes=fid===d.fcur?d.strokes:skLiveAt(fid,ALL);if(PV)strokes=strokes.filter(st=>PV.has(LI(st)));const pvk=PV?[...PV].join(','):'',pw=d.inf?1920:(d.w||1920),ph=d.inf?1080:(d.h||1080);
   const ver=fid===d.fcur?'c'+SKW.undo.length+'.'+SKW.redo.length+'.'+strokes.length:'o'+strokes.length+'.'+strokes.reduce((m,st)=>Math.max(m,st.m||0),0)+'.'+strokes.map(st=>st.f).join('').length;
-  const fake=Object.assign({},d,{frames:null,strokes,created:String(d.created||d.name||'')+'|fs|'+fid+'|'+ver,updated:''});
+  const fake=Object.assign({},d,{frames:null,strokes,created:String(d.created||d.name||'')+'|fs|'+fid+'|'+ver+'|'+pvk,updated:''});
   return skPanelCv(fake,{pw,ph},Math.round(H*pw/ph));}
 function skFStrip(){const d=SKW.doc,ALL=skAllStrokes(),H=46,pw=d.inf?1920:(d.w||1920),ph=d.inf?1080:(d.h||1080),bw=Math.max(28,Math.min(110,Math.round(H*pw/ph)));
   const cells=d.frames.map((fid,i)=>{const hold=skHold(d,fid);
@@ -7369,10 +7411,10 @@ function skFStrip(){const d=SKW.doc,ALL=skAllStrokes(),H=46,pw=d.inf?1920:(d.w||
       h('span',{class:'skfcv'},skFStripThumb(d,fid,H,ALL)),h('b',null,String(i+1)),hold>1?h('i',null,hold+'×'):null);});
   const fsel=new Set(SKW.fsel||[]);cells.forEach(c=>{if(fsel.has(c.dataset.fid))c.classList.add('sel');});
   const rows=S.skFLayers!==false,flt=!!S.skTLFloat,W=d.frames.map(fid=>bw+(skHold(d,fid)-1)*bw*.5);
-  const el=h('div',{class:'skfstrip'+(rows?' sktl':'')+(flt?' infloat':''),role:'listbox','aria-label':'Frames'},rows?[h('div',{class:'skfrow'},h('span',{class:'sktll sp'},h('button',{class:'sktlb sktladd',title:'New layer (above this one)','aria-label':'New layer',onclick:e=>{e.stopPropagation();skLayerAdd();}},skIcoL('plus'))),cells),skTLRows(d,W,ALL)]:cells);
+  const el=h('div',{class:'skfstrip'+(rows||S.skFSnd?' sktl':'')+' infloat',role:'listbox','aria-label':'Frames'},(rows||S.skFSnd)?[h('div',{class:'skfrow'},h('span',{class:'sktll sp'},h('button',{class:'sktlb sktlall'+(SKW.prev?'':' on'),title:'Preview every layer in the strip','aria-pressed':String(!SKW.prev),onclick:e=>{e.stopPropagation();SKW.prev=null;render();}},'All'),h('button',{class:'sktlb sktladd',title:'New layer (above this one)','aria-label':'New layer',onclick:e=>{e.stopPropagation();skLayerAdd();}},skIcoL('plus'))),cells),rows?skTLRows(d,W,ALL):null,S.skFSnd?skTLSndRow(d,W):null]:cells);
   const cellAt=x=>{let best=null,bd=1e9;for(const c of el.querySelectorAll('.skfcell')){const r=c.getBoundingClientRect();const dd=x<r.left?r.left-x:x>r.right?x-r.right:0;if(dd<bd){bd=dd;best=c;}}return best;};
   let st=null;
-  if(rows)skTLRowsWire(el);
+  if(rows||S.skFSnd)skTLRowsWire(el);
   el.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest('.skfcell');if(!c)return;e.preventDefault();if(SKPLAY)skStop();
     /* Shift: select a run of frames; Ctrl (or the Select button on touch): add or remove one */
     if(S.skFSelMode&&!e.shiftKey){const f=c.dataset.fid;let L=(SKW.fsel||[]).slice();L=L.includes(f)?L.filter(x=>x!==f):L.concat([f]);SKW.fsel=L;SKW.fanchor=f;render();return;}
@@ -7400,13 +7442,16 @@ function skFStrip(){const d=SKW.doc,ALL=skAllStrokes(),H=46,pw=d.inf?1920:(d.w||
 /* each timeline row's header works like a row of the Layers panel: eye, solo, lock, the name (tap to select / fold its thumbnails,
    drag up or down to reorder) and ⋯ for the rest */
 function skTLHead(d,l,big){const tb=(cls,title,on,fn,kid)=>h('button',{class:'sktlb'+cls,title,'aria-label':title,'aria-pressed':String(!!on),onclick:e=>{e.stopPropagation();fn();}},kid);
-  const nm=h('button',{class:'sktln',title:l.id===d.cur?(big?'Fold this layer’s thumbnails · drag up or down to reorder':'Show this layer’s thumbnails · drag up or down to reorder'):'Draw on “'+l.name+'” · drag up or down to reorder'},
-    l.id===d.cur?h('span',{class:'sktltw','aria-hidden':'true'},big?'▾':'▸'):null,l.name);
-  let dr=null;nm.addEventListener('pointerdown',e=>{if(e.button>0)return;e.stopPropagation();dr={y:e.clientY,id:e.pointerId,on:false};try{nm.setPointerCapture(e.pointerId);}catch(_){}});
-  nm.addEventListener('pointermove',e=>{if(!dr)return;if(!dr.on&&Math.abs(e.clientY-dr.y)<8)return;dr.on=true;document.querySelectorAll('#app .sktlrow.drop').forEach(x=>x.classList.remove('drop','dropb'));
-    const t=document.elementFromPoint(e.clientX,e.clientY),row=t&&t.closest&&t.closest('.sktlrow');if(row&&row.dataset.lid!==l.id){row.classList.add('drop');if(e.clientY>row.getBoundingClientRect().top+row.offsetHeight/2)row.classList.add('dropb');}dr.row=row;dr.below=row&&row.classList.contains('dropb');});
-  nm.addEventListener('pointerup',e=>{const x=dr;dr=null;if(!x)return;e.stopPropagation();
-    if(!x.on){if(l.id===d.cur){S.skTLThumb=S.skTLThumb===false;saveUI();render();}else{d.cur=l.id;S.skTLThumb=true;skSave();render();}return;}
+  const PV=SKW.prev,inPV=!!(PV&&PV.has(l.id));
+  const nm=h('button',{class:'sktln'+(inPV?' pv':''),title:'Tap: draw on “'+l.name+'” and preview just it in the strip (tap again for all layers) · Shift/Ctrl+click or long-press: add to the preview · drag up or down to reorder'},l.name);
+  const pvToggle=()=>{const P=new Set(SKW.prev||[]);if(P.has(l.id))P.delete(l.id);else P.add(l.id);SKW.prev=P.size?P:null;render();};
+  let dr=null;nm.addEventListener('pointerdown',e=>{if(e.button>0)return;e.stopPropagation();dr={y:e.clientY,x:e.clientX,id:e.pointerId,on:false,lp:false,mod:e.shiftKey||e.ctrlKey||e.metaKey};
+    if(e.pointerType!=='mouse')dr.t=setTimeout(()=>{if(dr&&!dr.on){dr.lp=true;try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}pvToggle();}},450);try{nm.setPointerCapture(e.pointerId);}catch(_){}});
+  nm.addEventListener('pointermove',e=>{if(!dr||dr.lp)return;if(!dr.on&&Math.abs(e.clientY-dr.y)<8)return;dr.on=true;clearTimeout(dr.t);document.querySelectorAll('#app .sktlrow.drop').forEach(x=>x.classList.remove('drop','dropb'));
+    const t=document.elementFromPoint(e.clientX,e.clientY),row=t&&t.closest&&t.closest('.sktlrow[data-lid]');if(row&&row.dataset.lid!==l.id){row.classList.add('drop');if(e.clientY>row.getBoundingClientRect().top+row.offsetHeight/2)row.classList.add('dropb');}dr.row=row;dr.below=row&&row.classList.contains('dropb');});
+  nm.addEventListener('pointerup',e=>{const x=dr;dr=null;if(!x)return;clearTimeout(x.t);e.stopPropagation();if(x.lp)return;
+    if(!x.on){if(x.mod){pvToggle();return;}
+      const only=SKW.prev&&SKW.prev.size===1&&SKW.prev.has(l.id);SKW.prev=only?null:new Set([l.id]);if(d.cur!==l.id){d.cur=l.id;skSave();}render();return;}
     const tid=x.row&&x.row.dataset.lid;if(!tid||tid===l.id){render();return;}
     /* rows show the top layer first, so dropping below a row puts the layer under it in the stack */
     skLayerAct(d=>{const L=d.layers.filter(y=>y.id!==l.id),ti=L.findIndex(y=>y.id===tid);L.splice(x.below?ti:ti+1,0,d.layers.find(y=>y.id===l.id));d.layers=L;});});
@@ -7419,7 +7464,9 @@ function skTLHead(d,l,big){const tb=(cls,title,on,fn,kid)=>h('button',{class:'sk
     h('button',{class:'sktlb sktlmore'+(S.skTLMenu&&S.skTLMenu.id===l.id?' on':''),title:'More: rename, opacity, blending, duplicate, merge, delete…','aria-label':'More for '+l.name,
       onclick:e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();S.skTLMenu=S.skTLMenu&&S.skTLMenu.id===l.id?null:{id:l.id,x:r.left,y:r.top};S.confirm=null;render();}},'⋯'));}
 /* the ⋯ menu for a timeline row */
-function skTLMenuView(){const m=S.skTLMenu;if(!m||!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.doc,l=d.layers.find(y=>y.id===m.id);if(!l){S.skTLMenu=null;return null;}
+function skTLMenuView(){const m=S.skTLMenu;if(!m||!SKW||!skHasFrames(SKW.doc))return null;
+  if(m.id==='__snd')return h('div',{class:'skpop list sktlmenu',style:`left:${Math.max(8,Math.min(innerWidth-250,m.x))}px;bottom:${Math.max(8,innerHeight-m.y+6)}px`,onpointerdown:e=>e.stopPropagation()},skSndMenuItems(),h('button',{class:'skrow',onclick:()=>{S.skTLMenu=null;render();}},skIcoL('x'),'Close'));
+  const d=SKW.doc,l=d.layers.find(y=>y.id===m.id);if(!l){S.skTLMenu=null;return null;}
   const close=()=>{S.skTLMenu=null;render();},i=d.layers.indexOf(l),below=d.layers[i-1],op=l.op==null?1:l.op,lab=h('span',null,Math.round(op*100)+'%');
   const row=(ico,txt,fn,cls)=>h('button',{class:'skrow'+(cls||''),onclick:()=>fn()},ico?skIcoL(ico):null,txt);
   const el=h('div',{class:'skpop list sktlmenu',style:`left:${Math.max(8,Math.min(innerWidth-250,m.x))}px;bottom:${Math.max(8,innerHeight-m.y+6)}px`,onpointerdown:e=>e.stopPropagation()},
@@ -7446,7 +7493,7 @@ function skTLRows(d,W,ALL){const F=d.frames,A=skAllL(d),lid=skLidFn(d),has=new S
     const ver=(cur?'c'+SKW.undo.length+'.'+SKW.redo.length:'o')+'.'+strokes.length+'.'+strokes.reduce((m,st)=>Math.max(m,st.m||0),0);
     const fake=Object.assign({},d,{frames:null,layers:[Object.assign({},l,{hidden:false})],strokes,bgc:null,created:String(d.created||d.name||'')+'|tl|'+l.id+'|'+src+'|'+ver,updated:''});
     return h('span',{class:'sktlcv'},skPanelCv(fake,{pw,ph},Math.round(TH*pw/ph)));};
-  return h('div',{class:'sktlrows'},[...d.layers].reverse().map(l=>{const big=l.id===d.cur&&S.skTLThumb!==false;
+  return h('div',{class:'sktlrows'},[...d.layers].reverse().map(l=>{const big=false;
     return h('div',{class:'sktlrow'+(l.id===d.cur?' cur':'')+(big?' big':'')+(l.hidden?' hid':''),'data-lid':l.id},
     skTLHead(d,l,big),
     F.map((f,i)=>{const all=A.has(l.id),held=all?i>0:(i>0&&!!(l.h&&l.h[f])),k=held?'h':has.has(l.id+'|'+(all?'*':f))?'k':'e',more=i+1<F.length&&(all||!!(l.h&&l.h[F[i+1]]));
@@ -7466,20 +7513,18 @@ function skFStripSync(jump){const el=document.querySelector('#app .skfstrip');if
   el.querySelectorAll('.skfcell').forEach(c=>{const y=c.dataset.fid===f;c.classList.toggle('on',y);if(y)on=c;});{const ci=String(SKW.doc.frames.indexOf(f));el.querySelectorAll('.sktlc').forEach(c=>c.classList.toggle('on',c.dataset.i===ci));}
   if(on){const r=on.getBoundingClientRect(),R=el.getBoundingClientRect();if(r.left<R.left+8||r.right>R.right-8)el.scrollLeft+=(r.left+r.width/2)-(R.left+R.width/2);}}
 function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.doc,n=d.frames.length,i=d.frames.indexOf(d.fcur),pl=!!SKW.playing,on=S.skOnion||0;
-  if(S.skFrMini)return h('div',{class:'skframes skcoll'},h('button',{class:'sktool skminib',title:'Show the frames panel','aria-label':'Show the frames panel',onclick:()=>{S.skFrMini=false;saveUI();render();}},skIcoL('frames'),h('span',null,(i+1)+' / '+n)),
-    ib(pl?'stop':'play',pl?'Stop (tap Space)':'Play (tap Space)',skPlay,{disabled:n<2}));
+  if(S.skFrMini)return h('div',{class:'skframes skcoll'},h('button',{class:'sktool skminib',title:'Show the timeline','aria-label':'Show the timeline',onclick:()=>{S.skFrMini=false;saveUI();render();}},skIcoL('frames'),h('span',null,(i+1)+' / '+n)));
   const cl=d.layers.find(l=>l.id===d.cur),run=cl?skRun(d,cl.id,d.fcur):{n:1},held=cl&&(cl.all?i>0:!!(cl.h&&cl.h[d.fcur]));
   const strip=S.skFStrip!==false?skFStrip():null;
-  const tl=strip&&S.skTLFloat?skFloatPanel('sktlfloat','Timeline',S.skTLFloat,'tl',[strip],[h('button',{class:'sklb',title:'Dock the timeline back above the frame controls','aria-label':'Dock the timeline',onclick:()=>{S.skTLFloat=null;saveUI();render();}},skIcoL('dock'))]):strip;
-  return [S.skFSnd?skFSndView():null,tl,h('div',{class:'skframes'},
+  if(!S.skTLFloat||typeof S.skTLFloat.x!=='number')S.skTLFloat={x:12,y:Math.max(60,innerHeight-330)};
+  const bar=h('div',{class:'skframes infloat'},
     ib('fprev','Previous frame (, or Page Up)',()=>skStepFrame(-1)),h('span',{class:'skfn',title:'Frame'},(i+1)+' / '+n),ib('fnext','Next frame (. or Page Down)',()=>skStepFrame(1)),
     run.n>1&&cl?h('span',{class:'sktlnote',title:'This drawing on “'+cl.name+'” shows on '+run.n+' frames: what you draw here changes all of them. ● starts a new drawing on this frame instead.'},'✎ '+run.n+' frames'):null,
     cl&&n>1?(held?h('button',{class:'sktool skib sktlkey',title:'● New drawing here: this frame gets its own copy of “'+cl.name+'” (the frames before keep the old one)','aria-label':'New drawing on this frame',onclick:()=>skCellKey()},'●'):
       i>0?h('button',{class:'sktool skib sktlkey'+(S.confirm==='skhold'?' skarm':''),title:S.confirm==='skhold'?'Tap again: this frame’s drawing on “'+cl.name+'” is replaced by the one before':'Hold: show the previous frame’s drawing on “'+cl.name+'” here instead','aria-label':'Hold the previous drawing here',
         onclick:()=>{const L=skLidFn(d);if(d.strokes.some(st=>L(st)===cl.id)&&S.confirm!=='skhold')return armConfirm('skhold');S.confirm=null;skCellHold(cl.id,i-1,i);}},'─'):null):null,
-    ib(pl?'stop':'play',pl?'Stop (tap Space)':'Play (tap Space)',skPlay,{disabled:n<2}),
     h('span',{class:'skfsep'}),
-    skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('dup','Copy this frame to a new frame',true),
+    skFrameAddBtn('plus','New blank frame after this one',false),skFrameAddBtn('fnew','Copy this frame to a new frame',true),
     h('button',{class:'sktool skib skfselb','aria-pressed':String(!!S.skFSelMode),title:S.skFSelMode?'Done selecting':'Select frames: tap thumbnails to pick several',onclick:()=>{S.skFSelMode=!S.skFSelMode;if(!S.skFSelMode&&SKW.fsel&&SKW.fsel.length<2)SKW.fsel=null;render();}},S.skFSelMode?'Done':'Select'),
     S.skFSelMode?h('button',{class:'sktool skib skfselb',title:'Select every frame',onclick:()=>{SKW.fsel=d.frames.slice();render();}},'All'):null,
     ib('copyf',(SKW.fsel&&SKW.fsel.length>1?'Copy the '+SKW.fsel.length+' selected frames':'Copy this frame (Shift or Ctrl+click in the strip to pick several)')+(S.skFLayer?', this layer only':'')+' · Ctrl+C',skFramesCopy),
@@ -7499,11 +7544,12 @@ function skFramesView(){if(!SKW||!skHasFrames(SKW.doc))return null;const d=SKW.d
     h('select',{class:'skfps',title:'Playback: loop (1 2 3 1 2 3) or ping-pong (1 2 3 2 1)','aria-label':'Playback mode',onchange:e=>{d.pmode=e.target.value==='pong'?'pong':null;skSave();if(SKPLAY){skStop();skPlay();}}},
       h('option',{value:'loop',selected:d.pmode!=='pong'?'':null},'Loop'),h('option',{value:'pong',selected:d.pmode==='pong'?'':null},'Ping-pong')),
     h('select',{class:'skfps',title:'Frames per second','aria-label':'Frames per second',onchange:e=>{d.fps=+e.target.value;skSave();if(SKPLAY){skStop();skPlay();}}},[6,8,12,15,24].map(v=>h('option',{value:String(v),selected:(d.fps||12)===v?'':null},v+' fps'))),
-    h('button',{class:'sktool skib'+(d.aud?' skhasaud':''),'aria-pressed':String(!!S.skFSnd),title:S.skFSnd?'Hide the sound panel':'Sound: record or bring in a track for this animation'+(d.aud?' (has sound)':''),onclick:()=>{S.skFSnd=!S.skFSnd;saveUI();render();}},skIcoL('mic')),
+    h('button',{class:'sktool skib'+(d.aud?' skhasaud':''),'aria-pressed':String(!!S.skFSnd),title:S.skFSnd?'Hide the sound row':'Sound: show a sound row in the timeline (record or bring in a track)'+(d.aud?' (has sound)':''),onclick:()=>{S.skFSnd=!S.skFSnd;saveUI();render();}},skIcoL('mic')),
     h('button',{class:'sktool skib','aria-pressed':String(S.skFStrip!==false),title:S.skFStrip!==false?'Hide the frame strip':'Show the frame strip (thumbnails to scrub through)',onclick:()=>{S.skFStrip=S.skFStrip===false;saveUI();render();}},skIcoL('fstrip')),
     S.skFStrip!==false?h('button',{class:'sktool skib','aria-pressed':String(S.skFLayers!==false),title:S.skFLayers!==false?'Hide the layer rows':'Show a row per layer under the strip (holds and new drawings)',onclick:()=>{S.skFLayers=S.skFLayers===false;saveUI();render();}},skIcoL('tlrows')):null,
-    S.skFStrip!==false?h('button',{class:'sktool skib','aria-pressed':String(!!S.skTLFloat),title:S.skTLFloat?'Dock the timeline':'Float the timeline in its own panel',onclick:()=>{S.skTLFloat=S.skTLFloat?null:{x:Math.max(8,innerWidth/2-260),y:Math.max(8,innerHeight-360)};saveUI();render();}},skIcoL('popout')):null,
-    ib('collapse','Hide the frames panel',()=>{S.skFrMini=true;saveUI();render();}))];}
+
+    ib('collapse','Fold the timeline down to a small button',()=>{S.skFrMini=true;saveUI();render();}));
+  return skFloatPanel('sktlfloat','Timeline',S.skTLFloat,'tl',[strip,bar],[]);}
 function skOpen(id){skColTargetSet('stroke');const d=S.sketches&&S.sketches.get(id);if(!d)return;if(S.skFromBoard&&!(skBoardGet(S.skFromBoard)||{panels:[]}).panels.some(p=>p.sk===id))S.skFromBoard=null;if(d._partial){flash(Date.now()-(window.SKLOAD0||Date.now())>10000?'Part of this drawing is missing from this copy, so it can’t open safely. Bring it back with Restore a backup (◐ menu).':'Still loading this sketch. Try again in a moment.');return;}SKW={id,doc:skLayersInit(skClone(d)),undo:[],redo:[],fitNext:true};skPrefsApply(SKW.doc.prefs);SKW.known=new Set(SKW.doc.strokes.map(st=>st.id));skSplitFrames();SKW.knownL=new Set(SKW.doc.layers.map(l=>l.id));skUndoRestore();/* always open fitted and centred */S.skFS=false;render();window.scrollTo(0,0);}
 function skClose(){skColTargetSet('stroke');S.skTween=null;if(SKPLAY){clearInterval(SKPLAY);SKPLAY=0;}try{skPenFinish();}catch(e){}if(SKW&&SKW.simp)skSimpEnd(true);if(SKW)SKW.wantThumb=true;skSaveNow();skUndoKeep();SKW=null;S.skFS=false;S.skMenu=false;render();}
 let SKSAVE=0,SKLASTSAVE=0;
@@ -7737,7 +7783,7 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
   const pivKey=sel=>sel.map(st=>st.id).sort().join(',');
   const pivOf=(sel,b)=>{const P=SKW.piv;if(P&&P.k===pivKey(sel))return [P.x,P.y,true];return [b.x+b.w/2,b.y+b.h/2,false];};
   const handleAt=(sx,sy)=>{const sel=skSel(),b=skBoxOf(sel);if(!b)return null;const H=handlesS(b),t=hsz()/2+7,rp=rotPt(b,H);if(Math.hypot(sx-rp[0],sy-rp[1])<t+2)return 'rot';
-    for(const i of [0,2,4,6,1,3,5,7])if(Math.hypot(sx-H[i][0],sy-H[i][1])<t)return i;const pv=pivOf(sel,b),ps=toS(pv[0],pv[1]);if(Math.hypot(sx-ps[0],sy-ps[1])<t+1)return 'piv';return null;};
+    for(const i of [0,2,4,6,1,3,5,7])if(Math.hypot(sx-H[i][0],sy-H[i][1])<t)return i;const pv=pivOf(sel,b),ps=toS(pv[0],pv[1]),sw=Math.hypot(H[2][0]-H[0][0],H[2][1]-H[0][1]),sh=Math.hypot(H[6][0]-H[0][0],H[6][1]-H[0][1]);if((pv[2]||Math.min(sw,sh)>=56)&&Math.hypot(sx-ps[0],sy-ps[1])<t+1)return 'piv';return null;};
   const pivDraw=(ctx,q)=>{ctx.save();ctx.lineWidth=1.5;ctx.strokeStyle='#1E88E5';ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(q[0],q[1],6,0,7);ctx.fill();ctx.stroke();
     ctx.beginPath();ctx.moveTo(q[0]-11,q[1]);ctx.lineTo(q[0]-3,q[1]);ctx.moveTo(q[0]+3,q[1]);ctx.lineTo(q[0]+11,q[1]);ctx.moveTo(q[0],q[1]-11);ctx.lineTo(q[0],q[1]-3);ctx.moveTo(q[0],q[1]+3);ctx.lineTo(q[0],q[1]+11);ctx.stroke();ctx.restore();};
   const selOverlay=ctx=>{const blue='#1E88E5';ctx.save();ctx.lineWidth=1.25;ctx.strokeStyle=blue;
@@ -7753,7 +7799,7 @@ function skEditor(){const doc=SKW.doc,inf=!!doc.inf,W=doc.w,H=doc.h,bgc=doc.bg==
         for(const q of H){ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(rot());ctx.fillRect(-hs/2,-hs/2,hs,hs);ctx.strokeRect(-hs/2,-hs/2,hs,hs);ctx.restore();}}
       if(cur&&cur.piv)pivDraw(ctx,toS(cur.at[0],cur.at[1]));
       else if(cur&&cur.xf&&cur.pv){const q=cur.M?skAff(cur.M,cur.pv[0],cur.pv[1]):cur.pv;pivDraw(ctx,toS(q[0],q[1]));}
-      else if(skSelTool()){const pv=pivOf(sel,b);pivDraw(ctx,toS(pv[0],pv[1]));}}
+      else if(skSelTool()){const pv=pivOf(sel,b),H0=handlesS(b),sw=Math.hypot(H0[2][0]-H0[0][0],H0[2][1]-H0[0][1]),sh=Math.hypot(H0[6][0]-H0[0][0],H0[6][1]-H0[0][1]);if(pv[2]||Math.min(sw,sh)>=56)pivDraw(ctx,toS(pv[0],pv[1]));}}
     ctx.restore();};
   const pip=(x,y,P)=>{let c=false;for(let i=0,j=P.length-2;i<P.length;j=i,i+=2){const xi=P[i],yi=P[i+1],xj=P[j],yj=P[j+1];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c;}return c;};
   /* a line counts as selected when most of it is inside the lasso */
@@ -10067,7 +10113,7 @@ addEventListener('pointerdown',e=>{if(!S.skPop||!skActive())return;if(e.target.c
 addEventListener('keydown',e=>{if(e.key==='Escape'&&S.skPop&&skActive()){S.skPop=null;render();}});
 /* icon buttons for the sketch toolbar (label shows as a tooltip and to screen readers) */
 function ib(icon,label,fn,o){o=o||{};const a={class:'sktool skib'+(o.cls?' '+o.cls:''),title:label,'aria-label':label,onclick:fn};if(o.disabled)a.disabled=true;if(o.pressed!=null)a['aria-pressed']=String(!!o.pressed);if(o.expanded!=null)a['aria-expanded']=String(o.expanded);return h('button',a,skIcoL(icon));}
-const SKIL={tlrows:'<path d="M10 6h11M10 12h11M10 18h11"/><circle cx="5" cy="6" r="1.8"/><circle cx="5" cy="12" r="1.8"/><circle cx="5" cy="18" r="1.8"/>',allframes:'<rect x="3" y="6" width="12" height="12" rx="1.5"/><path d="M18 8v10.5a1.5 1.5 0 0 1-1.5 1.5H8M21 10v9.5a2.5 2.5 0 0 1-2.5 2.5H10"/>',copyf:'<rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',pastef:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M12 9v7M8.5 12.5h7"/>',onelayer:'<path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M5 13l7 3.5 7-3.5" opacity=".35"/>',fstrip:'<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M8.5 6v12M15.5 6v12M2.5 9h1.5M2.5 15h1.5M20 9h1.5M20 15h1.5"/>',eyedrop:'<path d="M14.5 4.5l5 5M17 2.8a2.3 2.3 0 0 1 3.2 3.2L17.6 8.6l-2.2-2.2z"/><path d="M15.4 6.4 5.6 16.2 5 19l2.8-.6 9.8-9.8"/>',popout:'<rect x="3" y="9" width="12" height="12" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/>',mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
+const SKIL={dl:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',fnew:'<rect x="3.5" y="6.5" width="11" height="11" rx="1.5"/><path d="M7.5 3.5h11a2 2 0 0 1 2 2v11"/><path d="M9 9.5v5M6.5 12h5"/>',tlrows:'<path d="M10 6h11M10 12h11M10 18h11"/><circle cx="5" cy="6" r="1.8"/><circle cx="5" cy="12" r="1.8"/><circle cx="5" cy="18" r="1.8"/>',allframes:'<rect x="3" y="6" width="12" height="12" rx="1.5"/><path d="M18 8v10.5a1.5 1.5 0 0 1-1.5 1.5H8M21 10v9.5a2.5 2.5 0 0 1-2.5 2.5H10"/>',copyf:'<rect x="8" y="8" width="12" height="12" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',pastef:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M12 9v7M8.5 12.5h7"/>',onelayer:'<path d="M12 4 3 8.5l9 4.5 9-4.5z"/><path d="M5 13l7 3.5 7-3.5" opacity=".35"/>',fstrip:'<rect x="2.5" y="6" width="19" height="12" rx="1.5"/><path d="M8.5 6v12M15.5 6v12M2.5 9h1.5M2.5 15h1.5M20 9h1.5M20 15h1.5"/>',eyedrop:'<path d="M14.5 4.5l5 5M17 2.8a2.3 2.3 0 0 1 3.2 3.2L17.6 8.6l-2.2-2.2z"/><path d="M15.4 6.4 5.6 16.2 5 19l2.8-.6 9.8-9.8"/>',popout:'<rect x="3" y="9" width="12" height="12" rx="2"/><path d="M13 3h8v8M21 3l-9 9"/>',mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',import:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',fmovel:'<rect x="11" y="6" width="9" height="12" rx="1.5"/><path d="M8 9l-3 3 3 3M5 12h4"/>',fmover:'<rect x="4" y="6" width="9" height="12" rx="1.5"/><path d="M16 9l3 3-3 3M19 12h-4"/>',copy:'<rect x="8" y="3" width="12" height="15" rx="2"/><path d="M5 7v12a2 2 0 0 0 2 2h9M11.5 8h5M11.5 11.5h5"/>',cut:'<circle cx="6.5" cy="17.5" r="2.8"/><circle cx="17.5" cy="17.5" r="2.8"/><path d="M8.5 15.5 18 4M15.5 15.5 6 4"/>',paste:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 11h6M9 15h4"/>',pastemid:'<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="2.5 2.5"/><rect x="9" y="9" width="6" height="6" rx="1"/>',tween:'<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M9.5 12h1M13.5 12h1"/>',sh_rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',sh_ellipse:'<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',sh_line:'<path d="M5 19 19 5"/>',sh_poly:'<path d="M12 3.5 20 9.3l-3 9.2H7L4 9.3z"/>',sh_star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',sym:'<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',closepath:'<path d="M7 19 4.5 9 12 4.5 19.5 9 17 19"/><path d="M7.5 19h9" stroke-dasharray="1.5 2.6"/>',zoomout:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/>',zoomin:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6M10.5 7.5v6"/>',
   fit:'<circle cx="10.5" cy="10.5" r="7"/><path d="M16 16l5 5"/><path d="M6.8 11.6c1.1-2.6 2.2-2.6 3.2-.6s2.2 2 3.3-.7" stroke-width="1.7"/>',
   pressure:'<path d="M3 17c3-1 4-5 7-5s3 5 6 5 3-3 5-4" stroke-width="1.4"/><path d="M3 21c3-1.5 4-7 7-7s3 7 6 7 3-4 5-5" stroke-width="3"/><path d="M14.5 3.5l3 3-6 6H8.5v-3z" fill="currentColor" stroke="none"/>',
   undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',redo:'<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
@@ -10107,14 +10153,14 @@ const skIcoL=k=>{const s=document.createElementNS('http://www.w3.org/2000/svg','
 const SKSCRSEL=['#app .skbar.vert>.skrowin','#app .skbar.dock>.skrowin','#app .skframes','#app .sksel .skrowin','#app .skbdnav'],SKSCR={};
 addEventListener('scroll',e=>{const t=e.target;if(!t||!t.matches)return;for(const q of SKSCRSEL)if(t.matches(q)){SKSCR[q]=t.scrollLeft;break;}},true);
 function skScrollKeep(){for(const q of SKSCRSEL){const el=document.querySelector(q);if(el&&SKSCR[q]&&Math.abs(el.scrollLeft-SKSCR[q])>1)el.scrollLeft=SKSCR[q];}}
-function skStackBottom(){skScrollKeep();const els=['.skframes','.skfstrip:not(.infloat)','.skfsnd','.sksel','.skbdnav','.skpastebar'].map(q=>document.querySelector('#app '+q)).filter(Boolean),placed=[];
+function skStackBottom(){skScrollKeep();const els=['.skframes:not(.infloat)','.skfstrip:not(.infloat)','.skfsnd','.sksel','.skbdnav','.skpastebar'].map(q=>document.querySelector('#app '+q)).filter(Boolean),placed=[];
   for(const el of els){el.style.bottom='';let r=el.getBoundingClientRect();
     for(let guard=0;guard<4;guard++){const hit=placed.find(p=>r.left<p.right-2&&r.right>p.left+2&&r.top<p.bottom-2&&r.bottom>p.top+2);if(!hit)break;el.style.bottom=(innerHeight-hit.top+8)+'px';r=el.getBoundingClientRect();}
     placed.push(r);}}
 addEventListener('resize',()=>{if(SKW)skStackBottom();});
 function sketchView(){const head=h('div',{class:'monthhead'},h('div',{class:'bigrow'},h('h1',{class:'wkh1 fith','aria-label':'Sketch'},'SKETCH'),bigClock()));
   if(SKW){const doc=SKW.doc;requestAnimationFrame(skStackBottom);
-    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skTLMenuView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null)];}
+    const pl=!!(SKW&&SKW.playing);return [h('div',{class:'skeditor skfs'+(S.skFloat?' floating':'')+(pl?' skplaying'+(skPlayRect(SKW.doc)?' skplayfr':''):'')},S.skFloat?skCorner():null,skToolbar(),skEditor(),skIsoBar(),skUndoView(),skCompass(),skStripView(),skLayersFloatView(),skFramesView(),skTLMenuView(),skSelBar(),skCtxView(),skKeysView(),skSBNoteView(),skPalFloatView(),skPalSoloViews(),skPFFloatView(),skColFloatView(),skPenFloatView(),skSizeFloatView(),skBoardNav(),skTweenView(),skPasteView(),pl?skPlayVeil():null,skPlayFab())];}
   const all=[...(S.sketches||new Map()).entries()].sort((a,b)=>String(b[1].updated||'').localeCompare(String(a[1].updated||'')));
   skBooksEnsure();const books=skBookList().slice().sort((a,b)=>(b.def?1:0)-(a.def?1:0)),has=new Set(books.map(b=>b.id)),BC=skBookCtx(),inB=(id,d)=>skBooksOf(id,d,BC);
   if(S.skBoardOpen){const v=skBoardEditor();if(v)return [v];}
@@ -10680,10 +10726,10 @@ async function skImportText(txt){let o;try{o=JSON.parse(txt);}catch(e){o=null;}
   flash(bmsg+(parts.length?'Drawings: '+parts.join(', ')+'.':'No drawings in that file.'));render();}
 
 /* ---------- the host page (the planner, or the After Effects panel) calls these to load and save the drawing settings and to follow the database ---------- */
-function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skTLFloat=store.skTLFloat&&typeof store.skTLFloat.x==='number'?store.skTLFloat:null;S.skTLThumb=store.skTLThumb!==false;S.skFLayers=store.skFLayers!==false;S.skColFloat=store.skColFloat&&typeof store.skColFloat.x==='number'?store.skColFloat:null;S.skPenFloat=store.skPenFloat&&typeof store.skPenFloat.x==='number'?store.skPenFloat:null;S.skSizeFloat=store.skSizeFloat&&typeof store.skSizeFloat.x==='number'?store.skSizeFloat:null;S.skColHide=!!store.skColHide;S.skPenHide=!!store.skPenHide;S.skFStrip=store.skFStrip!==false;S.skStacks=Array.isArray(store.skStacks)?store.skStacks.filter(st=>st&&Array.isArray(st.k)&&st.k.length>1&&typeof st.x==='number'):[];S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
+function skPrefsLoad(store){S.skPanelSz=store.skPanelSz&&typeof store.skPanelSz==='object'?store.skPanelSz:{};S.skTLFloat=store.skTLFloat&&typeof store.skTLFloat.x==='number'?store.skTLFloat:null;S.skSndBig=!!store.skSndBig;S.skSndMute=!!store.skSndMute;S.skTLThumb=store.skTLThumb!==false;S.skFLayers=store.skFLayers!==false;S.skColFloat=store.skColFloat&&typeof store.skColFloat.x==='number'?store.skColFloat:null;S.skPenFloat=store.skPenFloat&&typeof store.skPenFloat.x==='number'?store.skPenFloat:null;S.skSizeFloat=store.skSizeFloat&&typeof store.skSizeFloat.x==='number'?store.skSizeFloat:null;S.skColHide=!!store.skColHide;S.skPenHide=!!store.skPenHide;S.skFStrip=store.skFStrip!==false;S.skStacks=Array.isArray(store.skStacks)?store.skStacks.filter(st=>st&&Array.isArray(st.k)&&st.k.length>1&&typeof st.x==='number'):[];S.skPFFloat=store.skPFFloat&&typeof store.skPFFloat.x==='number'?store.skPFFloat:null;S.skPlayPos=store.skPlayPos&&typeof store.skPlayPos.x==='number'?store.skPlayPos:null;S.skGrpLast=store.skGrpLast&&typeof store.skGrpLast==='object'?store.skGrpLast:{};S.skUI=typeof store.skUI==='number'?store.skUI:1;skUIApply();S.skPenFill=store.skPenFill||'#FFFFFF';S.skPenFillOn=!!store.skPenFillOn;S.skPenNoStroke=!!store.skPenNoStroke;S.skColTarget='stroke';S.skTool=store.skTool||'pen';S.skSize=store.skSize==null?1:store.skSize;S.skColor=store.skColor||'';S.skPress=store.skPress!==false;S.skOnion=Math.max(1,Math.min(3,(typeof store.skOnion==='number'&&store.skOnion)||1));S.skOnionOn=typeof store.skOnionOn==='boolean'?store.skOnionOn:(store.skOnion!==0);S.skTint=store.skTint!==false;S.skBooks=Array.isArray(store.skBooks)?store.skBooks:[];S.skBook=store.skBook||null;S.skBox=store.skBox!==false;S.skKeymap=store.skKeymap&&typeof store.skKeymap==='object'?store.skKeymap:{};setTimeout(()=>{try{skKeysToHost();}catch(e){}},0);S.skTilt=store.skTilt!==false;S.skTiltAmt=typeof store.skTiltAmt==='number'?store.skTiltAmt:null;S.skLFloat=!!store.skLFloat;S.skLHide=!!store.skLHide;S.skLPos=store.skLPos||null;S.skEraseMode=store.skEraseMode||'line';S.skColorPrev=store.skColorPrev||'';S._skColCur=store.skColor||'';S.skW=store.skW&&typeof store.skW==='object'?store.skW:null;S.skSmooth=typeof store.skSmooth==='number'?store.skSmooth:null;S.skStrip=!!store.skStrip;S.skCustom=Array.isArray(store.skCustom)?store.skCustom.slice(0,4):[];S.skBoards=Array.isArray(store.skBoards)?store.skBoards:[];S.skBoardOpen=store.skBoardOpen||null;S.skFrMini=!!store.skFrMini;S.skBdMini=!!store.skBdMini;S.skRecent=Array.isArray(store.skRecent)?store.skRecent.slice(0,8):[];S.skPals=Array.isArray(store.skPals)?store.skPals:[];S.skPalFloat=!!store.skPalFloat;S.skPalShow=!!store.skPalShow;S.skCropShow=!!store.skCropShow;S.skPPos=store.skPPos||null;S.skPalSolos=Array.isArray(store.skPalSolos)?store.skPalSolos:[];S.skPressAmt=typeof store.skPressAmt==='number'?store.skPressAmt:null;S.skBg=store.skBg||'blank';S.skFloat=!!store.skFloat;S.skVert=!!store.skVert;S.skMini=!!store.skMini;S.skBarPos=store.skBarPos||null;}
 /* remember the colour you had before the last change, for X */
 function skPrefsTrack(){if(S.skColor!==S._skColCur){if(S._skColCur!==undefined&&S._skColCur)S.skColorPrev=S._skColCur;S._skColCur=S.skColor;const c=String(S.skColor||'').toUpperCase();if(/^#[0-9A-F]{6}$/.test(c))S.skRecent=[c].concat((S.skRecent||[]).filter(x=>x!==c)).slice(0,8);}}
-function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skTLFloat:S.skTLFloat||null,skTLThumb:S.skTLThumb!==false,skFLayers:S.skFLayers!==false,skPFFloat:S.skPFFloat||null,skStacks:S.skStacks||[],skFStrip:S.skFStrip!==false,skColFloat:S.skColFloat||null,skColHide:!!S.skColHide,skPenFloat:S.skPenFloat||null,skPenHide:!!S.skPenHide,skSizeFloat:S.skSizeFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
+function skPrefsOut(){const pc=skPenCols();return {skPanelSz:S.skPanelSz||{},skTLFloat:S.skTLFloat||null,skSndBig:!!S.skSndBig,skSndMute:!!S.skSndMute,skTLThumb:S.skTLThumb!==false,skFLayers:S.skFLayers!==false,skPFFloat:S.skPFFloat||null,skStacks:S.skStacks||[],skFStrip:S.skFStrip!==false,skColFloat:S.skColFloat||null,skColHide:!!S.skColHide,skPenFloat:S.skPenFloat||null,skPenHide:!!S.skPenHide,skSizeFloat:S.skSizeFloat||null,skGrpLast:S.skGrpLast||{},skPlayPos:S.skPlayPos||null,skUI:skUI(),skPenFill:pc.fill,skPenFillOn:!!S.skPenFillOn,skPenNoStroke:!!S.skPenNoStroke,skTool:S.skTool||'pen',skSize:S.skSize==null?1:S.skSize,skColor:S.skColTarget==='fill'?(S.skPenStrokeC||''):(S.skColor||''),skPress:S.skPress!==false,skOnion:S.skOnion||1,skOnionOn:!!S.skOnionOn,skTint:S.skTint!==false,skBooks:S.skBooks||[],skBook:S.skBook||null,skBox:S.skBox!==false,skKeymap:S.skKeymap||{},skTilt:S.skTilt!==false,skTiltAmt:S.skTiltAmt==null?null:S.skTiltAmt,skLFloat:!!S.skLFloat,skLHide:!!S.skLHide,skLPos:S.skLPos||null,skEraseMode:S.skEraseMode||'line',skColorPrev:S.skColorPrev||'',skW:S.skW||null,skSmooth:S.skSmooth==null?null:S.skSmooth,skStrip:!!S.skStrip,skCustom:S.skCustom||[],skFrMini:!!S.skFrMini,skBdMini:!!S.skBdMini,skBoards:Array.isArray(S.skBoards)?S.skBoards:[],skBoardOpen:S.skBoardOpen||null,skRecent:S.skRecent||[],skPals:Array.isArray(S.skPals)?S.skPals:[],skPalFloat:!!S.skPalFloat,skPalShow:!!S.skPalShow,skCropShow:!!S.skCropShow,skPPos:S.skPPos||null,skPalSolos:S.skPalSolos||[],skPressAmt:S.skPressAmt==null?null:S.skPressAmt,skBg:S.skBg||'blank',skFloat:!!S.skFloat,skVert:!!S.skVert,skMini:!!S.skMini,skBarPos:S.skBarPos||null};}
 function skListen(db){
   db.collection('sketches').onSnapshot(s=>{S.skMain=new Map(s.docs.map(d=>[d.id,d.data()]));skSyncFromDb();},()=>{});
   db.collection('skparts').onSnapshot(s=>{S.skParts=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.skMain)skSyncFromDb();},()=>{});
